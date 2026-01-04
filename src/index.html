@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A Progressive Web App for tracking bills due each pay period">
+    <title>Bill Tracker PWA</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="vendor/supabase.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <header id="header"></header>
+        <div id="dashboard"></div>
+        <div class="container">
+            <aside id="sidebar"></aside>
+            <main id="billGrid"></main>
+        </div>
+        <div id="billForm"></div>
+        <div id="paymentModals"></div>
+    </div>
+    <script src="payment-history.js"></script>
+    <script type="module" src="index.js"></script>
+</body>
+
+</html>

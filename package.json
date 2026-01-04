@@ -1,0 +1,21 @@
+{
+  "name": "bill-tracker-pwa",
+  "version": "1.0.0",
+  "description": "A Progressive Web App for tracking bills due each pay period",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "http-server ./src -p 8080 -c-1"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "pwa",
+    "bills",
+    "tracker",
+    "payroll"
+  ],
+  "author": "",
+  "license": "MIT"
+}
