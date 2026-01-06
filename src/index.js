@@ -3,6 +3,8 @@ let bills = [];
 let selectedPaycheck = null;
 let selectedCategory = null;
 let viewMode = 'filtered'; // 'filtered' or 'all'
+let displayMode = 'list'; // 'list' or 'calendar'
+let currentCalendarDate = new Date(); // Tracks which month is being viewed
 let paymentFilter = 'all'; // 'all', 'unpaid', 'paid'
 let paymentStartDate = null;
 let paymentFrequency = 'bi-weekly'; // 'weekly', 'bi-weekly', 'monthly'
@@ -30,7 +32,7 @@ function generatePaycheckDates() {
     // Load from localStorage or use defaults
     const stored = localStorage.getItem('paymentSettings');
     let startDate, frequency, periods;
-    
+
     if (stored) {
         const settings = JSON.parse(stored);
         startDate = createLocalDate(settings.startDate);
@@ -52,11 +54,11 @@ function generatePaycheckDates() {
         paymentFrequency = frequency;
         payPeriodsToShow = periods;
     }
-    
+
     // Generate paycheck dates based on user preference
     const dates = [];
     const daysBetweenPaychecks = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
-    
+
     for (let i = 0; i < periods; i++) {
         const payDate = new Date(startDate);
         payDate.setDate(payDate.getDate() + (i * daysBetweenPaychecks));
@@ -77,8 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'setup.html';
         return;
     }
-    
+
     loadBillsFromStorage();
+    initializeTheme();
     completeInitialization();
 });
 
@@ -92,7 +95,7 @@ function completeInitialization() {
     initializeDashboard();
     autoSelectPayPeriod();
     initializeBillGrid();
-    
+
     // ENSURE ALL MODALS ARE HIDDEN ON STARTUP
     const billForm = document.getElementById('billForm');
     if (billForm) billForm.style.display = 'none';
@@ -109,15 +112,16 @@ function initializeHeader() {
         <div class="header-top">
             <h1>Bill Tracker</h1>
             <div class="view-controls">
-                <button id="allBillsBtn" class="view-btn">📋 All Bills</button>
                 <div class="filter-group">
-                    <label for="paymentFilter">Show:</label>
+                    <label for="paymentFilter">Status:</label>
                     <select id="paymentFilter" class="payment-filter-dropdown">
-                        <option value="all">All Bills</option>
+                        <option value="all">All</option>
                         <option value="unpaid">Unpaid Only</option>
                         <option value="paid">Paid Only</option>
                     </select>
                 </div>
+                <button id="viewToggleBtn" class="view-btn" title="Toggle View">📅</button>
+                <button id="themeBtn" class="settings-btn" title="Toggle Theme">🌓</button>
                 <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
             </div>
         </div>
@@ -130,22 +134,20 @@ function initializeHeader() {
             selectedPaycheck = parseInt(e.target.dataset.check);
             document.querySelectorAll('.paycheck-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
-            document.getElementById('allBillsBtn').classList.remove('active');
             renderDashboard();
             renderBillGrid();
         });
     });
 
-    document.getElementById('allBillsBtn').addEventListener('click', () => {
-        viewMode = 'all';
-        document.querySelectorAll('.paycheck-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('allBillsBtn').classList.add('active');
-        renderDashboard();
-        renderBillGrid();
-    });
+
 
     document.getElementById('paymentFilter').addEventListener('change', (e) => {
         paymentFilter = e.target.value;
+        // Safety sync: Ensure selectedCategory matches the active UI element
+        const activeBtn = document.querySelector('.category-btn.active');
+        if (activeBtn) {
+            selectedCategory = activeBtn.dataset.category;
+        }
         renderDashboard();
         renderBillGrid();
     });
@@ -153,11 +155,37 @@ function initializeHeader() {
     document.getElementById('settingsBtn').addEventListener('click', () => {
         showSettingsModal();
     });
+
+    // Theme Toggle Logic
+    const themeBtn = document.getElementById('themeBtn');
+    themeBtn.addEventListener('click', toggleTheme);
+
+    // Initialize Theme Icon
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        themeBtn.textContent = '☀️';
+    } else {
+        themeBtn.textContent = '🌓';
+    }
+
+    // View Toggle Logic
+    document.getElementById('viewToggleBtn').addEventListener('click', () => {
+        if (displayMode === 'list') {
+            displayMode = 'calendar';
+            document.getElementById('viewToggleBtn').textContent = '📋';
+            renderCalendar();
+        } else {
+            displayMode = 'list';
+            document.getElementById('viewToggleBtn').textContent = '📅';
+            renderBillGrid();
+        }
+    });
 }
 
 function initializeSidebar() {
     const sidebar = document.getElementById('sidebar');
     let html = '<h2>Categories</h2><ul>';
+    html += '<li><button class="category-btn" data-category="All">All Categories</button></li>';
     categories.forEach(cat => {
         html += `<li><button class="category-btn" data-category="${cat}">${cat}</button></li>`;
     });
@@ -168,6 +196,8 @@ function initializeSidebar() {
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             selectedCategory = e.target.dataset.category;
+            localStorage.setItem('selectedCategory', selectedCategory);
+            viewMode = 'filtered';
             document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             renderBillGrid();
@@ -214,7 +244,12 @@ function autoSelectPayPeriod() {
     }
 
     selectedPaycheck = selectedIndex;
-    selectedCategory = categories[0];
+    const savedCategory = localStorage.getItem('selectedCategory');
+    if (savedCategory && (categories.includes(savedCategory) || savedCategory === 'All')) {
+        selectedCategory = savedCategory;
+    } else {
+        selectedCategory = 'All'; // Default to All
+    }
     viewMode = 'filtered';
 
     const paycheckButtons = document.querySelectorAll('.paycheck-btn');
@@ -223,7 +258,12 @@ function autoSelectPayPeriod() {
     }
 
     const categoryButtons = document.querySelectorAll('.category-btn');
-    if (categoryButtons[0]) {
+    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+
+    const activeCategoryBtn = Array.from(categoryButtons).find(btn => btn.dataset.category === selectedCategory);
+    if (activeCategoryBtn) {
+        activeCategoryBtn.classList.add('active');
+    } else if (categoryButtons[0]) {
         categoryButtons[0].classList.add('active');
     }
 
@@ -235,23 +275,23 @@ function autoSelectPayPeriod() {
 function updateBillDatesBasedOnRecurrence() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     bills = bills.map(bill => {
         // Skip if already paid
         if (bill.isPaid) return bill;
-        
+
         const billDueDate = createLocalDate(bill.dueDate);
         billDueDate.setHours(0, 0, 0, 0);
-        
+
         // If bill is past due and unpaid, move it to next applicable pay date
         if (billDueDate < today && bill.recurrence !== 'One-time') {
             let nextDueDate = new Date(billDueDate);
-            
+
             // Keep moving forward until we find a date that's today or in the future
             while (nextDueDate < today) {
                 nextDueDate = calculateNextDueDate(nextDueDate, bill.recurrence);
             }
-            
+
             // Find closest paycheck date on or after nextDueDate
             const closestPaycheck = findClosestPaycheckDate(nextDueDate);
             if (closestPaycheck) {
@@ -269,21 +309,21 @@ function updateBillDatesBasedOnRecurrence() {
                 }
             }
         }
-        
+
         return bill;
     });
-    
+
     saveBillsToStorage();
 }
 
 function findClosestPaycheckDate(targetDate) {
     let closest = null;
     let minDifference = Infinity;
-    
+
     for (const payDate of payCheckDates) {
         const payDateClone = new Date(payDate);
         payDateClone.setHours(0, 0, 0, 0);
-        
+
         // Find paychecks on or after targetDate
         if (payDateClone >= targetDate) {
             const difference = payDateClone - targetDate;
@@ -293,7 +333,7 @@ function findClosestPaycheckDate(targetDate) {
             }
         }
     }
-    
+
     return closest;
 }
 
@@ -404,7 +444,8 @@ function renderDashboard() {
         const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
         displayBills = displayBills.filter(bill => {
             const billDate = createLocalDate(bill.dueDate);
-            return bill.category === selectedCategory && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+            const categoryMatch = selectedCategory === 'All' || bill.category === selectedCategory;
+            return categoryMatch && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
         });
     }
 
@@ -448,11 +489,30 @@ function renderDashboard() {
 }
 
 function initializeBillGrid() {
+    const main = document.querySelector('main');
+    // Inject Calendar Container if not present
+    if (!document.getElementById('calendarView')) {
+        const calendarDiv = document.createElement('div');
+        calendarDiv.id = 'calendarView';
+        calendarDiv.className = 'calendar-container';
+        main.appendChild(calendarDiv);
+    }
+
     document.getElementById('billGrid').innerHTML = '<p>Select a paycheck date and category to view bills.</p>';
 }
 
 function renderBillGrid() {
     const billGrid = document.getElementById('billGrid');
+    const calendarView = document.getElementById('calendarView');
+
+    if (displayMode === 'calendar') {
+        renderCalendar();
+        return;
+    }
+
+    billGrid.style.display = 'block';
+    if (calendarView) calendarView.style.display = 'none';
+
     billGrid.innerHTML = '';
     let dueBills = [];
 
@@ -467,7 +527,8 @@ function renderBillGrid() {
         const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
         dueBills = bills.filter(bill => {
             const billDate = createLocalDate(bill.dueDate);
-            return bill.category === selectedCategory && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+            const categoryMatch = selectedCategory === 'All' || bill.category === selectedCategory;
+            return categoryMatch && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
         }).sort((a, b) => createLocalDate(a.dueDate) - createLocalDate(b.dueDate));
     }
 
@@ -525,13 +586,154 @@ function renderBillGrid() {
     document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => editBill(e.target.closest('button').dataset.billId)));
 }
 
+// ========== CALENDAR VIEW ==========
+function renderCalendar() {
+    const billGrid = document.getElementById('billGrid');
+    const calendarView = document.getElementById('calendarView');
+    billGrid.style.display = 'none';
+    calendarView.style.display = 'block';
+
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay(); // 0 is Sunday
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    let html = `
+        <div class="calendar-header">
+            <button id="prevMonth" class="calendar-nav-btn">&lt; Prev</button>
+            <h2>${monthNames[month]} ${year}</h2>
+            <button id="nextMonth" class="calendar-nav-btn">Next &gt;</button>
+        </div>
+        <div class="calendar-grid">
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+    `;
+
+    // Previous month filler days
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = 0; i < startingDay; i++) {
+        html += `<div class="calendar-day other-month"><span class="calendar-day-number">${prevMonthLastDay - startingDay + 1 + i}</span></div>`;
+    }
+
+    // Current month days
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+
+        // Find bills due on this day
+        const billsDue = bills.filter(b => b.dueDate === dateStr);
+
+        let billsHtml = '<div class="calendar-bills">';
+        billsDue.forEach(b => {
+            const isPaid = b.isPaid;
+            const isOverdue = !isPaid && new Date(dateStr) < new Date().setHours(0, 0, 0, 0);
+            const statusClass = isPaid ? 'paid' : (isOverdue ? 'overdue' : '');
+            billsHtml += `<div class="calendar-bill ${statusClass}" title="${b.name} - $${(b.amountDue || 0).toFixed(2)}" onclick="editBill('${b.id}')">${b.name}</div>`;
+        });
+        billsHtml += '</div>';
+
+        html += `<div class="calendar-day ${isToday ? 'today' : ''}">
+            <span class="calendar-day-number">${day}</span>
+            ${billsHtml}
+        </div>`;
+    }
+
+    // Next month filler days
+    const totalCells = startingDay + daysInMonth;
+    const remainingCells = (7 - (totalCells % 7)) % 7;
+    for (let i = 1; i <= remainingCells; i++) {
+        html += `<div class="calendar-day other-month"><span class="calendar-day-number">${i}</span></div>`;
+    }
+
+    html += '</div>';
+    calendarView.innerHTML = html;
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+    });
+
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+    });
+}
+
+
 // ========== BILL FORM ==========
 function initializeBillForm() {
     const form = document.getElementById('billForm');
-    form.innerHTML = `<div class="modal"><div class="modal-content"><span class="close">&times;</span><h2>Add/Edit Bill</h2><form id="billFormElement"><input type="hidden" id="billId"><div class="form-group"><label>Category:</label><select id="billCategory" required><option value="">Select Category</option>${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}</select></div><div class="form-group"><label>Bill Name:</label><input type="text" id="billName" required></div><div class="form-group"><label>Due Date:</label><input type="date" id="billDueDate" required></div><div class="form-group"><label>Amount Due:</label><input type="number" id="billAmountDue" step="0.01" required></div><div class="form-group"><label>Balance:</label><input type="number" id="billBalance" step="0.01" required></div><div class="form-group"><label>Recurrence:</label><select id="billRecurrence"><option value="One-time">One-time</option><option value="Weekly">Weekly</option><option value="Bi-weekly">Bi-weekly</option><option value="Monthly">Monthly</option><option value="Yearly">Yearly</option></select></div><div class="form-group"><label>Notes:</label><textarea id="billNotes" rows="3" placeholder="Add any notes or comments..."></textarea></div><button type="submit" class="submit-btn">Save Bill</button></form></div></div>`;
+    form.innerHTML = `
+        <div class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add/Edit Bill</h2>
+                <form id="billFormElement">
+                    <input type="hidden" id="billId">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Bill Name:</label>
+                            <input type="text" id="billName" required placeholder="e.g., Apartment Rent">
+                        </div>
+                        <div class="form-group">
+                            <label>Category:</label>
+                            <select id="billCategory" required>
+                                <option value="">Select Category</option>
+                                ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Recurrence:</label>
+                            <select id="billRecurrence">
+                                <option value="One-time">One-time</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Bi-weekly">Bi-weekly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="Yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date:</label>
+                            <input type="date" id="billDueDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount Due:</label>
+                            <input type="number" id="billAmountDue" step="0.01" required placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Current Balance:</label>
+                            <input type="number" id="billBalance" step="0.01" placeholder="Optional (defaults to Amount Due)">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Notes:</label>
+                            <textarea id="billNotes" rows="3" placeholder="Add any notes or comments..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" id="cancelBillBtn">Cancel</button>
+                        <button type="submit" class="submit-btn">Save Bill</button>
+                    </div>
+                </form>
+            </div>
+        </div>`;
+
     const modal = form.querySelector('.modal');
-    form.querySelector('.close').addEventListener('click', () => form.style.display = 'none');
-    window.addEventListener('click', (e) => { if (e.target === modal) form.style.display = 'none'; });
+    const closeForm = () => form.style.display = 'none';
+
+    form.querySelector('.close').addEventListener('click', closeForm);
+    document.getElementById('cancelBillBtn').addEventListener('click', closeForm);
+    window.addEventListener('click', (e) => { if (e.target === modal) closeForm(); });
     document.getElementById('billFormElement').addEventListener('submit', (e) => { e.preventDefault(); saveBill(); });
 }
 
@@ -544,7 +746,7 @@ function saveBill() {
         name: document.getElementById('billName').value,
         dueDate: document.getElementById('billDueDate').value,
         amountDue: parseFloat(document.getElementById('billAmountDue').value),
-        balance: parseFloat(document.getElementById('billBalance').value),
+        balance: document.getElementById('billBalance').value ? parseFloat(document.getElementById('billBalance').value) : parseFloat(document.getElementById('billAmountDue').value),
         recurrence: document.getElementById('billRecurrence').value,
         notes: document.getElementById('billNotes').value,
         isPaid: existingBill ? existingBill.isPaid || false : false,
@@ -563,6 +765,18 @@ function saveBill() {
     }
 
     saveBillsToStorage();
+
+    // Auto-switch to the bill's category to ensure it's visible
+    if (selectedCategory !== bill.category) {
+        selectedCategory = bill.category;
+        localStorage.setItem('selectedCategory', selectedCategory);
+
+        // Sync Sidebar UI
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        const newActiveBtn = document.querySelector(`.category-btn[data-category="${selectedCategory}"]`);
+        if (newActiveBtn) newActiveBtn.classList.add('active');
+    }
+
     document.getElementById('billForm').style.display = 'none';
     document.getElementById('billFormElement').reset();
     document.getElementById('billId').value = '';
@@ -589,6 +803,24 @@ function resetBillForm() {
     document.getElementById('billId').value = '';
     document.getElementById('billCategory').value = '';
     document.getElementById('billFormElement').reset();
+}
+
+// ========== THEME HANDLING ==========
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+    // Update button icon
+    const themeBtn = document.getElementById('themeBtn');
+    if (themeBtn) themeBtn.textContent = isDark ? '☀️' : '🌓';
 }
 
 // ========== BILL ACTIONS ==========
@@ -813,32 +1045,32 @@ function showSettingsModal() {
             </form>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     document.getElementById('closeSettingsBtn').addEventListener('click', () => {
         modal.remove();
     });
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
         }
     });
-    
+
     document.getElementById('settingsForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const startDate = document.getElementById('settingsStartDate').value;
         const frequency = document.getElementById('settingsFrequency').value;
         const weeks = document.getElementById('settingsWeeks').value;
-        
+
         // Save to localStorage
         localStorage.setItem('paymentSettings', JSON.stringify({
             startDate: startDate,
             frequency: frequency,
             payPeriodsToShow: parseInt(weeks)
         }));
-        
+
         // Reload page to apply changes
         modal.remove();
         window.location.reload();

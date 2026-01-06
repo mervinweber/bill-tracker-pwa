@@ -415,17 +415,24 @@ main {
 }
 
 .form-group label {
+    display: block;
+    margin-bottom: 8px;
     color: var(--text-color);
+    font-weight: 600;
+    font-size: 14px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
+    width: 100%;
     background-color: var(--input-bg);
     color: var(--text-color);
     border: 1px solid var(--input-border);
-    border-radius: 4px;
-    padding: 10px;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 15px;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus,
@@ -433,36 +440,61 @@ main {
 .form-group textarea:focus {
     border-color: var(--primary-color);
     outline: none;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 600px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .form-group.full-width {
+        grid-column: span 2;
+    }
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
 }
 
 .submit-btn {
+    flex: 2;
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 12px;
-    border-radius: 4px;
+    padding: 14px;
+    border-radius: 6px;
     cursor: pointer;
-    width: 100%;
-    font-weight: bold;
-}
-
-.submit-btn:hover {
-    background-color: var(--primary-hover);
+    font-weight: 600;
+    font-size: 16px;
+    transition: background-color 0.2s;
 }
 
 .cancel-btn {
-    background-color: #999999;
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 4px;
+    flex: 1;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 14px;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 16px;
     transition: all 0.2s;
 }
 
 .cancel-btn:hover {
-    background-color: #777777;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-color: var(--text-secondary);
 }
 
 /* Dashboard Styling - Compact Stats Bar */
@@ -659,4 +691,144 @@ input:checked+.slider:before {
     .pay-period-select {
         width: 100%;
     }
+}
+
+/* Calendar View */
+.calendar-container {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    display: none;
+    /* Hidden by default */
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.dark-mode .calendar-header h2 {
+    color: var(--accent-color);
+}
+
+.calendar-nav-btn {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.calendar-nav-btn:hover {
+    background-color: var(--bg-color);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.calendar-day-header {
+    background-color: var(--th-bg);
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+}
+
+.dark-mode .calendar-day-header {
+    color: var(--accent-color);
+}
+
+.calendar-day {
+    min-height: 100px;
+    /* Ensure enough height for bills */
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    padding: 8px;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.calendar-day:hover {
+    background-color: var(--table-hover);
+}
+
+.calendar-day.other-month {
+    background-color: var(--bg-color);
+    /* Slightly simpler bg for other month days */
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.calendar-day-number {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.calendar-day.today .calendar-day-number {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.calendar-bills {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.calendar-bill {
+    font-size: 11px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
+    border-left: 3px solid var(--primary-color);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: transform 0.1s;
+}
+
+.calendar-bill:hover {
+    transform: scale(1.02);
+    z-index: 2;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.calendar-bill.paid {
+    border-left-color: var(--success-color);
+    background-color: rgba(39, 174, 96, 0.1);
+}
+
+.calendar-bill.overdue {
+    border-left-color: var(--danger-color);
+    background-color: rgba(217, 127, 127, 0.1);
 }
