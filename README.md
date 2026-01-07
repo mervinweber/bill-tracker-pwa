@@ -115,6 +115,12 @@ To enable Cloud Sync, you need to provide your own free Supabase credentials.
         update using (auth.uid() = user_id);
     ```
 
+5.  **Enable Google Authentication**:
+    *   Go to **Authentication** > **Providers** in Supabase.
+    *   Enable **Google**.
+    *   You will need to set up OAuth consent screen in Google Cloud Console to get the `Client ID` and `Client Secret`.
+    *   Add `https://<YOUR_PROJECT_ID>.supabase.co/auth/v1/callback` to "Authorized redirect URIs" in Google Cloud Console.
+
 ## 🔮 Next Steps (Roadmap)
 
 Here is where we left off and what you can tackle next:

@@ -71,6 +71,8 @@ function generatePaycheckDates() {
 const payCheckDates = generatePaycheckDates();
 const paychecks = payCheckDates.map(d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
 
+import { initializeSupabase, getSupabase, signInWithGoogle, signOut, getUser } from './services/supabase.js';
+
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
     // Check if user has configured payment settings
@@ -87,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function completeInitialization() {
+    initializeSupabase();
     migrateBillsToPaymentHistory();
     updateBillDatesBasedOnRecurrence();
     initializeHeader();
@@ -112,7 +115,8 @@ function initializeHeader() {
     header.innerHTML = `
         <div class="header-top">
             <h1>Bill Tracker</h1>
-            <div class="view-controls">
+            <div class="header-controls">
+                <button id="authBtn" class="auth-btn">Sign In</button>
                 <div class="filter-group">
                     <label for="paymentFilter">Status:</label>
                     <select id="paymentFilter" class="payment-filter-dropdown">
@@ -170,6 +174,32 @@ function initializeHeader() {
         themeBtn.textContent = '🌓';
     }
 
+    // Auth Toggle Logic
+    const authBtn = document.getElementById('authBtn');
+
+    // Check initial user state
+    getUser().then(user => {
+        updateAuthButton(user);
+    });
+
+    // Listen for auth state changes
+    const supabase = getSupabase();
+    if (supabase) {
+        supabase.auth.onAuthStateChange((event, session) => {
+            updateAuthButton(session?.user);
+        });
+    }
+
+    authBtn.addEventListener('click', async () => {
+        const user = await getUser();
+        if (user) {
+            await signOut();
+            // Button update handled by onAuthStateChange
+        } else {
+            await signInWithGoogle();
+        }
+    });
+
     // View Toggle Logic
     document.getElementById('viewToggleBtn').addEventListener('click', () => {
         if (displayMode === 'list') {
@@ -193,6 +223,18 @@ function initializeHeader() {
             renderAnalytics();
         }
     });
+}
+
+// Helper to update Auth Button State
+function updateAuthButton(user) {
+    const authBtn = document.getElementById('authBtn');
+    if (user) {
+        authBtn.textContent = `Sign Out (${user.email})`;
+        authBtn.classList.add('logged-in');
+    } else {
+        authBtn.textContent = 'Sign In with Google';
+        authBtn.classList.remove('logged-in');
+    }
 }
 
 function initializeSidebar() {
