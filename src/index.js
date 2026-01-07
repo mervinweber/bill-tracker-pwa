@@ -3,7 +3,7 @@ let bills = [];
 let selectedPaycheck = null;
 let selectedCategory = null;
 let viewMode = 'filtered'; // 'filtered' or 'all'
-let displayMode = 'list'; // 'list' or 'calendar'
+let displayMode = 'list'; // 'list', 'calendar', 'analytics'
 let currentCalendarDate = new Date(); // Tracks which month is being viewed
 let paymentFilter = 'all'; // 'all', 'unpaid', 'paid'
 let paymentStartDate = null;
@@ -121,6 +121,7 @@ function initializeHeader() {
                     </select>
                 </div>
                 <button id="viewToggleBtn" class="view-btn" title="Toggle View">📅</button>
+                <button id="analyticsBtn" class="view-btn" title="Analytics">📊</button>
                 <button id="themeBtn" class="settings-btn" title="Toggle Theme">🌓</button>
                 <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
             </div>
@@ -178,6 +179,17 @@ function initializeHeader() {
             displayMode = 'list';
             document.getElementById('viewToggleBtn').textContent = '📅';
             renderBillGrid();
+        }
+    });
+
+    // Analytics Toggle Logic
+    document.getElementById('analyticsBtn').addEventListener('click', () => {
+        if (displayMode === 'analytics') {
+            displayMode = 'list';
+            renderBillGrid();
+        } else {
+            displayMode = 'analytics';
+            renderAnalytics();
         }
     });
 }
@@ -489,7 +501,9 @@ function renderDashboard() {
 }
 
 function initializeBillGrid() {
-    const main = document.querySelector('main');
+    const main = document.getElementById('mainContent');
+    if (!main) console.error('FATAL: #mainContent not found in DOM');
+
     // Inject Calendar Container if not present
     if (!document.getElementById('calendarView')) {
         const calendarDiv = document.createElement('div');
@@ -498,20 +512,39 @@ function initializeBillGrid() {
         main.appendChild(calendarDiv);
     }
 
+    // Inject Analytics Container if not present
+    if (!document.getElementById('analyticsView')) {
+        const analyticsDiv = document.createElement('div');
+        analyticsDiv.id = 'analyticsView';
+        analyticsDiv.className = 'analytics-container';
+        main.appendChild(analyticsDiv);
+    }
+
     document.getElementById('billGrid').innerHTML = '<p>Select a paycheck date and category to view bills.</p>';
 }
+
 
 function renderBillGrid() {
     const billGrid = document.getElementById('billGrid');
     const calendarView = document.getElementById('calendarView');
+    const analyticsView = document.getElementById('analyticsView');
 
     if (displayMode === 'calendar') {
         renderCalendar();
+        if (analyticsView) analyticsView.style.display = 'none';
+        return;
+    }
+
+    if (displayMode === 'analytics') {
+        renderAnalytics();
+        if (calendarView) calendarView.style.display = 'none';
+        if (billGrid) billGrid.style.display = 'none';
         return;
     }
 
     billGrid.style.display = 'block';
     if (calendarView) calendarView.style.display = 'none';
+    if (analyticsView) analyticsView.style.display = 'none';
 
     billGrid.innerHTML = '';
     let dueBills = [];
@@ -670,6 +703,162 @@ function renderCalendar() {
     });
 }
 
+// ========== ANALYTICS VIEW ==========
+let categoryChart = null;
+let trendChart = null;
+
+function renderAnalytics() {
+    try {
+        const billGrid = document.getElementById('billGrid');
+        const calendarView = document.getElementById('calendarView');
+        const analyticsView = document.getElementById('analyticsView');
+
+        if (!analyticsView) {
+            console.error('FATAL: #analyticsView not found in DOM during renderAnalytics');
+            return;
+        }
+
+        billGrid.style.display = 'none';
+        calendarView.style.display = 'none';
+        analyticsView.style.setProperty('display', 'block', 'important');
+
+        if (!bills || bills.length === 0) {
+            analyticsView.innerHTML = `
+            <div class="header-top" style="margin-bottom: 20px;">
+                <h2>Spending Analytics</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; text-align: center; color: var(--text-secondary);">
+                <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
+                <h3>No Data Available</h3>
+                <p>Add some bills to seeing spending analytics.</p>
+            </div>
+        `;
+            return;
+        }
+
+        analyticsView.innerHTML = `
+        <div class="header-top" style="margin-bottom: 20px;">
+            <h2>Spending Analytics</h2>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Spending by Category</h3>
+                <div class="chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Monthly Trend</h3>
+                <div class="chart-wrapper">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+
+        // Prepare Data for Category Chart
+        const categoryTotals = {};
+        bills.forEach(bill => {
+            if (!categoryTotals[bill.category]) categoryTotals[bill.category] = 0;
+            categoryTotals[bill.category] += (bill.amountDue || 0);
+        });
+
+        const catLabels = Object.keys(categoryTotals);
+        const catData = Object.values(categoryTotals);
+        const backgroundColors = catLabels.map((_, i) => {
+            const colors = ['#2c5aa0', '#5eb3d6', '#f5a623', '#27ae60', '#d97f7f', '#7b68ee'];
+            return colors[i % colors.length];
+        });
+
+        // Prepare Data for Trend Chart (Last 6 Months)
+
+        // Prepare Data for Trend Chart (Last 6 Months)
+        const trendData = {};
+        const today = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const monthKey = d.toLocaleString('default', { month: 'short' });
+            trendData[monthKey] = 0;
+        }
+
+        bills.forEach(bill => {
+            const d = new Date(bill.dueDate);
+            const diffMonths = (today.getFullYear() - d.getFullYear()) * 12 + (today.getMonth() - d.getMonth());
+            if (diffMonths >= 0 && diffMonths < 6) {
+                const monthKey = d.toLocaleString('default', { month: 'short' });
+                if (trendData[monthKey] !== undefined) trendData[monthKey] += (bill.amountDue || 0);
+            }
+        });
+
+        const trendLabels = Object.keys(trendData);
+        const trendValues = Object.values(trendData);
+
+        // Destroy existing charts if any
+        if (categoryChart) categoryChart.destroy();
+        if (trendChart) trendChart.destroy();
+
+        // Draw Category Chart
+        const ctxCat = document.getElementById('categoryChart').getContext('2d');
+        categoryChart = new Chart(ctxCat, {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catData,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Draw Trend Chart
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#e0e0e0' : '#333333';
+        const gridColor = isDark ? '#333333' : '#d9e3ed';
+
+        trendChart = new Chart(ctxTrend, {
+            type: 'bar',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Total Amount Due',
+                    data: trendValues,
+                    backgroundColor: '#5eb3d6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textColor }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error rendering analytics:', error);
+    }
+}
 
 // ========== BILL FORM ==========
 function initializeBillForm() {

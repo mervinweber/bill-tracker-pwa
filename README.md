@@ -47,12 +47,15 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
     *   Track partial payments.
     *   View full payment history for any bill.
     *   Auto-select current pay period.
-*   **Cloud Sync (New!)**: Integrated with **Supabase** to sync your data across all your devices.
+*   **Cloud Sync**: Integrated with **Supabase** to sync your data across all your devices.
 *   **Theme Engine**: Built-in Dark Mode & Light Mode with persistent preferences.
+*   **Interactive Calendar View**: View your monthly bills at a glance with color-coded status indicators.
+*   **Visual Analytics**: Visualize your spending habits with interactive charts:
+    *   **Spending by Category**: Doughnut chart breaking down expenses.
+    *   **Monthly Trends**: Bar chart showing payment history over the last 6 months.
 *   **Data Safety**:
+    *   Persistent local storage.
     *   Automatic local backup.
-    *   Export/Import data to JSON.
-    *   Cloud backup (when logged in).
 
 ## 🛠️ Setup & Configuration
 
