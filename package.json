@@ -4,12 +4,15 @@
   "description": "A Progressive Web App for tracking bills due each pay period",
   "main": "src/index.js",
   "scripts": {
-    "start": "http-server ./src -p 8080 -c-1"
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "dependencies": {
-    "http-server": "^14.1.1"
+  "dependencies": {},
+  "devDependencies": {
+    "vite": "^4.5.14"
   },
-  "devDependencies": {},
   "keywords": [
     "pwa",
     "bills",

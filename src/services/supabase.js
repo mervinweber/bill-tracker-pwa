@@ -1,8 +1,8 @@
 
 // Supabase Service
-// You will need to replace these with your actual project details from https://supabase.com
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+// Secrets are read from .env file (Vite)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
 let supabase = null;
 
@@ -10,7 +10,7 @@ export const initializeSupabase = () => {
     if (window.supabase) {
         // Validate URL before attempting init to prevent crash
         if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL' || !SUPABASE_URL.startsWith('http')) {
-            console.warn('Supabase URL not configured. Skipping initialization.');
+            console.warn('Supabase URL not configured in .env. Skipping initialization.');
             return;
         }
 
