@@ -8,9 +8,19 @@ let supabase = null;
 
 export const initializeSupabase = () => {
     if (window.supabase) {
-        // @ts-ignore
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('Supabase initialized');
+        // Validate URL before attempting init to prevent crash
+        if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL' || !SUPABASE_URL.startsWith('http')) {
+            console.warn('Supabase URL not configured. Skipping initialization.');
+            return;
+        }
+
+        try {
+            // @ts-ignore
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('Supabase initialized');
+        } catch (error) {
+            console.error('Failed to initialize Supabase:', error);
+        }
     } else {
         console.error('Supabase client not loaded');
     }

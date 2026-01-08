@@ -104,7 +104,7 @@ h1 {
     font-weight: 600;
 }
 
-.view-controls {
+.header-controls {
     display: flex;
     gap: 15px;
     align-items: center;
