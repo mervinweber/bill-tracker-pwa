@@ -1,3 +1,5 @@
+import { createLocalDate, formatLocalDate, calculateNextDueDate } from './utils/dates.js';
+
 // State
 let bills = [];
 let selectedPaycheck = null;
@@ -13,20 +15,6 @@ let payPeriodsToShow = 6; // number of pay periods to display
 // Constants
 const DEFAULT_CATEGORIES = ['Rent', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Entertainment'];
 let categories = JSON.parse(localStorage.getItem('customCategories')) || [...DEFAULT_CATEGORIES];
-
-// Helper function to create a date from string without timezone issues
-function createLocalDate(dateString) {
-    const [year, month, day] = dateString.split('-');
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-}
-
-// Helper function to format a date as YYYY-MM-DD in local timezone
-function formatLocalDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
 
 // Generate paycheck dates dynamically - based on user settings or defaults
 function generatePaycheckDates() {
@@ -390,18 +378,6 @@ function findClosestPaycheckDate(targetDate) {
     }
 
     return closest;
-}
-
-function calculateNextDueDate(currentDate, recurrence) {
-    const nextDate = new Date(currentDate);
-    switch (recurrence) {
-        case 'Weekly': nextDate.setDate(nextDate.getDate() + 7); break;
-        case 'Bi-weekly': nextDate.setDate(nextDate.getDate() + 14); break;
-        case 'Monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
-        case 'Yearly': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
-        default: return null;
-    }
-    return nextDate;
 }
 
 function generateRecurringBillInstances(baseBill) {
