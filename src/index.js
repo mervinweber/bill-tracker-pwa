@@ -233,11 +233,6 @@ function completeInitialization() {
 }
 
 // ========== RECURRING BILLS & DATE UPDATES ==========
-function updateBillDatesBasedOnRecurrence() {
-    // This function is called during initialization
-    // Logic moved here from old location
-}
-
 function autoSelectPayPeriod() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -295,7 +290,6 @@ function autoSelectPayPeriod() {
     renderBillGrid();
 }
 
-// ========== RECURRING BILLS & DATE UPDATES ==========
 function updateBillDatesBasedOnRecurrence() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
