@@ -1,7 +1,8 @@
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from './utils/dates.js';
+import { billStore } from './store/BillStore.js';
 
 // State
-let bills = [];
+// bills is now managed by billStore
 let selectedPaycheck = null;
 let selectedCategory = null;
 let viewMode = 'filtered'; // 'filtered' or 'all'
@@ -71,7 +72,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    loadBillsFromStorage();
+    // loadBillsFromStorage() is handled by BillStore constructor
+
+    // Subscribe to store updates
+    billStore.subscribe(() => {
+        // Debounce or direct render? Direct for now.
+        // We only render if we are not in the middle of a specific operation that handles its own rendering?
+        // Actually, let's let the manual calls handle rendering for now to avoid double renders, 
+        // OR rely on subscription. 
+        // Current index.js calls render manually. Let's keep manual calls for safety in this refactor, 
+        // to avoid race conditions or double renders until a full reactive refactor.
+    });
     initializeTheme();
     completeInitialization();
 });
@@ -319,12 +330,15 @@ function updateBillDatesBasedOnRecurrence() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    bills = bills.map(bill => {
+    const currentBills = billStore.getAll();
+    const updatedBills = currentBills.map(bill => {
         // Skip if already paid
         if (bill.isPaid) return bill;
 
         const billDueDate = createLocalDate(bill.dueDate);
         billDueDate.setHours(0, 0, 0, 0);
+
+        let modifiedBill = { ...bill }; // Clone
 
         // If bill is past due and unpaid, move it to next applicable pay date
         if (billDueDate < today && bill.recurrence !== 'One-time') {
@@ -338,7 +352,7 @@ function updateBillDatesBasedOnRecurrence() {
             // Find closest paycheck date on or after nextDueDate
             const closestPaycheck = findClosestPaycheckDate(nextDueDate);
             if (closestPaycheck) {
-                bill.dueDate = formatLocalDate(closestPaycheck);
+                modifiedBill.dueDate = formatLocalDate(closestPaycheck);
             }
         }
         // If bill is today or in the future but past the last paycheck, move it to next cycle
@@ -348,15 +362,15 @@ function updateBillDatesBasedOnRecurrence() {
                 let nextDueDate = calculateNextDueDate(billDueDate, bill.recurrence);
                 const closestPaycheck = findClosestPaycheckDate(nextDueDate);
                 if (closestPaycheck) {
-                    bill.dueDate = formatLocalDate(closestPaycheck);
+                    modifiedBill.dueDate = formatLocalDate(closestPaycheck);
                 }
             }
         }
 
-        return bill;
+        return modifiedBill;
     });
 
-    saveBillsToStorage();
+    billStore.setBills(updatedBills);
 }
 
 function findClosestPaycheckDate(targetDate) {
@@ -394,7 +408,8 @@ function generateRecurringBillInstances(baseBill) {
         while (currentDueDate < payPeriodEnd) {
             if (currentDueDate >= payPeriodStart && currentDueDate < payPeriodEnd) {
                 const dueDateStr = formatLocalDate(currentDueDate);
-                const existingBill = bills.find(b =>
+                const currentBills = billStore.getAll();
+                const existingBill = currentBills.find(b =>
                     b.name === baseBill.name &&
                     b.category === baseBill.category &&
                     b.dueDate === dueDateStr &&
@@ -402,7 +417,7 @@ function generateRecurringBillInstances(baseBill) {
                 );
 
                 if (!existingBill) {
-                    const previousBill = bills.find(b =>
+                    const previousBill = currentBills.find(b =>
                         b.name === baseBill.name &&
                         b.category === baseBill.category &&
                         !b.isPaid &&
@@ -435,7 +450,8 @@ function generateRecurringBillInstances(baseBill) {
 
 function regenerateAllRecurringBills() {
     if (!confirm('This will regenerate all recurring bill instances. Continue?')) return;
-    const recurringBills = bills.filter(b => b.recurrence !== 'One-time');
+    const currentBills = billStore.getAll();
+    const recurringBills = currentBills.filter(b => b.recurrence !== 'One-time');
     const uniqueBills = [];
     const seen = new Set();
 
@@ -448,13 +464,15 @@ function regenerateAllRecurringBills() {
     }
 
     const today = new Date();
-    bills = bills.filter(b => b.recurrence === 'One-time' || b.isPaid || new Date(b.dueDate) <= today);
+    // Filter logic: keep One-time, paid, OR past due (Wait, logic was `new Date(b.dueDate) <= today`)
+    let newBills = currentBills.filter(b => b.recurrence === 'One-time' || b.isPaid || new Date(b.dueDate) <= today);
 
     for (const template of uniqueBills) {
         const generatedBills = generateRecurringBillInstances(template);
-        if (generatedBills && generatedBills.length > 0) bills.push(...generatedBills);
+        if (generatedBills && generatedBills.length > 0) newBills.push(...generatedBills);
     }
-    saveBillsToStorage();
+
+    billStore.setBills(newBills);
     renderDashboard();
     renderBillGrid();
     alert('Recurring bills regenerated successfully!');
@@ -465,7 +483,7 @@ function initializeDashboard() { renderDashboard(); }
 
 function renderDashboard() {
     const dashboard = document.getElementById('dashboard');
-    let displayBills = bills;
+    let displayBills = billStore.getAll();
 
     if (paymentFilter === 'unpaid') displayBills = displayBills.filter(b => !b.isPaid);
     else if (paymentFilter === 'paid') displayBills = displayBills.filter(b => b.isPaid);
@@ -567,9 +585,10 @@ function renderBillGrid() {
 
     billGrid.innerHTML = '';
     let dueBills = [];
+    const currentBills = billStore.getAll();
 
     if (viewMode === 'all') {
-        dueBills = bills.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        dueBills = currentBills.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     } else {
         if (selectedPaycheck === null || selectedCategory === null) {
             billGrid.innerHTML = '<p>Select a paycheck date and category to view bills.</p>';
@@ -577,7 +596,7 @@ function renderBillGrid() {
         }
         const currentPaycheckDate = payCheckDates[selectedPaycheck];
         const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
-        dueBills = bills.filter(bill => {
+        dueBills = currentBills.filter(bill => {
             const billDate = createLocalDate(bill.dueDate);
             const categoryMatch = selectedCategory === 'All' || bill.category === selectedCategory;
             return categoryMatch && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
@@ -684,7 +703,8 @@ function renderCalendar() {
         const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
 
         // Find bills due on this day
-        const billsDue = bills.filter(b => b.dueDate === dateStr);
+        const currentBills = billStore.getAll();
+        const billsDue = currentBills.filter(b => b.dueDate === dateStr);
 
         let billsHtml = '<div class="calendar-bills">';
         billsDue.forEach(b => {
@@ -740,8 +760,9 @@ function renderAnalytics() {
         billGrid.style.display = 'none';
         calendarView.style.display = 'none';
         analyticsView.style.setProperty('display', 'block', 'important');
+        const currentBills = billStore.getAll();
 
-        if (!bills || bills.length === 0) {
+        if (!currentBills || currentBills.length === 0) {
             analyticsView.innerHTML = `
             <div class="header-top" style="margin-bottom: 20px;">
                 <h2>Spending Analytics</h2>
@@ -776,8 +797,10 @@ function renderAnalytics() {
     `;
 
         // Prepare Data for Category Chart
+        // Prepare Data for Category Chart
         const categoryTotals = {};
-        bills.forEach(bill => {
+        // currentBills already declared above
+        currentBills.forEach(bill => {
             if (!categoryTotals[bill.category]) categoryTotals[bill.category] = 0;
             categoryTotals[bill.category] += (bill.amountDue || 0);
         });
@@ -947,7 +970,11 @@ function initializeBillForm() {
 
 function saveBill() {
     const id = document.getElementById('billId').value;
-    const existingBill = id ? bills.find(b => b.id === id) : null;
+    // Get bills from store for existence check
+    const currentBills = billStore.getAll();
+    const existingBill = id ? currentBills.find(b => b.id === id) : null;
+
+    // Construct bill object
     const bill = {
         id: id || Date.now().toString(),
         category: document.getElementById('billCategory').value,
@@ -963,16 +990,20 @@ function saveBill() {
     };
 
     if (id) {
-        bills = bills.map(b => b.id === id ? bill : b);
+        billStore.update(bill);
     } else {
-        bills.push(bill);
+        billStore.add(bill);
         if (bill.recurrence !== 'One-time') {
             const generatedBills = generateRecurringBillInstances(bill);
-            if (generatedBills && generatedBills.length > 0) bills.push(...generatedBills);
+            if (generatedBills && generatedBills.length > 0) {
+                // We can't use push spread on store. Add one by one or use setBills.
+                // Ideally BillStore should handle this. For now, multiple adds.
+                generatedBills.forEach(b => billStore.add(b));
+            }
         }
     }
 
-    saveBillsToStorage();
+    // saveBillsToStorage() is handled by Store
 
     // Auto-switch to the bill's category to ensure it's visible
     if (selectedCategory !== bill.category) {
@@ -993,7 +1024,8 @@ function saveBill() {
 }
 
 function editBill(billId) {
-    const bill = bills.find(b => b.id === billId);
+    const currentBills = billStore.getAll();
+    const bill = currentBills.find(b => b.id === billId);
     if (bill) {
         document.getElementById('billId').value = bill.id;
         document.getElementById('billCategory').value = bill.category;
@@ -1033,29 +1065,39 @@ function toggleTheme() {
 
 // ========== BILL ACTIONS ==========
 function updateBillBalance(billId, newBalance) {
-    const bill = bills.find(b => b.id === billId);
-    if (bill) { bill.balance = newBalance; saveBillsToStorage(); }
+    // Fetch fresh from store
+    const currentBills = billStore.getAll();
+    const bill = currentBills.find(b => b.id === billId);
+    if (bill) {
+        // Create duplicate to avoid mutation issues if strict
+        const updated = { ...bill, balance: newBalance };
+        billStore.update(updated);
+    }
 }
 
 function togglePaymentStatus(billId, isPaid) {
-    const bill = bills.find(b => b.id === billId);
+    const currentBills = billStore.getAll();
+    const bill = currentBills.find(b => b.id === billId);
     if (bill) {
-        bill.isPaid = isPaid;
-        bill.lastPaymentDate = isPaid ? new Date().toISOString() : null;
+        const updated = { ...bill }; // Clone
+        updated.isPaid = isPaid;
+        updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
+
+        billStore.update(updated);
+
+        // Record simplified payment (Logic needs access to up-to-date bill, let's just pass ID)
         if (isPaid) {
-            // Record simplified payment
-            recordPayment(billId, { amount: getRemainingBalance(bill), method: 'Quick Pay', notes: 'Toggled paid' });
+            // CAUTION: recordPayment also accesses global `bills`. Need to fix `recordPayment` too.
+            // Relying on synchronous update for now.
+            // We'll update render inside recordPayment logic?
+            recordPayment(billId, { amount: getRemainingBalance(updated), method: 'Quick Pay', notes: 'Toggled paid' });
         }
-        saveBillsToStorage();
-        renderDashboard();
-        renderBillGrid();
     }
 }
 
 function deleteBill(billId) {
     if (confirm('Delete this bill?')) {
-        bills = bills.filter(b => b.id !== billId);
-        saveBillsToStorage();
+        billStore.delete(billId);
         renderDashboard();
         renderBillGrid();
     }
@@ -1111,7 +1153,8 @@ function initializePaymentModals() {
 }
 
 function migrateBillsToPaymentHistory() {
-    bills.forEach(bill => {
+    const currentBills = billStore.getAll();
+    currentBills.forEach(bill => {
         if (!bill.paymentHistory) {
             bill.paymentHistory = [];
             if (bill.lastPaymentDate && bill.isPaid) {
@@ -1125,7 +1168,7 @@ function migrateBillsToPaymentHistory() {
             }
         }
     });
-    saveBillsToStorage();
+    billStore.save();
 }
 
 function getTotalPaid(bill) {
@@ -1140,9 +1183,13 @@ function getRemainingBalance(bill) {
 }
 
 function recordPayment(billId, paymentData) {
-    const bill = bills.find(b => b.id === billId);
+    const currentBills = billStore.getAll();
+    const bill = currentBills.find(b => b.id === billId);
     if (!bill) return;
-    if (!bill.paymentHistory) bill.paymentHistory = [];
+
+    // Create update clone
+    const updated = { ...bill };
+    if (!updated.paymentHistory) updated.paymentHistory = [];
 
     const payment = {
         id: 'pmt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
@@ -1153,19 +1200,21 @@ function recordPayment(billId, paymentData) {
         notes: paymentData.notes || ''
     };
 
-    bill.paymentHistory.push(payment);
-    bill.lastPaymentDate = payment.date;
-    const remaining = getRemainingBalance(bill);
-    bill.balance = remaining; // Update balance to reflect payment
-    bill.isPaid = remaining <= 0;
+    updated.paymentHistory.push(payment);
+    updated.lastPaymentDate = payment.date;
 
-    saveBillsToStorage();
+    const remaining = getRemainingBalance(updated);
+    updated.balance = remaining;
+    updated.isPaid = remaining <= 0;
+
+    billStore.update(updated);
     renderDashboard();
     renderBillGrid();
 }
 
 function openRecordPayment(billId) {
-    const bill = bills.find(b => b.id === billId);
+    const currentBills = billStore.getAll();
+    const bill = currentBills.find(b => b.id === billId);
     if (!bill) return;
     document.getElementById('paymentBillId').value = billId;
     document.getElementById('paymentAmount').value = getRemainingBalance(bill).toFixed(2);
@@ -1174,7 +1223,8 @@ function openRecordPayment(billId) {
 }
 
 function openViewHistory(billId) {
-    const bill = bills.find(b => b.id === billId);
+    const currentBills = billStore.getAll();
+    const bill = currentBills.find(b => b.id === billId);
     if (!bill) return;
     const totalDue = bill.amountDue || 0; // Fix: Show original amount due, not balance
     const totalPaid = getTotalPaid(bill);
@@ -1349,8 +1399,7 @@ function showSettingsModal() {
 }
 
 // ========== STORAGE ==========
-function saveBillsToStorage() { localStorage.setItem('bills', JSON.stringify(bills)); }
-function loadBillsFromStorage() { const stored = localStorage.getItem('bills'); bills = stored ? JSON.parse(stored) : []; }
+// Storage functions removed - handled by BillStore
 
 // ========== CATEGORY MANAGEMENT ==========
 
@@ -1459,23 +1508,25 @@ function showDeleteCategoryModal(categoryName, count, settingsModal) {
 
         if (action === 'move') {
             const targetCat = document.getElementById('targetCategory').value;
-            bills.forEach(bill => {
+            const currentBills = billStore.getAll();
+            currentBills.forEach(bill => {
                 if (bill.category === categoryName) {
                     bill.category = targetCat;
+                    billStore.update(bill);
                 }
             });
         } else if (action === 'delete') {
             // Remove bills with this category
-            // We iterate backwards to splice safely
-            for (let i = bills.length - 1; i >= 0; i--) {
-                if (bills[i].category === categoryName) {
-                    bills.splice(i, 1);
+            // Use store delete
+            const currentBills = billStore.getAll();
+            currentBills.forEach(bill => {
+                if (bill.category === categoryName) {
+                    billStore.delete(bill.id);
                 }
-            }
+            });
         }
 
-        // Save Bills
-        localStorage.setItem('bills', JSON.stringify(bills));
+        // Save Bills (Store handles it on delete/update)
 
         // Delete Category
         categories = categories.filter(c => c !== categoryName);
