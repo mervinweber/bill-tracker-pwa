@@ -1,5 +1,12 @@
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from './utils/dates.js';
 import { billStore } from './store/BillStore.js';
+import { initializeHeader as initHeader, updateHeaderUI } from './components/header.js';
+import { initializeSidebar as initSidebar } from './components/sidebar.js';
+import { initializeBillGrid as initGrid, renderBillGrid as renderGrid } from './components/billGrid.js';
+import { initializeDashboard as initDash, renderDashboard as renderDash } from './components/dashboard.js';
+import { initializeBillForm as initForm, openBillForm, resetBillForm as resetForm, closeBillForm } from './components/billForm.js';
+import { initializeAuthModal as initAuth, openAuthModal, closeAuthModal, setAuthMessage } from './components/authModal.js';
+
 
 // State
 // bills is now managed by billStore
@@ -87,17 +94,134 @@ document.addEventListener('DOMContentLoaded', () => {
     completeInitialization();
 });
 
+// ========== COMPONENT CALLBACK HANDLERS ==========
+function handlePaycheckSelect(index) {
+    viewMode = 'filtered';
+    selectedPaycheck = index;
+    renderDashboard();
+    renderBillGrid();
+}
+
+function handleFilterChange(filter) {
+    paymentFilter = filter;
+    const activeBtn = document.querySelector('.category-btn.active');
+    if (activeBtn) {
+        selectedCategory = activeBtn.dataset.category;
+    }
+    renderDashboard();
+    renderBillGrid();
+}
+
+function handleAllBillsSelect() {
+    viewMode = 'all';
+    renderDashboard();
+    renderBillGrid();
+}
+
+function handleCategorySelect(category) {
+    selectedCategory = category;
+    localStorage.setItem('selectedCategory', selectedCategory);
+    viewMode = 'filtered';
+    renderDashboard();
+    renderBillGrid();
+}
+
+function handleOpenAddBill() {
+    resetForm();
+    document.getElementById('billForm').style.display = 'block';
+}
+
+function handleLogin(email, password) {
+    // Placeholder for login logic
+    console.log('Login:', email);
+    // In the future, integrate with Supabase
+}
+
+function handleSignUp(email, password) {
+    // Placeholder for signup logic
+    console.log('Sign up:', email);
+    // In the future, integrate with Supabase
+}
+
+function handleLogout() {
+    localStorage.removeItem('userEmail');
+    window.location.reload();
+}
+
+function exportData() {
+    const data = {
+        bills: billStore.getAll(),
+        categories,
+        settings: JSON.parse(localStorage.getItem('paymentSettings') || '{}')
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bill-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importData(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.bills) {
+                billStore.setBills(data.bills);
+            }
+            if (data.categories) {
+                categories = data.categories;
+                localStorage.setItem('customCategories', JSON.stringify(categories));
+            }
+            if (data.settings) {
+                localStorage.setItem('paymentSettings', JSON.stringify(data.settings));
+            }
+            alert('Data imported successfully! Refreshing...');
+            window.location.reload();
+        } catch (err) {
+            alert('Error importing data: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
 function completeInitialization() {
     initializeSupabase();
     migrateBillsToPaymentHistory();
     updateBillDatesBasedOnRecurrence();
-    initializeHeader();
-    initializeSidebar();
-    initializeBillForm();
+
+    // Initialize components with their callbacks
+    initHeader(paychecks, {
+        onPaycheckSelect: handlePaycheckSelect,
+        onFilterChange: handleFilterChange,
+        onAllBillsSelect: handleAllBillsSelect
+    });
+
+    initSidebar(categories, {
+        onCategorySelect: handleCategorySelect,
+        onOpenAddBill: handleOpenAddBill,
+        onRegenerateBills: regenerateAllRecurringBills,
+        onExportData: exportData,
+        onImportData: importData,
+        onOpenAuth: () => openAuthModal(),
+        onLogout: handleLogout
+    });
+
+    initForm(categories, {
+        onSaveBill: saveBill
+    });
+
+    initAuth({
+        onLogin: handleLogin,
+        onSignUp: handleSignUp
+    });
+
     initializePaymentModals();
-    initializeDashboard();
+    initDash();
     autoSelectPayPeriod();
-    initializeBillGrid();
+    initGrid();
 
     // ENSURE ALL MODALS ARE HIDDEN ON STARTUP
     const billForm = document.getElementById('billForm');
@@ -108,164 +232,10 @@ function completeInitialization() {
     if (viewHistoryModal) viewHistoryModal.style.display = 'none';
 }
 
-// ========== HEADER & NAVIGATION ==========
-function initializeHeader() {
-    const header = document.getElementById('header');
-    header.innerHTML = `
-        <div class="header-top">
-            <h1>Bill Tracker</h1>
-            <div class="header-controls">
-                <button id="authBtn" class="auth-btn">Sign In</button>
-                <div class="filter-group">
-                    <label for="paymentFilter">Status:</label>
-                    <select id="paymentFilter" class="payment-filter-dropdown">
-                        <option value="all">All</option>
-                        <option value="unpaid">Unpaid Only</option>
-                        <option value="paid">Paid Only</option>
-                    </select>
-                </div>
-                <button id="viewToggleBtn" class="view-btn" title="Toggle View">📅</button>
-                <button id="analyticsBtn" class="view-btn" title="Analytics">📊</button>
-                <button id="themeBtn" class="settings-btn" title="Toggle Theme">🌓</button>
-                <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
-            </div>
-        </div>
-        <div class="payroll-checks">${paychecks.map((c, i) => `<button class="paycheck-btn" data-check="${i}">${c}</button>`).join('')}</div>
-    `;
-
-    document.querySelectorAll('.paycheck-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            viewMode = 'filtered';
-            selectedPaycheck = parseInt(e.target.dataset.check);
-            document.querySelectorAll('.paycheck-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            renderDashboard();
-            renderBillGrid();
-        });
-    });
-
-
-
-    document.getElementById('paymentFilter').addEventListener('change', (e) => {
-        paymentFilter = e.target.value;
-        // Safety sync: Ensure selectedCategory matches the active UI element
-        const activeBtn = document.querySelector('.category-btn.active');
-        if (activeBtn) {
-            selectedCategory = activeBtn.dataset.category;
-        }
-        renderDashboard();
-        renderBillGrid();
-    });
-
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-        showSettingsModal();
-    });
-
-    // Theme Toggle Logic
-    const themeBtn = document.getElementById('themeBtn');
-    themeBtn.addEventListener('click', toggleTheme);
-
-    // Initialize Theme Icon
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        themeBtn.textContent = '☀️';
-    } else {
-        themeBtn.textContent = '🌓';
-    }
-
-    // Auth Toggle Logic
-    const authBtn = document.getElementById('authBtn');
-
-    // Check initial user state
-    getUser().then(user => {
-        updateAuthButton(user);
-    });
-
-    // Listen for auth state changes
-    const supabase = getSupabase();
-    if (supabase) {
-        supabase.auth.onAuthStateChange((event, session) => {
-            updateAuthButton(session?.user);
-        });
-    }
-
-    authBtn.addEventListener('click', async () => {
-        const user = await getUser();
-        if (user) {
-            await signOut();
-            // Button update handled by onAuthStateChange
-        } else {
-            await signInWithGoogle();
-        }
-    });
-
-    // View Toggle Logic
-    document.getElementById('viewToggleBtn').addEventListener('click', () => {
-        if (displayMode === 'list') {
-            displayMode = 'calendar';
-            document.getElementById('viewToggleBtn').textContent = '📋';
-            renderCalendar();
-        } else {
-            displayMode = 'list';
-            document.getElementById('viewToggleBtn').textContent = '📅';
-            renderBillGrid();
-        }
-    });
-
-    // Analytics Toggle Logic
-    document.getElementById('analyticsBtn').addEventListener('click', () => {
-        if (displayMode === 'analytics') {
-            displayMode = 'list';
-            renderBillGrid();
-        } else {
-            displayMode = 'analytics';
-            renderAnalytics();
-        }
-    });
-}
-
-// Helper to update Auth Button State
-function updateAuthButton(user) {
-    const authBtn = document.getElementById('authBtn');
-    if (user) {
-        authBtn.textContent = `Sign Out (${user.email})`;
-        authBtn.classList.add('logged-in');
-    } else {
-        authBtn.textContent = 'Sign In with Google';
-        authBtn.classList.remove('logged-in');
-    }
-}
-
-function initializeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    let html = '<h2>Categories</h2><ul>';
-    html += '<li><button class="category-btn" data-category="All">All Categories</button></li>';
-    categories.forEach(cat => {
-        html += `<li><button class="category-btn" data-category="${cat}">${cat}</button></li>`;
-    });
-    html += '</ul><button id="addBillBtn" class="add-bill-btn">+ Add Bill</button>';
-    html += '<button id="regenerateBillsBtn" class="regenerate-btn" title="Regenerate all recurring bills">🔄 Regenerate Bills</button>';
-    sidebar.innerHTML = html;
-
-    document.querySelectorAll('.category-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            selectedCategory = e.target.dataset.category;
-            localStorage.setItem('selectedCategory', selectedCategory);
-            viewMode = 'filtered';
-            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            renderBillGrid();
-        });
-    });
-
-    document.getElementById('addBillBtn').addEventListener('click', () => {
-        resetBillForm();
-        document.getElementById('billForm').style.display = 'block';
-    });
-
-    document.getElementById('regenerateBillsBtn').addEventListener('click', () => {
-        regenerateAllRecurringBills();
-    });
+// ========== RECURRING BILLS & DATE UPDATES ==========
+function updateBillDatesBasedOnRecurrence() {
+    // This function is called during initialization
+    // Logic moved here from old location
 }
 
 function autoSelectPayPeriod() {
@@ -481,60 +451,16 @@ function regenerateAllRecurringBills() {
 // ========== DASHBOARD & GRID ==========
 function initializeDashboard() { renderDashboard(); }
 
+// Wrapper function that delegates to the dashboard component
 function renderDashboard() {
-    const dashboard = document.getElementById('dashboard');
-    let displayBills = billStore.getAll();
-
-    if (paymentFilter === 'unpaid') displayBills = displayBills.filter(b => !b.isPaid);
-    else if (paymentFilter === 'paid') displayBills = displayBills.filter(b => b.isPaid);
-
-    if (viewMode === 'filtered' && selectedPaycheck !== null && selectedCategory !== null) {
-        const currentPaycheckDate = payCheckDates[selectedPaycheck];
-        const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
-        displayBills = displayBills.filter(bill => {
-            const billDate = createLocalDate(bill.dueDate);
-            const categoryMatch = selectedCategory === 'All' || bill.category === selectedCategory;
-            return categoryMatch && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
-        });
-    }
-
-    const totalBills = displayBills.length;
-    const totalAmountDue = displayBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
-    const unpaidBills = displayBills.filter(b => !b.isPaid);
-    const totalUnpaidAmount = unpaidBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const overdueBills = displayBills.filter(b => {
-        const dueDate = new Date(b.dueDate);
-        dueDate.setHours(0, 0, 0, 0);
-        return dueDate < today && !b.isPaid;
-    });
-
-    dashboard.innerHTML = `
-        <div class="dashboard">
-            <div class="dashboard-card">
-                <div class="card-icon">📊</div>
-                <div class="card-content"><div class="card-value">${totalBills}</div><div class="card-label">Total Bills</div></div>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-icon">💰</div>
-                <div class="card-content"><div class="card-value">$${totalAmountDue.toFixed(2)}</div><div class="card-label">Total Amount</div></div>
-            </div>
-            <div class="dashboard-card unpaid">
-                <div class="card-icon">⚠️</div>
-                <div class="card-content"><div class="card-value">${unpaidBills.length}</div><div class="card-label">Unpaid Bills</div></div>
-            </div>
-            <div class="dashboard-card unpaid-amount">
-                <div class="card-icon">💳</div>
-                <div class="card-content"><div class="card-value">$${totalUnpaidAmount.toFixed(2)}</div><div class="card-label">Unpaid Amount</div></div>
-            </div>
-            <div class="dashboard-card overdue">
-                <div class="card-icon">🔴</div>
-                <div class="card-content"><div class="card-value">${overdueBills.length}</div><div class="card-label">Overdue</div></div>
-            </div>
-        </div>
-    `;
+    renderDash(
+        billStore.getAll(),
+        viewMode,
+        selectedPaycheck,
+        selectedCategory,
+        paymentFilter,
+        payCheckDates
+    );
 }
 
 function initializeBillGrid() {
@@ -583,78 +509,25 @@ function renderBillGrid() {
     if (calendarView) calendarView.style.display = 'none';
     if (analyticsView) analyticsView.style.display = 'none';
 
-    billGrid.innerHTML = '';
-    let dueBills = [];
-    const currentBills = billStore.getAll();
-
-    if (viewMode === 'all') {
-        dueBills = currentBills.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-    } else {
-        if (selectedPaycheck === null || selectedCategory === null) {
-            billGrid.innerHTML = '<p>Select a paycheck date and category to view bills.</p>';
-            return;
+    // Delegate to component
+    renderGrid(
+        {
+            bills: billStore.getAll(),
+            viewMode,
+            selectedPaycheck,
+            selectedCategory,
+            paymentFilter,
+            payCheckDates
+        },
+        {
+            onUpdateBalance: updateBillBalance,
+            onTogglePayment: togglePaymentStatus,
+            onRecordPayment: openRecordPayment,
+            onViewHistory: openViewHistory,
+            onDeleteBill: deleteBill,
+            onEditBill: editBill
         }
-        const currentPaycheckDate = payCheckDates[selectedPaycheck];
-        const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
-        dueBills = currentBills.filter(bill => {
-            const billDate = createLocalDate(bill.dueDate);
-            const categoryMatch = selectedCategory === 'All' || bill.category === selectedCategory;
-            return categoryMatch && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
-        }).sort((a, b) => createLocalDate(a.dueDate) - createLocalDate(b.dueDate));
-    }
-
-    if (paymentFilter === 'unpaid') dueBills = dueBills.filter(bill => !bill.isPaid);
-    else if (paymentFilter === 'paid') dueBills = dueBills.filter(bill => bill.isPaid);
-
-    let html = `<div class="bill-grid-container"><table class="bill-table"><thead><tr><th>Bill Name</th><th>Due Date</th>${viewMode === 'all' ? '<th>Category</th>' : ''}<th>Amount Due</th><th>Balance</th><th>Paid</th><th>Last Payment</th><th>Notes</th><th>Recurrence</th><th>Actions</th></tr></thead><tbody>`;
-
-    if (dueBills.length > 0) {
-        html += dueBills.map(bill => {
-            const isPaid = bill.isPaid || false;
-            const lastPayment = bill.lastPaymentDate ? new Date(bill.lastPaymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not paid';
-            const notes = bill.notes || '';
-            const notesDisplay = notes ? (notes.length > 30 ? notes.substring(0, 30) + '...' : notes) : '-';
-            const notesTitle = notes ? notes : 'No notes';
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dueDate = createLocalDate(bill.dueDate);
-            dueDate.setHours(0, 0, 0, 0);
-            const isOverdue = dueDate < today && !isPaid;
-            const rowClass = `${isPaid ? 'paid-bill' : ''} ${isOverdue ? 'overdue-bill' : ''}`;
-
-            return `<tr class="${rowClass}">
-                <td>${bill.name}</td>
-                <td class="${isOverdue ? 'overdue-date' : ''}">${bill.dueDate}${isOverdue ? ' ⚠️' : ''}</td>
-                ${viewMode === 'all' ? `<td>${bill.category}</td>` : ''}
-                <td>$${(bill.amountDue || 0).toFixed(2)}</td>
-                <td><input type="number" class="balance-input" data-bill-id="${bill.id}" value="${(bill.balance || 0).toFixed(2)}" step="0.01"></td>
-                <td><label class="payment-toggle"><input type="checkbox" class="payment-checkbox" data-bill-id="${bill.id}" ${isPaid ? 'checked' : ''}><span class="toggle-slider"></span></label></td>
-                <td class="payment-date">${lastPayment}</td>
-                <td class="notes-cell" title="${notesTitle}">${notesDisplay}</td>
-                <td>${bill.recurrence}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="icon-btn pay-btn" title="Record Payment" data-bill-id="${bill.id}">💳</button>
-                        <button class="icon-btn history-btn" title="View History" data-bill-id="${bill.id}">📜</button>
-                        <button class="icon-btn edit-btn" title="Edit" data-bill-id="${bill.id}">✏️</button>
-                        <button class="icon-btn delete-btn" title="Delete" data-bill-id="${bill.id}">🗑️</button>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
-    } else {
-        const message = viewMode === 'all' ? 'No bills found' : 'No bills in this category due before the next paycheck';
-        html += `<tr><td colspan="100%">${message}</td></tr>`;
-    }
-    html += '</tbody></table></div>';
-    billGrid.innerHTML = html;
-
-    document.querySelectorAll('.balance-input').forEach(input => input.addEventListener('change', (e) => updateBillBalance(e.target.dataset.billId, parseFloat(e.target.value))));
-    document.querySelectorAll('.payment-checkbox').forEach(checkbox => checkbox.addEventListener('change', (e) => togglePaymentStatus(e.target.dataset.billId, e.target.checked)));
-    document.querySelectorAll('.pay-btn').forEach(btn => btn.addEventListener('click', (e) => openRecordPayment(e.target.closest('button').dataset.billId)));
-    document.querySelectorAll('.history-btn').forEach(btn => btn.addEventListener('click', (e) => openViewHistory(e.target.closest('button').dataset.billId)));
-    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteBill(e.target.closest('button').dataset.billId)));
-    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => editBill(e.target.closest('button').dataset.billId)));
+    );
 }
 
 // ========== CALENDAR VIEW ==========
@@ -903,70 +776,7 @@ function renderAnalytics() {
 }
 
 // ========== BILL FORM ==========
-function initializeBillForm() {
-    const form = document.getElementById('billForm');
-    form.innerHTML = `
-        <div class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>Add/Edit Bill</h2>
-                <form id="billFormElement">
-                    <input type="hidden" id="billId">
-                    <div class="form-grid">
-                        <div class="form-group full-width">
-                            <label>Bill Name:</label>
-                            <input type="text" id="billName" required placeholder="e.g., Apartment Rent">
-                        </div>
-                        <div class="form-group">
-                            <label>Category:</label>
-                            <select id="billCategory" required>
-                                <option value="">Select Category</option>
-                                ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Recurrence:</label>
-                            <select id="billRecurrence">
-                                <option value="One-time">One-time</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Bi-weekly">Bi-weekly</option>
-                                <option value="Monthly">Monthly</option>
-                                <option value="Yearly">Yearly</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Due Date:</label>
-                            <input type="date" id="billDueDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Amount Due:</label>
-                            <input type="number" id="billAmountDue" step="0.01" required placeholder="0.00">
-                        </div>
-                        <div class="form-group">
-                            <label>Current Balance:</label>
-                            <input type="number" id="billBalance" step="0.01" placeholder="Optional (defaults to Amount Due)">
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Notes:</label>
-                            <textarea id="billNotes" rows="3" placeholder="Add any notes or comments..."></textarea>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="cancel-btn" id="cancelBillBtn">Cancel</button>
-                        <button type="submit" class="submit-btn">Save Bill</button>
-                    </div>
-                </form>
-            </div>
-        </div>`;
-
-    const modal = form.querySelector('.modal');
-    const closeForm = () => form.style.display = 'none';
-
-    form.querySelector('.close').addEventListener('click', closeForm);
-    document.getElementById('cancelBillBtn').addEventListener('click', closeForm);
-    window.addEventListener('click', (e) => { if (e.target === modal) closeForm(); });
-    document.getElementById('billFormElement').addEventListener('submit', (e) => { e.preventDefault(); saveBill(); });
-}
+// initializeBillForm moved to components/billForm.js
 
 function saveBill() {
     const id = document.getElementById('billId').value;
@@ -1039,11 +849,7 @@ function editBill(billId) {
     }
 }
 
-function resetBillForm() {
-    document.getElementById('billId').value = '';
-    document.getElementById('billCategory').value = '';
-    document.getElementById('billFormElement').reset();
-}
+// resetBillForm moved to components/billForm.js
 
 // ========== THEME HANDLING ==========
 function initializeTheme() {
