@@ -5,6 +5,12 @@
 
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from './dates.js';
 import { billStore } from '../store/BillStore.js';
+import { 
+    safeGetFromStorage, 
+    safeSetToStorage, 
+    ValidationError,
+    validateRequired 
+} from './errorHandling.js';
 
 class PaycheckManager {
     constructor() {
@@ -18,31 +24,46 @@ class PaycheckManager {
      */
     loadSettings() {
         try {
-            const stored = localStorage.getItem('paymentSettings');
+            const stored = safeGetFromStorage('paymentSettings');
             if (!stored) {
-                console.warn('No payment settings found. Using defaults.');
+                console.warn('⚠️ No payment settings found. Using defaults.');
                 return this.getDefaultSettings();
             }
-            const settings = JSON.parse(stored);
-            return this.validateSettings(settings) ? settings : this.getDefaultSettings();
+            
+            const validation = this.validateSettings(stored);
+            if (!validation.isValid) {
+                console.warn('⚠️ Invalid payment settings:', validation.errors);
+                return this.getDefaultSettings();
+            }
+            
+            return stored;
         } catch (error) {
-            console.error('Error loading payment settings:', error);
+            console.error('❌ Error loading payment settings:', error.message);
             return this.getDefaultSettings();
         }
     }
 
     /**
-     * Validate settings object
+     * Validate settings object with detailed error reporting
      */
     validateSettings(settings) {
-        return (
-            settings &&
-            settings.startDate &&
-            settings.frequency &&
-            ['weekly', 'bi-weekly', 'monthly'].includes(settings.frequency) &&
-            typeof settings.payPeriodsToShow === 'number' &&
-            settings.payPeriodsToShow > 0
-        );
+        const validation = validateRequired(settings, ['startDate', 'frequency', 'payPeriodsToShow']);
+        
+        if (!validation.isValid) {
+            return validation;
+        }
+
+        if (!['weekly', 'bi-weekly', 'monthly'].includes(settings.frequency)) {
+            validation.errors.push('Frequency must be weekly, bi-weekly, or monthly');
+            validation.isValid = false;
+        }
+
+        if (typeof settings.payPeriodsToShow !== 'number' || settings.payPeriodsToShow <= 0) {
+            validation.errors.push('Pay periods to show must be a positive number');
+            validation.isValid = false;
+        }
+
+        return validation;
     }
 
     /**
@@ -63,16 +84,21 @@ class PaycheckManager {
     }
 
     /**
-     * Generate paycheck dates based on settings
+     * Generate paycheck dates based on settings with comprehensive error handling
      */
     generatePaycheckDates() {
         try {
             this.payCheckDates = [];
             const { startDate, frequency, payPeriodsToShow } = this.paymentSettings;
 
+            // Validate inputs
+            if (!startDate || !frequency || !payPeriodsToShow) {
+                throw new ValidationError('Missing required paycheck settings', 'paymentSettings');
+            }
+
             const parsedStartDate = createLocalDate(startDate);
             if (!parsedStartDate || isNaN(parsedStartDate.getTime())) {
-                throw new Error(`Invalid start date: ${startDate}`);
+                throw new ValidationError(`Invalid start date format`, 'startDate', startDate);
             }
 
             const daysBetweenPaychecks =
@@ -86,7 +112,7 @@ class PaycheckManager {
 
             return this.payCheckDates;
         } catch (error) {
-            console.error('Error generating paycheck dates:', error);
+            console.error('❌ Error generating paycheck dates:', error.message);
             throw new Error('Failed to generate paycheck dates: ' + error.message);
         }
     }

@@ -5,46 +5,55 @@
 
 import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
+import { formatErrorMessage, ValidationError } from '../utils/errorHandling.js';
 
 /**
- * Show error notification to user
+ * Show error notification to user with formatted message
  */
 export function showErrorNotification(message, title = 'Error') {
-    // Create error toast/notification
-    const notification = document.createElement('div');
-    notification.className = 'error-notification';
-    notification.innerHTML = `
-        <div class="notification-content">
-            <strong>${title}</strong>
-            <p>${message}</p>
-        </div>
-        <button class="notification-close">&times;</button>
-    `;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--danger-color);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        max-width: 400px;
-    `;
+    try {
+        // Format message for user display
+        const displayMessage = message instanceof Error 
+            ? formatErrorMessage(message) 
+            : message;
 
-    notification.querySelector('.notification-close').addEventListener('click', () => {
-        notification.remove();
-    });
+        const notification = document.createElement('div');
+        notification.className = 'error-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <strong>${title}</strong>
+                <p>${displayMessage}</p>
+            </div>
+            <button class="notification-close">&times;</button>
+        `;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--danger-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            max-width: 400px;
+        `;
 
-    document.body.appendChild(notification);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
+        notification.querySelector('.notification-close').addEventListener('click', () => {
             notification.remove();
-        }
-    }, 5000);
+        });
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    } catch (error) {
+        console.error('❌ Failed to show error notification:', error);
+    }
 }
 
 /**
