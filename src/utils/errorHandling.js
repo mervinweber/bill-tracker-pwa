@@ -1,10 +1,24 @@
 /**
  * Error Handling & Recovery Utilities
- * Provides retry logic, error messages, and graceful degradation
+ * Provides retry logic, error messages, safe storage access, and graceful degradation
+ * 
+ * Features:
+ * - Automatic retry with exponential backoff
+ * - Safe localStorage access with fallback
+ * - User-friendly error formatting
+ * - Debounce/throttle utilities for event handlers
+ * 
+ * @module errorHandling
  */
 
 /**
- * Retry configuration
+ * Retry configuration object
+ * @typedef {Object} RetryConfig
+ * @property {number} [maxAttempts=3] - Maximum number of retry attempts
+ * @property {number} [initialDelay=100] - Initial delay in milliseconds
+ * @property {number} [maxDelay=3000] - Maximum delay between retries
+ * @property {number} [backoffMultiplier=2] - Multiplier for exponential backoff
+ * @property {Function} [shouldRetry] - Predicate to determine if error is retryable
  */
 const DEFAULT_RETRY_CONFIG = {
     maxAttempts: 3,
@@ -15,10 +29,17 @@ const DEFAULT_RETRY_CONFIG = {
 };
 
 /**
- * Execute a function with automatic retry on failure
- * @param {Function} fn - The function to execute
- * @param {Object} config - Retry configuration
- * @returns {Promise} Result of successful execution
+ * Execute a function with automatic retry on failure using exponential backoff
+ * 
+ * @param {Function} fn - The async function to execute
+ * @param {RetryConfig} [config] - Retry configuration (merged with defaults)
+ * @returns {Promise<*>} Result of successful execution
+ * @throws {Error} If all retry attempts fail and shouldRetry returns false for final error
+ * @example
+ * const result = await withRetry(
+ *   () => fetchData(),
+ *   { maxAttempts: 5, initialDelay: 200 }
+ * );
  */
 export async function withRetry(fn, config = {}) {
     const finalConfig = { ...DEFAULT_RETRY_CONFIG, ...config };
@@ -57,9 +78,14 @@ export async function withRetry(fn, config = {}) {
 
 /**
  * Safe JSON parse with fallback
+ * 
  * @param {string} json - JSON string to parse
- * @param {*} fallback - Value to return if parse fails
- * @returns {*} Parsed object or fallback
+ * @param {*} [fallback=null] - Value to return if parse fails
+ * @returns {*} Parsed object or fallback value
+ * @description Safely parses JSON strings without throwing errors.
+ *   Returns fallback value if parsing fails, with console warning for debugging.
+ * @example
+ * const data = safeParse(jsonString, {});
  */
 export function safeParse(json, fallback = null) {
     try {
@@ -72,9 +98,14 @@ export function safeParse(json, fallback = null) {
 
 /**
  * Safe JSON stringify with fallback
+ * 
  * @param {*} obj - Object to stringify
- * @param {string} fallback - Value to return if stringify fails
+ * @param {string} [fallback='{}'] - Value to return if stringify fails
  * @returns {string} Stringified object or fallback
+ * @description Safely stringifies objects without throwing errors.
+ *   Returns fallback value if stringification fails, with console warning.
+ * @example
+ * const json = safeStringify(billData, '{}');
  */
 export function safeStringify(obj, fallback = '{}') {
     try {
@@ -86,10 +117,19 @@ export function safeStringify(obj, fallback = '{}') {
 }
 
 /**
- * Safe localStorage access
- * @param {string} key - localStorage key
- * @param {*} fallback - Value to return on error
- * @returns {*} Stored value or fallback
+ * Safe localStorage access with automatic fallback
+ * 
+ * @param {string} key - localStorage key to retrieve
+ * @param {*} [fallback=null] - Value to return on error or if key not found
+ * @returns {*} Stored value (parsed if JSON) or fallback value
+ * @description Safely retrieves data from localStorage. Handles:
+ *   - Missing localStorage support (some private browsing modes)
+ *   - Invalid JSON values
+ *   - Quota exceeded errors
+ *   - Automatically logs warnings for debugging
+ * @example
+ * const settings = safeGetFromStorage('userSettings', {});
+ * const paycheck = safeGetFromStorage('nextPaycheck', new Date());
  */
 export function safeGetFromStorage(key, fallback = null) {
     try {

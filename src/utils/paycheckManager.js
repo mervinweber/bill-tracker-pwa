@@ -1,6 +1,24 @@
 /**
  * Paycheck Manager
- * Handles: paycheck date generation, recurring bill generation, bill date updates
+ * 
+ * Handles all paycheck-related operations including:
+ * - Paycheck date generation based on payment frequency
+ * - Recurring bill generation for upcoming paychecks
+ * - Bill date updates and recalculation
+ * - Payment settings management with validation
+ * - Safe storage access with fallback defaults
+ * 
+ * Payment frequencies supported:
+ * - Weekly: Every 7 days
+ * - Bi-weekly: Every 14 days
+ * - Semi-monthly: 15th and last day of month
+ * - Monthly: Same day each month
+ * - Annual: Same day each year
+ * 
+ * @module paycheckManager
+ * @requires dates
+ * @requires BillStore
+ * @requires errorHandling
  */
 
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from './dates.js';
@@ -12,7 +30,22 @@ import {
     validateRequired 
 } from './errorHandling.js';
 
+/**
+ * Paycheck Manager Class
+ * 
+ * Singleton class that manages paycheck dates and recurring bill generation.
+ * Uses localStorage to persist payment settings.
+ * 
+ * @class PaycheckManager
+ */
 class PaycheckManager {
+    /**
+     * Initialize PaycheckManager and generate initial paycheck dates
+     * 
+     * @constructor
+     * @description Loads payment settings from localStorage, validates them,
+     *   and generates upcoming paycheck dates. Sets up default settings if none exist.
+     */
     constructor() {
         this.payCheckDates = [];
         this.paymentSettings = this.loadSettings();
@@ -21,6 +54,15 @@ class PaycheckManager {
 
     /**
      * Load payment settings from localStorage with validation
+     * 
+     * @private
+     * @returns {Object} Payment settings object with properties: frequency, startDate, amount
+     * @description Retrieves settings from localStorage and validates them.
+     *   Returns default settings if:
+     *   - Settings don't exist
+     *   - Settings are invalid or corrupted
+     *   - Storage is unavailable
+     *   Logs warnings for debugging when fallback is used.
      */
     loadSettings() {
         try {

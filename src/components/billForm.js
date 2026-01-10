@@ -1,3 +1,18 @@
+/**
+ * Initializes the bill form modal for creating and editing bills
+ * 
+ * @param {string[]} categories - Array of available bill categories
+ * @param {Object} actions - Object containing action handler functions
+ * @param {Function} actions.onSaveBill - Called when form is submitted (receives billData object)
+ * @returns {void}
+ * @description Creates a modal form with:
+ *   - All required fields: category, name, due date, amount due, balance, recurrence, notes
+ *   - Form validation with proper error messages
+ *   - Proper dialog semantics and WCAG 2.1 Level AA accessibility
+ *   - Close button and Escape key handler
+ *   - Help text linked via aria-describedby for all fields
+ *   - Required field indicators and aria-required attributes
+ */
 export const initializeBillForm = (categories, actions) => {
     const form = document.getElementById('billForm');
     form.innerHTML = `<div class="modal" role="dialog" aria-labelledby="billFormTitle" aria-modal="true">
@@ -109,6 +124,14 @@ export const initializeBillForm = (categories, actions) => {
     });
 };
 
+/**
+ * Opens the bill form modal and populates it with bill data for editing
+ * 
+ * @param {Object} bill - Bill object to edit with properties: id, category, name, dueDate, amountDue, balance, recurrence, notes
+ * @returns {void}
+ * @description Displays the form modal, fills in all fields with the provided bill data,
+ *   and sets focus to the category field for accessibility.
+ */
 export const openBillForm = (bill) => {
     document.getElementById('billId').value = bill.id;
     document.getElementById('billCategory').value = bill.category;
@@ -122,6 +145,16 @@ export const openBillForm = (bill) => {
     document.getElementById('billCategory').focus();
 };
 
+/**
+ * Clears all form fields and resets to empty state
+ * 
+ * @returns {void}
+ * @description Resets the form by:
+ *   - Clearing all input fields
+ *   - Resetting the ID field
+ *   - Removing any aria-invalid attributes
+ *   - Preparing for a new bill entry
+ */
 export const resetBillForm = () => {
     document.getElementById('billId').value = '';
     document.getElementById('billCategory').value = '';
@@ -129,6 +162,12 @@ export const resetBillForm = () => {
     document.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
 };
 
+/**
+ * Closes the bill form modal and resets it
+ * 
+ * @returns {void}
+ * @description Hides the form modal and calls resetBillForm to clear all fields.
+ */
 export const closeBillForm = () => {
     document.getElementById('billForm').style.display = 'none';
     resetBillForm();

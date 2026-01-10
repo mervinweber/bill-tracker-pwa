@@ -1,4 +1,54 @@
+/**
+ * Authentication Modal Component
+ * 
+ * Handles user login and sign-up modal interface with email/password fields.
+ * Provides modal window for authentication and message feedback.
+ * 
+ * Modal Features:
+ * - Email input field with validation
+ * - Password input field with masking
+ * - Login button for existing users
+ * - Sign Up button for new users
+ * - Error/success message display area
+ * - Close button and backdrop click to dismiss
+ * - Keyboard accessible form controls
+ * 
+ * @module authModal
+ */
 
+/**
+ * Initialize authentication modal with login and signup handlers
+ * 
+ * @function initializeAuthModal
+ * @param {Object} actions - Action handlers object
+ * @param {Function} actions.onLogin - Callback for login button click
+ *   Receives (email, password) parameters
+ * @param {Function} actions.onSignUp - Callback for signup button click
+ *   Receives (email, password) parameters
+ * 
+ * @returns {void}
+ * 
+ * @description Creates modal HTML structure, injects into DOM,
+ *   and attaches event listeners for all form controls.
+ *   Called during app initialization to set up authentication UI.
+ *   Modal is hidden by default until openAuthModal() is called.
+ * 
+ * @accessibility
+ * - Form controls properly labeled with <label> elements
+ * - Close button accessible via click and backdrop click
+ * - Email and password inputs have required attribute
+ * - Modal overlay has semantic structure for screen readers
+ * 
+ * @example
+ * initializeAuthModal({
+ *   onLogin: async (email, password) => {
+ *     // Handle login logic
+ *   },
+ *   onSignUp: async (email, password) => {
+ *     // Handle signup logic
+ *   }
+ * });
+ */
 export const initializeAuthModal = (actions) => {
     const modalHTML = `
         <div id="authModal" class="modal-overlay">
@@ -51,10 +101,36 @@ export const initializeAuthModal = (actions) => {
     };
 };
 
+/**
+ * Open the authentication modal
+ * 
+ * @function openAuthModal
+ * @returns {void}
+ * 
+ * @description Sets modal display to 'block' to make it visible.
+ *   Called when user clicks login or signup trigger in header/sidebar.
+ *   Does not reset form fields - use closeAuthModal() for full reset.
+ * 
+ * @example
+ * openAuthModal(); // Show modal to user
+ */
 export const openAuthModal = () => {
     document.getElementById('authModal').style.display = 'block';
 };
 
+/**
+ * Close and reset the authentication modal
+ * 
+ * @function closeAuthModal
+ * @returns {void}
+ * 
+ * @description Hides modal and clears all form fields and messages.
+ *   Ensures previous state doesn't leak into next auth attempt.
+ *   Called after successful/failed login or on user-initiated close.
+ * 
+ * @example
+ * closeAuthModal(); // Hide modal and clear form
+ */
 export const closeAuthModal = () => {
     document.getElementById('authModal').style.display = 'none';
     document.getElementById('authEmail').value = '';
@@ -62,6 +138,28 @@ export const closeAuthModal = () => {
     document.getElementById('authMessage').textContent = '';
 };
 
+/**
+ * Display authentication status message in the modal
+ * 
+ * @function setAuthMessage
+ * @param {string} msg - Message text to display
+ * @param {boolean} [isError=true] - Whether message is an error (true) or success (false)
+ *   - true: Displays in red (danger color)
+ *   - false: Displays in green (success color)
+ * 
+ * @returns {void}
+ * 
+ * @description Updates the message display area in the modal.
+ *   Used to show login errors, validation errors, or success confirmations.
+ *   Message persists until next setAuthMessage call or modal close.
+ * 
+ * @example
+ * // Show error message
+ * setAuthMessage("Invalid email or password");
+ * 
+ * // Show success message
+ * setAuthMessage("Account created successfully!", false);
+ */
 export const setAuthMessage = (msg, isError = true) => {
     const el = document.getElementById('authMessage');
     el.textContent = msg;

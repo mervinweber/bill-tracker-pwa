@@ -1,3 +1,23 @@
+/**
+ * Initializes the sidebar component with category navigation and action buttons
+ * 
+ * @param {string[]} categories - Array of bill category names (e.g., ['Utilities', 'Rent', 'Entertainment'])
+ * @param {Object} actions - Object containing action handler functions
+ * @param {Function} actions.onCategorySelect - Called when user selects a category (receives category name)
+ * @param {Function} actions.onOpenAddBill - Called when user clicks "Add Bill" button
+ * @param {Function} actions.onRegenerateBills - Called when user clicks "Regenerate Bills" button
+ * @param {Function} actions.onExportData - Called when user clicks "Export Data" button
+ * @param {Function} actions.onImportData - Called when user selects a file to import (receives File object)
+ * @param {Function} actions.onLogout - Called when user clicks "Logout" button
+ * @param {Function} actions.onOpenAuth - Called when user clicks "Login" button
+ * @returns {void}
+ * @description Sets up the sidebar with:
+ *   - Category list with keyboard navigation (arrow keys)
+ *   - Action buttons (Add, Regenerate, Export, Import)
+ *   - Theme toggle with dark mode support and localStorage persistence
+ *   - User authentication info and login/logout controls
+ *   - Full WCAG 2.1 Level AA accessibility including aria-labels, keyboard nav, and semantic structure
+ */
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
 

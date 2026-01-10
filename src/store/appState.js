@@ -1,9 +1,22 @@
 /**
  * App State Store
  * Centralized UI state management with subscriber pattern
- * Handles: selectedPaycheck, selectedCategory, viewMode, displayMode, paymentFilter
+ * 
+ * Manages:
+ * - selectedPaycheck: Current paycheck index for filtering
+ * - selectedCategory: Current category filter
+ * - viewMode: 'filtered' (paycheck+category view) or 'all' (all bills)
+ * - displayMode: 'list', 'calendar', or 'analytics'
+ * - paymentFilter: 'all', 'paid', or 'unpaid'
+ * - isLoading: Loading state for async operations
+ * - error: Current error message if any
+ * 
+ * @class AppState
+ * @example
+ * const state = appState.getState();
+ * appState.setState({ selectedCategory: 'Utilities' });
+ * appState.subscribe((newState) => console.log(newState));
  */
-
 class AppState {
     constructor() {
         this.state = {
@@ -23,6 +36,10 @@ class AppState {
 
     /**
      * Load state from localStorage where applicable
+     * 
+     * @private
+     * @returns {void}
+     * @description Restores selectedCategory from localStorage on initialization
      */
     loadSavedState() {
         const savedCategory = localStorage.getItem('selectedCategory');
@@ -33,6 +50,12 @@ class AppState {
 
     /**
      * Get entire state or a specific property
+     * 
+     * @param {string|null} [key=null] - Optional property name to retrieve
+     * @returns {Object|*} Entire state object if key is null, otherwise specific property value
+     * @example
+     * const allState = appState.getState();
+     * const category = appState.getState('selectedCategory');
      */
     getState(key = null) {
         if (key) {
@@ -42,7 +65,14 @@ class AppState {
     }
 
     /**
-     * Update state and notify subscribers
+     * Update entire state and notify subscribers
+     * 
+     * @param {Object} updates - Partial state object with properties to update
+     * @returns {void}
+     * @description Merges provided updates into current state using shallow merge,
+     *   then notifies all subscribers of the change.
+     * @example
+     * appState.setState({ selectedPaycheck: 0, selectedCategory: 'Utilities' });
      */
     setState(updates) {
         this.state = { ...this.state, ...updates };
@@ -50,19 +80,38 @@ class AppState {
     }
 
     /**
-     * Set individual state properties
+     * Set individual state properties with automatic notification
+     * 
+     * @param {number} index - Paycheck index (0-based)
+     * @returns {void}
+     * @description Updates selectedPaycheck and notifies subscribers
      */
     setSelectedPaycheck(index) {
         this.state.selectedPaycheck = index;
         this.notifySubscribers();
     }
 
+    /**
+     * Set selected category and persist to localStorage
+     * 
+     * @param {string} category - Category name to select
+     * @returns {void}
+     * @description Updates selectedCategory, saves to localStorage for persistence,
+     *   and notifies subscribers of the change
+     */
     setSelectedCategory(category) {
         this.state.selectedCategory = category;
         localStorage.setItem('selectedCategory', category);
         this.notifySubscribers();
     }
 
+    /**
+     * Set view mode (filtered or all bills)
+     * 
+     * @param {string} mode - View mode: 'filtered' or 'all'
+     * @returns {void}
+     * @description Updates viewMode and notifies subscribers
+     */
     setViewMode(mode) {
         this.state.viewMode = mode; // 'filtered' or 'all'
         this.notifySubscribers();

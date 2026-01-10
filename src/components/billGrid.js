@@ -1,7 +1,41 @@
+/**
+ * Initializes the bill grid with empty state message
+ * 
+ * @returns {void}
+ * @description Displays initial empty state message that prompts users to select filters.
+ *   Includes aria-live region for screen reader announcements.
+ */
 export const initializeBillGrid = () => {
     document.getElementById('billGrid').innerHTML = '<p aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>';
 };
 
+/**
+ * Renders the bill grid table with filtered and sorted bills
+ * 
+ * @param {Object} state - Application state object
+ * @param {Array<Object>} state.bills - Array of bill objects with properties: id, name, dueDate, amountDue, balance, isPaid, category, recurrence, notes, lastPaymentDate
+ * @param {string} state.viewMode - View mode: 'all' for all bills or index-based for pay period view
+ * @param {number|null} state.selectedPaycheck - Index of selected paycheck (null if viewing all)
+ * @param {string|null} state.selectedCategory - Selected category name (null if not filtered)
+ * @param {string} state.paymentFilter - Payment status filter: 'all'|'paid'|'unpaid'
+ * @param {Date[]} state.payCheckDates - Array of paycheck dates for range filtering
+ * @param {Object} actions - Action handler object
+ * @param {Function} actions.onUpdateBalance - Called when user updates a bill's balance (receives billId, newBalance)
+ * @param {Function} actions.onTogglePayment - Called when user toggles payment status (receives billId, isPaid)
+ * @param {Function} actions.onRecordPayment - Called when user clicks payment button (receives billId)
+ * @param {Function} actions.onViewHistory - Called when user clicks history button (receives billId)
+ * @param {Function} actions.onDeleteBill - Called when user clicks delete button (receives billId)
+ * @param {Function} actions.onEditBill - Called when user clicks edit button (receives billId)
+ * @returns {void}
+ * @description Renders a fully accessible table with:
+ *   - Dynamic filtering by category, pay period, and payment status
+ *   - Sorting by due date
+ *   - Overdue status detection and visual indicators
+ *   - Semantic table structure with proper ARIA roles and labels (WCAG 2.1 Level AA)
+ *   - Action buttons for each bill (pay, history, edit, delete)
+ *   - Payment toggle and balance input fields
+ *   - Proper error handling and empty state messages
+ */
 export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates }, actions) => {
     const billGrid = document.getElementById('billGrid');
     billGrid.innerHTML = '';

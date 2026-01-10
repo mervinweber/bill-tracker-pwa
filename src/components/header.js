@@ -1,3 +1,19 @@
+/**
+ * Initializes the header component with pay period selector and bill filters
+ * 
+ * @param {string[]} paychecks - Array of paycheck date strings (formatted dates)
+ * @param {Object} actions - Object containing action handler functions
+ * @param {Function} actions.onPaycheckSelect - Called when user selects a pay period (receives index)
+ * @param {Function} actions.onAllBillsSelect - Called when user clicks "All Bills" button
+ * @param {Function} actions.onFilterChange - Called when user changes payment filter (receives filter value: 'all'|'paid'|'unpaid')
+ * @returns {void}
+ * @description Sets up the header with:
+ *   - Live status region for screen reader announcements
+ *   - Pay period dropdown with accessible labels
+ *   - "All Bills" view toggle button with aria-pressed state
+ *   - Payment status filter dropdown
+ *   - All interactive elements properly labeled for accessibility (WCAG 2.1 Level AA)
+ */
 export const initializeHeader = (paychecks, actions) => {
     const header = document.getElementById('header');
     header.innerHTML = `
@@ -60,6 +76,17 @@ export const initializeHeader = (paychecks, actions) => {
     });
 };
 
+/**
+ * Updates the header UI to reflect the current view mode and selected pay period
+ * 
+ * @param {string} viewMode - Current view mode ('all' for all bills, or specific paycheck index)
+ * @param {number|null} selectedPaycheck - Index of selected paycheck, or null if viewing all bills
+ * @returns {void}
+ * @description Synchronizes UI state by:
+ *   - Toggling 'active' class on "All Bills" button
+ *   - Updating aria-pressed state for accessibility
+ *   - Setting pay period dropdown value
+ */
 export const updateHeaderUI = (viewMode, selectedPaycheck) => {
     const payPeriodSelect = document.getElementById('payPeriodSelect');
     const allBillsBtn = document.getElementById('allBillsBtn');

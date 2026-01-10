@@ -1,6 +1,18 @@
 /**
  * Bill Action Handlers
- * Handles: payment recording, balance updates, bill deletion, with comprehensive error handling
+ * 
+ * Handles all bill-related user actions with comprehensive error handling and validation.
+ * Includes:
+ * - Payment recording and status tracking
+ * - Balance updates and calculations
+ * - Bill CRUD operations (Create, Read, Update, Delete)
+ * - User notifications for all actions
+ * - Undo/retry functionality for failed operations
+ * 
+ * @module billActionHandlers
+ * @requires billStore
+ * @requires appState
+ * @requires errorHandling
  */
 
 import { billStore } from '../store/BillStore.js';
@@ -8,7 +20,14 @@ import { appState } from '../store/appState.js';
 import { formatErrorMessage, ValidationError } from '../utils/errorHandling.js';
 
 /**
- * Show error notification to user with formatted message
+ * Display error notification to user with formatted message
+ * 
+ * @param {string|Error} message - Error message or Error object
+ * @param {string} [title='Error'] - Notification title
+ * @returns {void}
+ * @description Creates a floating notification with error icon, displays it for 5 seconds,
+ *   then auto-removes. Allows user to dismiss by clicking close button.
+ *   Formats Error objects to user-friendly messages.
  */
 export function showErrorNotification(message, title = 'Error') {
     try {
