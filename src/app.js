@@ -229,7 +229,16 @@ class AppOrchestrator {
 
     handleOpenAddBill() {
         resetBillForm();
-        openBillForm();
+        openBillForm({
+            id: '',
+            category: '',
+            name: '',
+            dueDate: '',
+            amountDue: '',
+            balance: '',
+            recurrence: '',
+            notes: ''
+        });
     }
 
     handleSaveBill() {
@@ -238,11 +247,18 @@ class AppOrchestrator {
             const bills = billStore.getAll();
             const existingBill = id ? bills.find(b => b.id === id) : null;
 
+            let dueDateString = document.getElementById('billDueDate').value;
+            
+            // Snap bill date to closest paycheck if it falls outside the paycheck range
+            const billDueDate = new Date(dueDateString);
+            const snappedDate = paycheckManager.snapBillDateToPaycheck(billDueDate);
+            dueDateString = snappedDate.toISOString().split('T')[0];
+
             const bill = {
                 id: id || Date.now().toString(),
                 category: document.getElementById('billCategory').value,
                 name: document.getElementById('billName').value,
-                dueDate: document.getElementById('billDueDate').value,
+                dueDate: dueDateString,
                 amountDue: parseFloat(document.getElementById('billAmountDue').value),
                 balance: document.getElementById('billBalance').value
                     ? parseFloat(document.getElementById('billBalance').value)

@@ -210,6 +210,45 @@ class PaycheckManager {
     }
 
     /**
+     * Snap bill date to closest paycheck if it falls outside paycheck range
+     * If a bill's due date is beyond the last paycheck, move it to the last available paycheck
+     * 
+     * @param {Date} billDueDate - The bill's due date
+     * @returns {Date} The snapped date (either original if within range, or closest paycheck)
+     */
+    snapBillDateToPaycheck(billDueDate) {
+        if (!billDueDate || !this.payCheckDates || this.payCheckDates.length === 0) {
+            return billDueDate;
+        }
+
+        const dateCopy = new Date(billDueDate);
+        dateCopy.setHours(0, 0, 0, 0);
+
+        const firstPaycheck = new Date(this.payCheckDates[0]);
+        firstPaycheck.setHours(0, 0, 0, 0);
+
+        const lastPaycheck = new Date(this.payCheckDates[this.payCheckDates.length - 1]);
+        lastPaycheck.setHours(0, 0, 0, 0);
+
+        // If bill date is within paycheck range, return as is
+        if (dateCopy >= firstPaycheck && dateCopy <= lastPaycheck) {
+            return dateCopy;
+        }
+
+        // If bill date is before first paycheck, snap to first paycheck
+        if (dateCopy < firstPaycheck) {
+            return firstPaycheck;
+        }
+
+        // If bill date is after last paycheck, snap to last paycheck
+        if (dateCopy > lastPaycheck) {
+            return lastPaycheck;
+        }
+
+        return dateCopy;
+    }
+
+    /**
      * Update bill dates based on recurrence
      */
     updateBillDatesBasedOnRecurrence() {
