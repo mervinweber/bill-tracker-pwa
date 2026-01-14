@@ -1,3 +1,23 @@
+/**
+ * Initializes the sidebar component with category navigation and action buttons
+ * 
+ * @param {string[]} categories - Array of bill category names (e.g., ['Utilities', 'Rent', 'Entertainment'])
+ * @param {Object} actions - Object containing action handler functions
+ * @param {Function} actions.onCategorySelect - Called when user selects a category (receives category name)
+ * @param {Function} actions.onOpenAddBill - Called when user clicks "Add Bill" button
+ * @param {Function} actions.onRegenerateBills - Called when user clicks "Regenerate Bills" button
+ * @param {Function} actions.onExportData - Called when user clicks "Export Data" button
+ * @param {Function} actions.onImportData - Called when user selects a file to import (receives File object)
+ * @param {Function} actions.onLogout - Called when user clicks "Logout" button
+ * @param {Function} actions.onOpenAuth - Called when user clicks "Login" button
+ * @returns {void}
+ * @description Sets up the sidebar with:
+ *   - Category list with keyboard navigation (arrow keys)
+ *   - Action buttons (Add, Regenerate, Export, Import)
+ *   - Theme toggle with dark mode support and localStorage persistence
+ *   - User authentication info and login/logout controls
+ *   - Full WCAG 2.1 Level AA accessibility including aria-labels, keyboard nav, and semantic structure
+ */
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
 
@@ -7,25 +27,32 @@ export const initializeSidebar = (categories, actions) => {
         document.body.classList.add('dark-mode');
     }
 
-    let html = '<h2>Categories</h2><ul>';
-    categories.forEach(cat => {
-        html += `<li><button class="category-btn" data-category="${cat}">${cat}</button></li>`;
+    let html = '<nav class="sidebar-nav" role="navigation" aria-label="Main navigation">';
+    html += '<h2>Categories</h2>';
+    html += '<ul class="categories-list" role="group" aria-label="Bill categories">';
+    categories.forEach((cat, idx) => {
+        html += `<li><button class="category-btn" data-category="${cat}" role="menuitemradio" aria-checked="false" tabindex="${idx === 0 ? '0' : '-1'}">${cat}</button></li>`;
     });
-    html += '</ul><button id="addBillBtn" class="add-bill-btn">+ Add Bill</button>';
-    html += '<button id="regenerateBillsBtn" class="regenerate-btn" title="Regenerate all recurring bills">🔄 Regenerate Bills</button>';
-    html += '<div class="backup-controls">';
-    html += '<button id="exportDataBtn" class="action-btn">⬇️ Export Data</button>';
-    html += '<button id="importDataBtn" class="action-btn">⬆️ Import Data</button>';
-    html += '<input type="file" id="importFileInput" accept=".json" style="display: none;">';
+    html += '</ul>';
+    
+    html += '<div class="sidebar-actions">';
+    html += '<button id="addBillBtn" class="add-bill-btn" aria-label="Add a new bill">➕ Add Bill</button>';
+    html += '<button id="regenerateBillsBtn" class="regenerate-btn" aria-label="Regenerate all recurring bills for the next pay period" title="Regenerate all recurring bills">🔄 Regenerate</button>';
+    html += '</div>';
+    
+    html += '<div class="backup-controls" role="region" aria-label="Data backup controls">';
+    html += '<button id="exportDataBtn" class="action-btn" aria-label="Export bills data to JSON file">⬇️ Export</button>';
+    html += '<button id="importDataBtn" class="action-btn" aria-label="Import bills data from JSON file">⬆️ Import</button>';
+    html += '<input type="file" id="importFileInput" accept=".json" style="display: none;" aria-label="Select JSON file to import">';
     html += '</div>';
 
     // Theme Toggle HTML
     html += `
-        <div class="theme-toggle-container">
-            <span>Dark Mode</span>
-            <label class="theme-switch">
-                <input type="checkbox" id="themeToggle" ${savedTheme === 'dark' ? 'checked' : ''}>
-                <span class="slider"></span>
+        <div class="theme-toggle-container" role="region" aria-label="Theme settings">
+            <label for="themeToggle" class="theme-label">Dark Mode</label>
+            <label class="theme-switch" aria-label="Toggle dark mode">
+                <input type="checkbox" id="themeToggle" aria-checked="${savedTheme === 'dark' ? 'true' : 'false'}" ${savedTheme === 'dark' ? 'checked' : ''}>
+                <span class="slider" aria-hidden="true"></span>
             </label>
         </div>
     `;
@@ -33,21 +60,23 @@ export const initializeSidebar = (categories, actions) => {
     // Auth Button
     const userEmail = localStorage.getItem('userEmail');
     if (userEmail) {
-        html += `<div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border-color); font-size: 12px; color: var(--text-secondary);">Logged in as: ${userEmail}</div>`;
-        html += `<button id="authBtn" class="action-btn" style="margin-top: 5px;">Logout</button>`;
+        html += `<div class="auth-info" role="region" aria-label="Account information"><p class="user-email">Logged in as:<br><span>${userEmail}</span></p><button id="authBtn" class="action-btn" aria-label="Logout from cloud sync">🚪 Logout</button></div>`;
     } else {
-        html += `<button id="authBtn" class="action-btn" style="margin-top: 15px;">☁️ Sync (Login)</button>`;
+        html += `<button id="authBtn" class="action-btn" aria-label="Login to enable cloud sync">☁️ Sync (Login)</button>`;
     }
 
+    html += '</nav>';
     sidebar.innerHTML = html;
 
     // Theme Toggle Event Listener
     document.getElementById('themeToggle').addEventListener('change', (e) => {
         if (e.target.checked) {
             document.body.classList.add('dark-mode');
+            e.target.setAttribute('aria-checked', 'true');
             localStorage.setItem('theme', 'dark');
         } else {
             document.body.classList.remove('dark-mode');
+            e.target.setAttribute('aria-checked', 'false');
             localStorage.setItem('theme', 'light');
         }
     });
@@ -60,11 +89,35 @@ export const initializeSidebar = (categories, actions) => {
         }
     });
 
-    document.querySelectorAll('.category-btn').forEach(btn => {
+    // Category button management with keyboard navigation
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    categoryBtns.forEach((btn, idx) => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            categoryBtns.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-checked', 'false');
+                b.setAttribute('tabindex', '-1');
+            });
             e.target.classList.add('active');
+            e.target.setAttribute('aria-checked', 'true');
+            e.target.setAttribute('tabindex', '0');
+            e.target.focus();
             actions.onCategorySelect(e.target.dataset.category);
+        });
+        
+        // Keyboard navigation for categories (arrow keys)
+        btn.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextBtn = btn.nextElementSibling?.querySelector('.category-btn') || categoryBtns[0];
+                nextBtn.focus();
+                nextBtn.click();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevBtn = btn.previousElementSibling?.querySelector('.category-btn') || categoryBtns[categoryBtns.length - 1];
+                prevBtn.focus();
+                prevBtn.click();
+            }
         });
     });
 

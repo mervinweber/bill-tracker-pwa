@@ -1,0 +1,281 @@
+/**
+ * Error Handling & Recovery Utilities
+ * Provides retry logic, error messages, safe storage access, and graceful degradation
+ * 
+ * Features:
+ * - Automatic retry with exponential backoff
+ * - Safe localStorage access with fallback
+ * - User-friendly error formatting
+ * - Debounce/throttle utilities for event handlers
+ * 
+ * @module errorHandling
+ */
+
+/**
+ * Retry configuration object
+ * @typedef {Object} RetryConfig
+ * @property {number} [maxAttempts=3] - Maximum number of retry attempts
+ * @property {number} [initialDelay=100] - Initial delay in milliseconds
+ * @property {number} [maxDelay=3000] - Maximum delay between retries
+ * @property {number} [backoffMultiplier=2] - Multiplier for exponential backoff
+ * @property {Function} [shouldRetry] - Predicate to determine if error is retryable
+ */
+const DEFAULT_RETRY_CONFIG = {
+    maxAttempts: 3,
+    initialDelay: 100,
+    maxDelay: 3000,
+    backoffMultiplier: 2,
+    shouldRetry: (error) => true
+};
+
+/**
+ * Execute a function with automatic retry on failure using exponential backoff
+ * 
+ * @param {Function} fn - The async function to execute
+ * @param {RetryConfig} [config] - Retry configuration (merged with defaults)
+ * @returns {Promise<*>} Result of successful execution
+ * @throws {Error} If all retry attempts fail and shouldRetry returns false for final error
+ * @example
+ * const result = await withRetry(
+ *   () => fetchData(),
+ *   { maxAttempts: 5, initialDelay: 200 }
+ * );
+ */
+export async function withRetry(fn, config = {}) {
+    const finalConfig = { ...DEFAULT_RETRY_CONFIG, ...config };
+    let lastError;
+    let delay = finalConfig.initialDelay;
+
+    for (let attempt = 1; attempt <= finalConfig.maxAttempts; attempt++) {
+        try {
+            const result = await Promise.resolve(fn());
+            if (attempt > 1) {
+                console.log(`✅ Retry successful on attempt ${attempt}`);
+            }
+            return result;
+        } catch (error) {
+            lastError = error;
+
+            if (!finalConfig.shouldRetry(error)) {
+                throw error;
+            }
+
+            if (attempt < finalConfig.maxAttempts) {
+                console.warn(
+                    `⚠️ Attempt ${attempt} failed. Retrying in ${delay}ms...`,
+                    error.message
+                );
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay = Math.min(delay * finalConfig.backoffMultiplier, finalConfig.maxDelay);
+            }
+        }
+    }
+
+    throw new Error(
+        `Failed after ${finalConfig.maxAttempts} attempts: ${lastError?.message || 'Unknown error'}`
+    );
+}
+
+/**
+ * Safe JSON parse with fallback
+ * 
+ * @param {string} json - JSON string to parse
+ * @param {*} [fallback=null] - Value to return if parse fails
+ * @returns {*} Parsed object or fallback value
+ * @description Safely parses JSON strings without throwing errors.
+ *   Returns fallback value if parsing fails, with console warning for debugging.
+ * @example
+ * const data = safeParse(jsonString, {});
+ */
+export function safeParse(json, fallback = null) {
+    try {
+        return JSON.parse(json);
+    } catch (error) {
+        console.warn('Failed to parse JSON, using fallback:', error.message);
+        return fallback;
+    }
+}
+
+/**
+ * Safe JSON stringify with fallback
+ * 
+ * @param {*} obj - Object to stringify
+ * @param {string} [fallback='{}'] - Value to return if stringify fails
+ * @returns {string} Stringified object or fallback
+ * @description Safely stringifies objects without throwing errors.
+ *   Returns fallback value if stringification fails, with console warning.
+ * @example
+ * const json = safeStringify(billData, '{}');
+ */
+export function safeStringify(obj, fallback = '{}') {
+    try {
+        return JSON.stringify(obj);
+    } catch (error) {
+        console.warn('Failed to stringify object, using fallback:', error.message);
+        return fallback;
+    }
+}
+
+/**
+ * Safe localStorage access with automatic fallback
+ * 
+ * @param {string} key - localStorage key to retrieve
+ * @param {*} [fallback=null] - Value to return on error or if key not found
+ * @returns {*} Stored value (parsed if JSON) or fallback value
+ * @description Safely retrieves data from localStorage. Handles:
+ *   - Missing localStorage support (some private browsing modes)
+ *   - Invalid JSON values
+ *   - Quota exceeded errors
+ *   - Automatically logs warnings for debugging
+ * @example
+ * const settings = safeGetFromStorage('userSettings', {});
+ * const paycheck = safeGetFromStorage('nextPaycheck', new Date());
+ */
+export function safeGetFromStorage(key, fallback = null) {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? safeParse(item, fallback) : fallback;
+    } catch (error) {
+        console.warn(`Failed to read from localStorage (${key}):`, error.message);
+        return fallback;
+    }
+}
+
+/**
+ * Safe localStorage write
+ * @param {string} key - localStorage key
+ * @param {*} value - Value to store
+ * @returns {boolean} Success status
+ */
+export function safeSetToStorage(key, value) {
+    try {
+        localStorage.setItem(key, safeStringify(value));
+        return true;
+    } catch (error) {
+        console.error(`Failed to write to localStorage (${key}):`, error.message);
+
+        // Handle quota exceeded
+        if (error.name === 'QuotaExceededError') {
+            console.error('❌ localStorage quota exceeded. Please clear some data.');
+        }
+
+        return false;
+    }
+}
+
+/**
+ * Validation error with detailed messages
+ */
+export class ValidationError extends Error {
+    constructor(message, field = null, value = null) {
+        super(message);
+        this.name = 'ValidationError';
+        this.field = field;
+        this.value = value;
+    }
+
+    toUserMessage() {
+        return `⚠️ ${this.field ? `${this.field}: ` : ''}${this.message}`;
+    }
+}
+
+/**
+ * Format error for user display
+ * @param {Error} error - The error object
+ * @returns {string} User-friendly error message
+ */
+export function formatErrorMessage(error) {
+    if (error instanceof ValidationError) {
+        return error.toUserMessage();
+    }
+
+    if (error.message.includes('localStorage')) {
+        return '💾 Unable to save data. Please check your browser storage.';
+    }
+
+    if (error.message.includes('Network')) {
+        return '🌐 Network error. Please check your connection.';
+    }
+
+    if (error.message.includes('Invalid')) {
+        return `⚠️ Invalid input: ${error.message}`;
+    }
+
+    return `❌ Error: ${error.message || 'An unexpected error occurred'}`;
+}
+
+/**
+ * Attempt operation with graceful fallback
+ * @param {Function} operation - Primary operation to attempt
+ * @param {Function} fallback - Fallback operation if primary fails
+ * @returns {*} Result of successful operation
+ */
+export async function withFallback(operation, fallback) {
+    try {
+        return await Promise.resolve(operation());
+    } catch (error) {
+        console.warn('Primary operation failed, attempting fallback:', error.message);
+        try {
+            return await Promise.resolve(fallback());
+        } catch (fallbackError) {
+            throw new Error(
+                `Both primary and fallback operations failed: ${error.message}`
+            );
+        }
+    }
+}
+
+/**
+ * Validate required fields in an object
+ * @param {Object} obj - Object to validate
+ * @param {Array<string>} requiredFields - Required field names
+ * @returns {Object} Validation result with isValid flag and errors array
+ */
+export function validateRequired(obj, requiredFields) {
+    const errors = [];
+
+    for (const field of requiredFields) {
+        const value = obj[field];
+        if (value === undefined || value === null || value === '') {
+            errors.push(`${field} is required`);
+        }
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors
+    };
+}
+
+/**
+ * Debounce a function
+ * @param {Function} fn - Function to debounce
+ * @param {number} delay - Delay in milliseconds
+ * @returns {Function} Debounced function
+ */
+export function debounce(fn, delay) {
+    let timeoutId;
+
+    return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+}
+
+/**
+ * Throttle a function
+ * @param {Function} fn - Function to throttle
+ * @param {number} delay - Delay in milliseconds
+ * @returns {Function} Throttled function
+ */
+export function throttle(fn, delay) {
+    let lastCall = 0;
+
+    return function (...args) {
+        const now = Date.now();
+        if (now - lastCall >= delay) {
+            fn(...args);
+            lastCall = now;
+        }
+    };
+}

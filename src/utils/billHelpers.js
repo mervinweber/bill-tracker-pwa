@@ -1,3 +1,34 @@
+/**
+ * Bill Helper Utilities
+ * 
+ * Utility functions for bill calculations and recurring bill instance generation.
+ * Handles recurring bill expansion, payment calculations, and balance tracking.
+ * 
+ * @module billHelpers
+ */
+
+/**
+ * Calculate the next due date based on recurrence pattern
+ * 
+ * @function calculateNextDueDate
+ * @param {Date} currentDate - Starting date for calculation
+ * @param {string} recurrence - Recurrence frequency
+ *   Options: 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly', 'One-time'
+ * 
+ * @returns {Date|null} Next due date as Date object.
+ *   Returns null for 'One-time' or invalid patterns.
+ * 
+ * @description Calculates next occurrence by advancing date:
+ *   - Weekly: 7 days forward
+ *   - Bi-weekly: 14 days forward
+ *   - Monthly: 1 month forward
+ *   - Yearly: 1 year forward
+ *   - One-time: null (no recurrence)
+ * 
+ * @example
+ * const nextDue = calculateNextDueDate(new Date(2024, 11, 15), 'Monthly');
+ * // Returns: 2025-01-15
+ */
 export const calculateNextDueDate = (currentDate, recurrence) => {
     const nextDate = new Date(currentDate);
 
@@ -21,6 +52,43 @@ export const calculateNextDueDate = (currentDate, recurrence) => {
     return nextDate;
 };
 
+/**
+ * Generate bill instances for recurring bills across pay periods
+ * 
+ * @function generateRecurringBillInstances
+ * @param {Object} baseBill - Base recurring bill template
+ *   Must have: name, category, recurrence, dueDate, balance/amountDue
+ * @param {Array<Object>} bills - Array of existing bills (to check for duplicates)
+ * @param {Array<Date>} payCheckDates - Array of paycheck date boundaries
+ *   Used to determine pay periods for instance generation
+ * 
+ * @returns {Array<Object>} Array of generated bill instances for each applicable pay period.
+ *   Returns empty array for one-time bills.
+ * 
+ * @description Expands recurring bill templates into individual bill instances.
+ *   For each pay period:
+ *   1. Calculates due dates based on recurrence pattern
+ *   2. Checks for duplicate instances (skips if already exists)
+ *   3. Accumulates balance from previous unpaid instances
+ *   4. Generates new bill with unique ID, current due date, empty payment history
+ *   
+ *   Limits generation to years <= 2027 to prevent infinite loops.
+ * 
+ * @example
+ * const baseBill = {
+ *   name: "Electric Bill",
+ *   category: "Utilities",
+ *   recurrence: "Monthly",
+ *   dueDate: "2024-12-15",
+ *   amountDue: 125.00
+ * };
+ * const generated = generateRecurringBillInstances(
+ *   baseBill,
+ *   existingBills,
+ *   [new Date(2024, 0, 1), new Date(2024, 0, 15), ...]
+ * );
+ * // Returns array of 12 monthly instances across pay periods
+ */
 export const generateRecurringBillInstances = (baseBill, bills, payCheckDates) => {
     // Only generate for recurring bills
     if (baseBill.recurrence === 'One-time') {
@@ -85,11 +153,66 @@ export const generateRecurringBillInstances = (baseBill, bills, payCheckDates) =
     return generatedBills;
 };
 
+/**
+ * Calculate total amount paid on a bill
+ * 
+ * @function getTotalPaid
+ * @param {Object} bill - Bill object with optional paymentHistory
+ * @param {Array<Object>} [bill.paymentHistory] - Array of payment records
+ *   Each payment record should have 'amount' property
+ * 
+ * @returns {number} Total amount paid across all payment history entries.
+ *   Returns 0 if no payment history exists.
+ * 
+ * @description Sums all amounts in paymentHistory array.
+ *   Handles missing or undefined paymentHistory gracefully.
+ * 
+ * @example
+ * const bill = {
+ *   name: "Electric Bill",
+ *   paymentHistory: [
+ *     { amount: 50, date: "2024-12-01" },
+ *     { amount: 75, date: "2024-12-15" }
+ *   ]
+ * };
+ * const paid = getTotalPaid(bill);
+ * console.log(paid); // 125
+ */
 export const getTotalPaid = (bill) => {
     if (!bill.paymentHistory) return 0;
     return bill.paymentHistory.reduce((sum, p) => sum + (p.amount || 0), 0);
 };
 
+/**
+ * Calculate remaining balance on a bill after payments
+ * 
+ * @function getRemainingBalance
+ * @param {Object} bill - Bill object with balance/amountDue and paymentHistory
+ * @param {number} bill.balance - Current balance (primary, checked first)
+ * @param {number} bill.amountDue - Amount originally due (fallback if balance missing)
+ * @param {Array<Object>} [bill.paymentHistory] - Payment history for deduction
+ * 
+ * @returns {number} Remaining balance after deducting payments.
+ *   Always >= 0 (never returns negative balance).
+ *   Returns 0 if bill is fully paid.
+ * 
+ * @description Calculates remaining balance by:
+ *   1. Using bill.balance or bill.amountDue as total due
+ *   2. Subtracting total paid from paymentHistory
+ *   3. Ensuring result never goes below 0
+ * 
+ * @example
+ * const bill = {
+ *   amountDue: 125.00,
+ *   balance: 125.00,
+ *   paymentHistory: [
+ *     { amount: 50 },
+ *     { amount: 25 }
+ *   ]
+ * };
+ * const remaining = getRemainingBalance(bill);
+ * console.log(remaining); // 50
+ */
 export const getRemainingBalance = (bill) => {
     const totalDue = bill.balance || bill.amountDue || 0;
     const totalPaid = getTotalPaid(bill);

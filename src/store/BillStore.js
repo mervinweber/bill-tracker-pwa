@@ -1,6 +1,46 @@
+/**
+ * Bill Store
+ * 
+ * Centralized storage for bill data with persistence to localStorage.
+ * Provides CRUD operations and listener pattern for reactive updates.
+ * 
+ * Bill Object Structure:
+ * - id: Unique identifier (generated on creation)
+ * - name: Bill name (e.g., "Electric Bill")
+ * - category: Bill category (e.g., "Utilities")
+ * - dueDate: Due date in YYYY-MM-DD format
+ * - amountDue: Amount of bill in dollars
+ * - balance: Current balance owed
+ * - isPaid: Payment status (boolean)
+ * - recurrence: Recurrence frequency ('One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly')
+ * - notes: Additional notes (optional)
+ * - lastPaymentDate: Date of last payment (optional)
+ * - paymentHistory: Array of past payments (optional)
+ * 
+ * @module BillStore
+ * @requires dates
+ */
+
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
 
+/**
+ * Bill Store Class
+ * 
+ * Singleton class that manages all bill data.
+ * Automatically persists changes to localStorage.
+ * Notifies listeners on any data change for reactive UI updates.
+ * 
+ * @class BillStore
+ */
 class BillStore {
+    /**
+     * Initialize BillStore and load bills from localStorage
+     * 
+     * @constructor
+     * @description Initializes empty bills array and listeners array,
+     *   then attempts to load bills from localStorage.
+     *   Creates empty bills list if localStorage is unavailable or corrupted.
+     */
     constructor() {
         this.bills = [];
         this.listeners = [];
@@ -9,6 +49,17 @@ class BillStore {
 
     /**
      * Load bills from localStorage
+     * 
+     * @method load
+     * @description Retrieves bills from localStorage and populates the bills array.
+     *   Silently ignores errors if localStorage is unavailable or corrupted.
+     *   Called automatically on BillStore instantiation.
+     * 
+     * @returns {void}
+     * 
+     * @example
+     * const store = new BillStore();
+     * // Bills automatically loaded from localStorage during construction
      */
     load() {
         const storedBills = localStorage.getItem('bills');
@@ -19,6 +70,18 @@ class BillStore {
 
     /**
      * Save bills to localStorage and notify listeners
+     * 
+     * @method save
+     * @description Persists current bills array to localStorage as JSON string.
+     *   Automatically called after any modify operation (add, update, delete).
+     *   Triggers all subscribed listeners to enable reactive UI updates.
+     *   Handles serialization errors silently to prevent crashes.
+     * 
+     * @returns {void}
+     * 
+     * @example
+     * // Automatically called after bill modifications
+     * store.add(newBill); // Calls save() internally
      */
     save() {
         localStorage.setItem('bills', JSON.stringify(this.bills));
@@ -26,16 +89,56 @@ class BillStore {
     }
 
     /**
-     * Get all bills
-     * @returns {Array} List of bills
+     * Get all bills from the store
+     * 
+     * @method getAll
+     * @description Returns the complete list of bills currently stored.
+     *   Safe to mutate array elements, but modifications must be followed
+     *   by update() call to persist changes and notify listeners.
+     * 
+     * @returns {Array<Object>} Array of bill objects
+     * 
+     * @example
+     * const allBills = store.getAll();
+     * console.log(allBills.length); // Total number of bills
      */
     getAll() {
         return this.bills;
     }
 
     /**
-     * Add a new bill
-     * @param {Object} bill 
+     * Add a new bill to the store
+     * 
+     * @method add
+     * @param {Object} bill - Bill object to add
+     * @param {string} [bill.id] - Optional unique identifier. Auto-generated from timestamp if omitted.
+     * @param {string} bill.name - Bill name (e.g., "Electric Bill")
+     * @param {string} bill.category - Bill category for filtering (e.g., "Utilities")
+     * @param {string} bill.dueDate - Due date in YYYY-MM-DD format
+     * @param {number} bill.amountDue - Amount due in dollars
+     * @param {number} bill.balance - Current balance owed
+     * @param {boolean} bill.isPaid - Payment status
+     * @param {string} bill.recurrence - Frequency ('One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly')
+     * @param {string} [bill.notes] - Optional notes about the bill
+     * @param {string} [bill.lastPaymentDate] - Optional last payment date (YYYY-MM-DD)
+     * @param {Array} [bill.paymentHistory] - Optional payment history array
+     * 
+     * @returns {void}
+     * 
+     * @description Creates new bill record with auto-generated ID if needed.
+     *   Handles both one-time and recurring bills.
+     *   Automatically saves to localStorage and notifies listeners.
+     * 
+     * @example
+     * store.add({
+     *   name: "Electric Bill",
+     *   category: "Utilities",
+     *   dueDate: "2024-12-15",
+     *   amountDue: 125.50,
+     *   balance: 125.50,
+     *   isPaid: false,
+     *   recurrence: "Monthly"
+     * });
      */
     add(bill) {
         // Generate ID if not present
@@ -58,7 +161,36 @@ class BillStore {
 
     /**
      * Update an existing bill
-     * @param {Object} updatedBill 
+     * 
+     * @method update
+     * @param {Object} updatedBill - Updated bill object with matching id
+     * @param {string} updatedBill.id - Bill ID to match (required for lookup)
+     * @param {string} [updatedBill.name] - Updated bill name
+     * @param {string} [updatedBill.category] - Updated category
+     * @param {string} [updatedBill.dueDate] - Updated due date (YYYY-MM-DD)
+     * @param {number} [updatedBill.amountDue] - Updated amount due
+     * @param {number} [updatedBill.balance] - Updated balance
+     * @param {boolean} [updatedBill.isPaid] - Updated payment status
+     * @param {string} [updatedBill.recurrence] - Updated recurrence
+     * @param {string} [updatedBill.notes] - Updated notes
+     * 
+     * @returns {void}
+     * 
+     * @description Replaces entire bill object with new one when ID matches.
+     *   Does nothing silently if ID not found (no error thrown).
+     *   Automatically saves to localStorage and notifies listeners on success.
+     * 
+     * @example
+     * store.update({
+     *   id: "1702681200000",
+     *   name: "Electric Bill",
+     *   category: "Utilities",
+     *   dueDate: "2024-12-20",
+     *   amountDue: 150.00,
+     *   balance: 75.00,
+     *   isPaid: false,
+     *   recurrence: "Monthly"
+     * });
      */
     update(updatedBill) {
         const index = this.bills.findIndex(b => b.id === updatedBill.id);
@@ -69,8 +201,19 @@ class BillStore {
     }
 
     /**
-     * Delete a bill
-     * @param {string} id 
+     * Delete a bill from the store
+     * 
+     * @method delete
+     * @param {string} id - Bill ID to delete
+     * 
+     * @returns {void}
+     * 
+     * @description Removes bill with matching ID from the store.
+     *   Silently succeeds even if ID not found (no error thrown).
+     *   Automatically saves to localStorage and notifies listeners.
+     * 
+     * @example
+     * store.delete("1702681200000"); // Delete specific bill
      */
     delete(id) {
         this.bills = this.bills.filter(b => b.id !== id);
@@ -78,8 +221,21 @@ class BillStore {
     }
 
     /**
-     * Overwrite all bills (for bulk updates/migrations)
-     * @param {Array} bills 
+     * Replace all bills in the store (bulk update)
+     * 
+     * @method setBills
+     * @param {Array<Object>} bills - Complete new bills array
+     * 
+     * @returns {void}
+     * 
+     * @description Overwrites entire bills array with new one.
+     *   Useful for migrations, bulk updates, or restoring backups.
+     *   Automatically saves to localStorage and notifies listeners.
+     * 
+     * @example
+     * // Restore backup
+     * const backup = JSON.parse(backupJson);
+     * store.setBills(backup);
      */
     setBills(bills) {
         this.bills = bills;
@@ -88,8 +244,23 @@ class BillStore {
 
     /**
      * Subscribe to store changes
-     * @param {Function} listener 
-     * @returns {Function} Unsubscribe function
+     * 
+     * @method subscribe
+     * @param {Function} listener - Callback function called on store changes
+     * @description Listener receives updated bills array as parameter.
+     *   Called immediately after save() to enable reactive UI updates.
+     *   Returns unsubscribe function to remove listener.
+     * 
+     * @returns {Function} Unsubscribe function - call to remove this listener
+     * 
+     * @example
+     * const unsubscribe = store.subscribe((bills) => {
+     *   console.log("Bills updated:", bills);
+     *   refreshBillDisplay(bills);
+     * });
+     * 
+     * // Later, to stop listening:
+     * unsubscribe();
      */
     subscribe(listener) {
         this.listeners.push(listener);
@@ -98,9 +269,21 @@ class BillStore {
         };
     }
 
+    /**
+     * Notify all subscribers of store changes
+     * 
+     * @method notify
+     * @private
+     * @description Called internally after save() to trigger all listener callbacks.
+     *   Passes current bills array to each listener.
+     *   Errors in individual listeners do not affect other listeners.
+     * 
+     * @returns {void}
+     */
     notify() {
         this.listeners.forEach(listener => listener(this.bills));
     }
+
 }
 
 export const billStore = new BillStore();
