@@ -102,6 +102,10 @@ export const initializeBillForm = (categories, actions) => {
     document.getElementById('billFormElement').addEventListener('submit', (e) => {
         e.preventDefault();
 
+        const amountDue = parseFloat(document.getElementById('billAmountDue').value);
+        const balance = document.getElementById('billBalance').value ?
+            parseFloat(document.getElementById('billBalance').value) :
+            amountDue;
         const amount = parseFloat(document.getElementById('billAmountDue').value);
         if (amount < 0) {
             const msg = 'Amount Due must be a positive number';
@@ -115,8 +119,8 @@ export const initializeBillForm = (categories, actions) => {
             category: document.getElementById('billCategory').value,
             name: document.getElementById('billName').value,
             dueDate: document.getElementById('billDueDate').value,
-            amountDue: amount,
-            balance: parseFloat(document.getElementById('billBalance').value),
+            amountDue,
+            balance,
             recurrence: document.getElementById('billRecurrence').value,
             notes: document.getElementById('billNotes').value
         };

@@ -23,6 +23,14 @@ export const initializeHeader = (paychecks, actions) => {
                 <p class="header-subtitle" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>
             </div>
             
+            <div class="view-controls">
+                <div class="view-mode-btns" style="margin-right: 15px;">
+                    <button id="listViewBtn" class="view-btn active" onclick="toggleView('list')">📋 List</button>
+                    <button id="calendarViewBtn" class="view-btn" onclick="toggleView('calendar')">📅 Calendar</button>
+                    <button id="analyticsViewBtn" class="view-btn" onclick="toggleView('analytics')">📈 Analytics</button>
+                </div>
+
+                <button id="allBillsBtn" class="view-btn">📋 All Bills</button>
             <div class="header-controls">
                 <div class="pay-period-group">
                     <label for="payPeriodSelect" class="control-label">Pay Period:</label>
@@ -48,6 +56,7 @@ export const initializeHeader = (paychecks, actions) => {
             </div>
         </div>
     `;
+
 
     const payPeriodSelect = document.getElementById('payPeriodSelect');
     const allBillsBtn = document.getElementById('allBillsBtn');
@@ -76,6 +85,10 @@ export const initializeHeader = (paychecks, actions) => {
     });
 };
 
+export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode) => {
+    const payPeriodSelect = document.getElementById('payPeriodSelect');
+
+    // Sync All Bills button
 /**
  * Updates the header UI to reflect the current view mode and selected pay period
  * 
@@ -101,4 +114,10 @@ export const updateHeaderUI = (viewMode, selectedPaycheck) => {
             payPeriodSelect.value = selectedPaycheck;
         }
     }
+
+    // Sync List/Calendar/Analytics buttons
+    document.querySelectorAll('.view-mode-btns .view-btn').forEach(btn => {
+        const mode = btn.id.replace('ViewBtn', '');
+        btn.classList.toggle('active', mode === displayMode);
+    });
 };

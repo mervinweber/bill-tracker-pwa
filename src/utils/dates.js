@@ -103,3 +103,22 @@ export function calculateNextDueDate(currentDate, recurrence) {
     }
     return nextDate;
 }
+/**
+ * Generates paycheck dates based on settings
+ * @param {Object} settings - payment settings (startDate, frequency, payPeriodsToShow)
+ * @returns {Date[]} Array of paycheck Date objects
+ */
+export function generatePaycheckDates(settings) {
+    const { startDate, frequency, payPeriodsToShow } = settings;
+    const dates = [];
+    const daysBetweenPaychecks = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+
+    const start = createLocalDate(startDate);
+
+    for (let i = 0; i < payPeriodsToShow; i++) {
+        const payDate = new Date(start);
+        payDate.setDate(payDate.getDate() + (i * daysBetweenPaychecks));
+        dates.push(payDate);
+    }
+    return dates;
+}
