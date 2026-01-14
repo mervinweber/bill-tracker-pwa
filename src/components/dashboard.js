@@ -3,8 +3,9 @@ export const initializeDashboard = () => {
     renderDashboard([], 'all', null, null, 'all', []);
 };
 
-export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates) => {
+export const renderDashboard = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates }) => {
     const dashboard = document.getElementById('dashboard');
+    if (!dashboard) return;
 
     // Calculate metrics
     let displayBills = bills;
