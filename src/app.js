@@ -63,42 +63,14 @@ class AppOrchestrator {
             // Initialize Supabase
             initializeSupabase();
 
-            // Check for logged-in user and fetch cloud data
+            // Check for logged-in user FIRST to set localStorage for Sidebar
             const user = await getUser();
             if (user) {
                 console.log('User logged in:', user.email);
-                const { data, error } = await fetchCloudBills();
-                if (data && data.length > 0) {
-                    // Determine strategy: Cloud wins on startup? Or Merge?
-                    // For simplicity: Cloud wins if local is empty or user manually synced.
-                    // Here we just overwrite local with cloud on startup if cloud has data.
-                    console.log('Fetched bills from cloud:', data.length);
-                    billStore.setBills(data);
-                }
-            }
-
-            // Migrate legacy data
-            migrateBillsToPaymentHistory();
-
-            // Update bill dates based on recurrence
-            paycheckManager.updateBillDatesBasedOnRecurrence();
-
-            // Initialize all views
-            initializeCalendarView();
-            initializeAnalyticsView();
-
-            // Auto-select pay period
-            const autoSelectedIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
-            appState.setSelectedPaycheck(autoSelectedIndex);
-
-            const savedCategory = localStorage.getItem('selectedCategory');
-            if (savedCategory && (this.categories.includes(savedCategory) || savedCategory === 'All')) {
-                appState.setSelectedCategory(savedCategory);
+                localStorage.setItem('userEmail', user.email);
             } else {
-                appState.setSelectedCategory(this.categories[0] || 'All');
+                localStorage.removeItem('userEmail');
             }
-
-            appState.setViewMode('filtered');
 
             // Get paycheck labels
             const paycheckLabels = paycheckManager.getPaycheckLabels();
@@ -121,6 +93,15 @@ class AppOrchestrator {
                 onOpenAuth: () => openAuthModal(),
                 onLogout: () => this.handleLogout()
             });
+
+            // Fetch cloud data if logged in
+            if (user) {
+                const { data, error } = await fetchCloudBills();
+                if (data && data.length > 0) {
+                    console.log('Fetched bills from cloud:', data.length);
+                    billStore.setBills(data);
+                }
+            }
 
             initializeBillForm(this.categories, {
                 onSaveBill: () => this.handleSaveBill()
@@ -502,6 +483,11 @@ class AppOrchestrator {
         if (error) {
             setAuthMessage(error.message, true);
         } else {
+            // Save user email to localStorage so Sidebar can read it on reload
+            if (data.user && data.user.email) {
+                localStorage.setItem('userEmail', data.user.email);
+            }
+
             closeAuthModal();
             billActionHandlers.showSuccessNotification('Logged in successfully');
 
