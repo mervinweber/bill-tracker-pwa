@@ -13,7 +13,7 @@ import { initializeSidebar } from './components/sidebar.js';
 import { initializeBillGrid, renderBillGrid } from './components/billGrid.js';
 import { initializeDashboard, renderDashboard } from './components/dashboard.js';
 import { initializeBillForm, openBillForm, resetBillForm, closeBillForm } from './components/billForm.js';
-import { initializeAuthModal, openAuthModal, closeAuthModal } from './components/authModal.js';
+import { initializeAuthModal, openAuthModal, closeAuthModal, setAuthMessage } from './components/authModal.js';
 
 import { initializeCalendarView, renderCalendar } from './views/calendarView.js';
 import { initializeAnalyticsView, renderAnalytics, cleanupCharts } from './views/analyticsView.js';
@@ -25,12 +25,21 @@ import {
 } from './handlers/billActionHandlers.js';
 import { settingsHandlers } from './handlers/settingsHandler.js';
 
-import { initializeSupabase, getUser } from './services/supabase.js';
+import {
+    initializeSupabase,
+    getUser,
+    signIn,
+    signUp,
+    signOut,
+    syncBills,
+    fetchCloudBills
+} from './services/supabase.js';
 
 class AppOrchestrator {
     constructor() {
         this.categories = [];
         this.initialized = false;
+        this.isSyncing = false;
     }
 
     /**
@@ -53,6 +62,20 @@ class AppOrchestrator {
 
             // Initialize Supabase
             initializeSupabase();
+
+            // Check for logged-in user and fetch cloud data
+            const user = await getUser();
+            if (user) {
+                console.log('User logged in:', user.email);
+                const { data, error } = await fetchCloudBills();
+                if (data && data.length > 0) {
+                    // Determine strategy: Cloud wins on startup? Or Merge?
+                    // For simplicity: Cloud wins if local is empty or user manually synced.
+                    // Here we just overwrite local with cloud on startup if cloud has data.
+                    console.log('Fetched bills from cloud:', data.length);
+                    billStore.setBills(data);
+                }
+            }
 
             // Migrate legacy data
             migrateBillsToPaymentHistory();
@@ -125,8 +148,11 @@ class AppOrchestrator {
             // Subscribe to state changes for re-rendering
             appState.subscribe(() => this.handleStateChange());
 
-            // Subscribe to store changes for re-rendering
-            billStore.subscribe(() => this.rerender());
+            // Subscribe to store changes for re-rendering AND Cloud Sync
+            billStore.subscribe((bills) => {
+                this.rerender();
+                this.handleCloudSync(bills);
+            });
 
             // Initial render
             this.rerender();
@@ -137,6 +163,33 @@ class AppOrchestrator {
             console.error('Error initializing app:', error);
             billActionHandlers.showErrorNotification(error.message, 'Initialization Error');
         }
+    }
+
+    /**
+     * Handle Cloud Synchronization
+     * Debounced to prevent excessive API calls
+     */
+    async handleCloudSync(bills) {
+        if (this.isSyncing) return;
+
+        // Simple debounce
+        if (this.syncTimeout) clearTimeout(this.syncTimeout);
+
+        this.syncTimeout = setTimeout(async () => {
+            const user = await getUser();
+            if (user) {
+                this.isSyncing = true;
+                const { error } = await syncBills(bills);
+                this.isSyncing = false;
+
+                if (error) {
+                    console.error('Cloud sync failed:', error);
+                    // Silent fail or small indicator?
+                } else {
+                    console.log('Cloud sync successful');
+                }
+            }
+        }, 2000); // 2 second debounce
     }
 
     /**
@@ -392,10 +445,10 @@ class AppOrchestrator {
                     <div style="padding: 12px; border-left: 3px solid #5eb3d6; background: white; margin-bottom: 10px; border-radius: 4px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                             <strong>${new Date(payment.date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                            })}</strong>
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                })}</strong>
                             <strong style="color: #27ae60;">$${payment.amount.toFixed(2)}</strong>
                         </div>
                         <div style="font-size: 13px; color: #666;">
@@ -443,17 +496,39 @@ class AppOrchestrator {
         billActionHandlers.importData(file);
     }
 
-    handleLogin(email, password) {
-        // Placeholder for future Supabase integration
-        console.log('Login:', email);
+    async handleLogin(email, password) {
+        setAuthMessage('Signing in...', false);
+        const { data, error } = await signIn(email, password);
+        if (error) {
+            setAuthMessage(error.message, true);
+        } else {
+            closeAuthModal();
+            billActionHandlers.showSuccessNotification('Logged in successfully');
+
+            // Sync/Fetch on login
+            const { data: bills, error: fetchError } = await fetchCloudBills();
+            if (bills && bills.length > 0) {
+                billStore.setBills(bills);
+            } else if (billStore.getAll().length > 0) {
+                // If cloud empty but local has data, upload local
+                await syncBills(billStore.getAll());
+            }
+            window.location.reload(); // To refresh sidebar user state/icon
+        }
     }
 
-    handleSignUp(email, password) {
-        // Placeholder for future Supabase integration
-        console.log('Sign up:', email);
+    async handleSignUp(email, password) {
+        setAuthMessage('Signing up...', false);
+        const { data, error } = await signUp(email, password);
+        if (error) {
+            setAuthMessage(error.message, true);
+        } else {
+            setAuthMessage('Account created! Please check your email.', false);
+        }
     }
 
-    handleLogout() {
+    async handleLogout() {
+        await signOut();
         localStorage.removeItem('userEmail');
         window.location.reload();
     }
