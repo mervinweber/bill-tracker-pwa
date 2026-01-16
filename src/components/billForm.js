@@ -73,25 +73,32 @@ export const initializeBillForm = (categories, actions) => {
                     <span id="notesHelp" class="sr-only">Add any additional notes about this bill</span>
                 </div>
                 
-                <button type="submit" class="submit-btn">Save Bill</button>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Save Bill</button>
+                    <button type="button" id="cancelBillBtn" class="cancel-btn">Cancel</button>
+                </div>
             </form>
         </div>
     </div>`;
 
     const modal = form.querySelector('.modal');
     const closeBtn = form.querySelector('.close');
-    
+
     closeBtn.addEventListener('click', () => {
         form.style.display = 'none';
         closeBtn.setAttribute('aria-label', 'Close');
     });
-    
+
+    document.getElementById('cancelBillBtn').addEventListener('click', () => {
+        form.style.display = 'none';
+    });
+
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
             form.style.display = 'none';
         }
     });
-    
+
     // Trap focus within modal when open
     form.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -133,14 +140,26 @@ export const initializeBillForm = (categories, actions) => {
  *   and sets focus to the category field for accessibility.
  */
 export const openBillForm = (bill) => {
-    document.getElementById('billId').value = bill.id;
-    document.getElementById('billCategory').value = bill.category;
-    document.getElementById('billName').value = bill.name;
-    document.getElementById('billDueDate').value = bill.dueDate;
-    document.getElementById('billAmountDue').value = bill.amountDue || 0;
-    document.getElementById('billBalance').value = bill.balance || 0;
-    document.getElementById('billRecurrence').value = bill.recurrence;
-    document.getElementById('billNotes').value = bill.notes || '';
+    const isEdit = !!bill;
+    const billData = bill || {
+        id: '',
+        category: '',
+        name: '',
+        dueDate: '',
+        amountDue: 0,
+        balance: 0,
+        recurrence: 'One-time',
+        notes: ''
+    };
+
+    document.getElementById('billId').value = billData.id;
+    document.getElementById('billCategory').value = billData.category;
+    document.getElementById('billName').value = billData.name;
+    document.getElementById('billDueDate').value = billData.dueDate;
+    document.getElementById('billAmountDue').value = billData.amountDue || 0;
+    document.getElementById('billBalance').value = billData.balance || 0;
+    document.getElementById('billRecurrence').value = billData.recurrence;
+    document.getElementById('billNotes').value = billData.notes || '';
     document.getElementById('billForm').style.display = 'block';
     document.getElementById('billCategory').focus();
 };

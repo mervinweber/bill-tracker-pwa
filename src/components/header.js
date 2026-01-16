@@ -33,6 +33,12 @@ export const initializeHeader = (paychecks, actions) => {
                     <span id="payPeriodHelp" class="sr-only">Choose when to view bills due between this paycheck and the next</span>
                 </div>
                 
+                <div class="display-mode-controls" style="display: flex; gap: 5px; background: rgba(0,0,0,0.1); padding: 4px; border-radius: 8px;">
+                    <button id="listViewBtn" class="view-btn active" title="List View">📋 List</button>
+                    <button id="calendarViewBtn" class="view-btn" title="Calendar View">📅 Calendar</button>
+                    <button id="analyticsViewBtn" class="view-btn" title="Analytics View">📊 Analytics</button>
+                </div>
+
                 <div class="view-controls">
                     <button id="allBillsBtn" class="view-btn" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
                 </div>
@@ -52,6 +58,9 @@ export const initializeHeader = (paychecks, actions) => {
     const payPeriodSelect = document.getElementById('payPeriodSelect');
     const allBillsBtn = document.getElementById('allBillsBtn');
     const headerStatus = document.getElementById('headerStatus');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const analyticsViewBtn = document.getElementById('analyticsViewBtn');
 
     payPeriodSelect.addEventListener('change', (e) => {
         allBillsBtn.classList.remove('active');
@@ -74,6 +83,27 @@ export const initializeHeader = (paychecks, actions) => {
         headerStatus.textContent = `Viewing ${filterText.toLowerCase()} bills`;
         actions.onFilterChange(e.target.value);
     });
+
+    // Display mode buttons
+    const setDisplayModeActive = (mode) => {
+        [listViewBtn, calendarViewBtn, analyticsViewBtn].forEach(btn => btn.classList.remove('active'));
+        if (mode === 'list') listViewBtn.classList.add('active');
+        if (mode === 'calendar') calendarViewBtn.classList.add('active');
+        if (mode === 'analytics') analyticsViewBtn.classList.add('active');
+    };
+
+    listViewBtn.onclick = () => {
+        setDisplayModeActive('list');
+        actions.onDisplayModeSelect('list');
+    };
+    calendarViewBtn.onclick = () => {
+        setDisplayModeActive('calendar');
+        actions.onDisplayModeSelect('calendar');
+    };
+    analyticsViewBtn.onclick = () => {
+        setDisplayModeActive('analytics');
+        actions.onDisplayModeSelect('analytics');
+    };
 };
 
 /**
@@ -81,16 +111,16 @@ export const initializeHeader = (paychecks, actions) => {
  * 
  * @param {string} viewMode - Current view mode ('all' for all bills, or specific paycheck index)
  * @param {number|null} selectedPaycheck - Index of selected paycheck, or null if viewing all bills
+ * @param {string} displayMode - Current display mode ('list', 'calendar', 'analytics')
  * @returns {void}
- * @description Synchronizes UI state by:
- *   - Toggling 'active' class on "All Bills" button
- *   - Updating aria-pressed state for accessibility
- *   - Setting pay period dropdown value
  */
-export const updateHeaderUI = (viewMode, selectedPaycheck) => {
+export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode) => {
     const payPeriodSelect = document.getElementById('payPeriodSelect');
     const allBillsBtn = document.getElementById('allBillsBtn');
-    
+    const listViewBtn = document.getElementById('listViewBtn');
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const analyticsViewBtn = document.getElementById('analyticsViewBtn');
+
     if (viewMode === 'all') {
         allBillsBtn.classList.add('active');
         allBillsBtn.setAttribute('aria-pressed', 'true');
@@ -100,5 +130,12 @@ export const updateHeaderUI = (viewMode, selectedPaycheck) => {
         if (payPeriodSelect && selectedPaycheck !== null) {
             payPeriodSelect.value = selectedPaycheck;
         }
+    }
+
+    if (displayMode && listViewBtn) {
+        [listViewBtn, calendarViewBtn, analyticsViewBtn].forEach(btn => btn.classList.remove('active'));
+        if (displayMode === 'list') listViewBtn.classList.add('active');
+        if (displayMode === 'calendar') calendarViewBtn.classList.add('active');
+        if (displayMode === 'analytics') analyticsViewBtn.classList.add('active');
     }
 };

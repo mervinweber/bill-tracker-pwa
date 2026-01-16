@@ -75,13 +75,18 @@ class AppOrchestrator {
             // Get paycheck labels
             const paycheckLabels = paycheckManager.getPaycheckLabels();
 
+            // Initialize all views
+            initializeCalendarView();
+            initializeAnalyticsView();
+
             // Initialize components with callbacks
             initializeHeader(paycheckLabels, {
                 onPaycheckSelect: (index) => this.handlePaycheckSelect(index),
                 onFilterChange: (filter) => this.handleFilterChange(filter),
                 onAllBillsSelect: () => this.handleAllBillsSelect(),
                 onToggleTheme: () => this.handleToggleTheme(),
-                onShowSettings: () => this.handleShowSettings()
+                onShowSettings: () => this.handleShowSettings(),
+                onDisplayModeSelect: (mode) => this.handleDisplayModeSelect(mode)
             });
 
             initializeSidebar(this.categories, {
@@ -205,16 +210,40 @@ class AppOrchestrator {
             const state = appState.getState();
             const bills = billStore.getAll();
 
-            // Render dashboard
-            renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates);
+            // Update header UI
+            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode);
 
             // Render appropriate view based on displayMode
+            const billGrid = document.getElementById('billGrid');
+            const calendarView = document.getElementById('calendarView');
+            const analyticsView = document.getElementById('analyticsView');
+
+            // Hide all views first
+            const dashboard = document.getElementById('dashboard');
+            if (billGrid) billGrid.style.display = 'none';
+            if (calendarView) calendarView.style.display = 'none';
+            if (analyticsView) analyticsView.style.display = 'none';
+            if (dashboard) dashboard.style.display = 'none';
+
             if (state.displayMode === 'calendar') {
+                if (calendarView) calendarView.style.display = 'block';
                 renderCalendar();
             } else if (state.displayMode === 'analytics') {
-                renderAnalytics();
+                if (analyticsView) analyticsView.style.display = 'block';
+                renderAnalytics({
+                    bills,
+                    viewMode: state.viewMode,
+                    selectedPaycheck: state.selectedPaycheck,
+                    payCheckDates: paycheckManager.payCheckDates
+                });
             } else {
                 // List view (default)
+                if (billGrid) billGrid.style.display = 'block';
+                if (dashboard) dashboard.style.display = 'block';
+
+                // Render dashboard
+                renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates);
+
                 renderBillGrid(
                     {
                         bills,
@@ -246,6 +275,12 @@ class AppOrchestrator {
     handlePaycheckSelect(index) {
         appState.setViewMode('filtered');
         appState.setSelectedPaycheck(index);
+
+        // Synchronize calendar view to the month of the selected paycheck
+        const selectedPaycheckDate = paycheckManager.payCheckDates[index];
+        if (selectedPaycheckDate) {
+            appState.setCurrentCalendarDate(new Date(selectedPaycheckDate));
+        }
     }
 
     handleFilterChange(filter) {
@@ -254,11 +289,19 @@ class AppOrchestrator {
 
     handleAllBillsSelect() {
         appState.setViewMode('all');
+        // Reset calendar to today's month when viewing all bills
+        appState.setCurrentCalendarDate(new Date());
     }
 
     handleCategorySelect(category) {
         appState.setSelectedCategory(category);
         appState.setViewMode('filtered');
+        // Ensure we switch back to list view when category is selected
+        appState.setDisplayMode('list');
+    }
+
+    handleDisplayModeSelect(mode) {
+        appState.setDisplayMode(mode);
     }
 
     handleOpenAddBill() {

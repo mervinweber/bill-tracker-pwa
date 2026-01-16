@@ -11,15 +11,11 @@ import { appState } from '../store/appState.js';
  */
 export function renderCalendar() {
     try {
-        const billGrid = document.getElementById('billGrid');
         const calendarView = document.getElementById('calendarView');
 
         if (!calendarView) {
             throw new Error('Calendar view container not found in DOM');
         }
-
-        billGrid.style.display = 'none';
-        calendarView.style.display = 'block';
 
         const currentCalendarDate = appState.getState('currentCalendarDate');
         const year = currentCalendarDate.getFullYear();
@@ -64,9 +60,8 @@ export function renderCalendar() {
         // Previous month filler days
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = 0; i < startingDay; i++) {
-            html += `<div class="calendar-day other-month"><span class="calendar-day-number">${
-                prevMonthLastDay - startingDay + 1 + i
-            }</span></div>`;
+            html += `<div class="calendar-day other-month"><span class="calendar-day-number">${prevMonthLastDay - startingDay + 1 + i
+                }</span></div>`;
         }
 
         // Current month days
@@ -88,17 +83,16 @@ export function renderCalendar() {
                 const isOverdue =
                     !isPaid &&
                     new Date(dateStr) <
-                        new Date(
-                            today.getFullYear(),
-                            today.getMonth(),
-                            today.getDate()
-                        );
+                    new Date(
+                        today.getFullYear(),
+                        today.getMonth(),
+                        today.getDate()
+                    );
                 const statusClass = isPaid ? 'paid' : isOverdue ? 'overdue' : '';
                 billsHtml += `<div class="calendar-bill ${statusClass}" title="${b.name} - $${(
                     b.amountDue || 0
-                ).toFixed(2)}" onclick="window.editBillGlobal('${b.id}')" style="cursor: pointer;">${
-                    b.name
-                }</div>`;
+                ).toFixed(2)}" onclick="window.editBillGlobal('${b.id}')" style="cursor: pointer;">${b.name
+                    }</div>`;
             });
             billsHtml += '</div>';
 
