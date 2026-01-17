@@ -233,7 +233,7 @@ export const getRemainingBalance = (bill) => {
  * @param {Array<Date>} payCheckDates - Array of paycheck dates
  * @returns {Array<Object>} Filtered and sorted bills
  */
-export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates) => {
+export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true) => {
     if (viewMode === 'all') {
         let filtered = [...bills];
         if (paymentFilter === 'unpaid') filtered = filtered.filter(b => !b.isPaid);
@@ -265,7 +265,8 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
 
         const isInPeriod = billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
 
-        const isOverdueAndUnpaid = !bill.isPaid &&
+        const isOverdueAndUnpaid = showCarriedForward &&
+            !bill.isPaid &&
             billDate < currentPaycheckDate &&
             currentPaycheckDate <= planningBoundaryDate;
 

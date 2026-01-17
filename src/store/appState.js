@@ -25,6 +25,7 @@ class AppState {
             viewMode: 'filtered', // 'filtered' or 'all'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
             paymentFilter: 'all', // 'all', 'unpaid', 'paid'
+            showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,
             error: null
@@ -127,6 +128,11 @@ class AppState {
         this.notifySubscribers();
     }
 
+    setShowCarriedForward(show) {
+        this.state.showCarriedForward = show;
+        this.notifySubscribers();
+    }
+
     setCurrentCalendarDate(date) {
         this.state.currentCalendarDate = date;
         this.notifySubscribers();
@@ -186,6 +192,7 @@ class AppState {
             viewMode: 'filtered',
             displayMode: 'list',
             paymentFilter: 'all',
+            showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,
             error: null

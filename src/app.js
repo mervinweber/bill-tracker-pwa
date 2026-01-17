@@ -92,7 +92,8 @@ class AppOrchestrator {
                 onAllBillsSelect: () => this.handleAllBillsSelect(),
                 onToggleTheme: () => this.handleToggleTheme(),
                 onShowSettings: () => this.handleShowSettings(),
-                onDisplayModeSelect: (mode) => this.handleDisplayModeSelect(mode)
+                onDisplayModeSelect: (mode) => this.handleDisplayModeSelect(mode),
+                onToggleCarriedForward: (show) => this.handleToggleCarriedForward(show)
             });
 
             initializeSidebar(this.categories, {
@@ -248,7 +249,7 @@ class AppOrchestrator {
             const bills = billStore.getAll();
 
             // Update header UI
-            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode);
+            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward);
 
             // Render appropriate view based on displayMode
             const billGrid = document.getElementById('billGrid');
@@ -288,6 +289,7 @@ class AppOrchestrator {
                         selectedPaycheck: state.selectedPaycheck,
                         selectedCategory: state.selectedCategory,
                         paymentFilter: state.paymentFilter,
+                        showCarriedForward: state.showCarriedForward,
                         payCheckDates: paycheckManager.payCheckDates
                     },
                     {
@@ -322,6 +324,10 @@ class AppOrchestrator {
 
     handleFilterChange(filter) {
         appState.setPaymentFilter(filter);
+    }
+
+    handleToggleCarriedForward(show) {
+        appState.setShowCarriedForward(show);
     }
 
     handleAllBillsSelect() {

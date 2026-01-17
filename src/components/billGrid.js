@@ -41,12 +41,12 @@ export const initializeBillGrid = () => {
  *   - Payment toggle and balance input fields
  *   - Proper error handling and empty state messages
  */
-export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates }, actions) => {
+export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates }, actions) => {
     const billGrid = document.getElementById('billGrid');
     billGrid.innerHTML = '';
 
     // Use shared filtering logic
-    const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates);
+    const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward);
 
     if (viewMode !== 'all' && (selectedPaycheck === null || selectedCategory === null)) {
         billGrid.innerHTML = '<p aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>';

@@ -51,6 +51,13 @@ export const initializeHeader = (paychecks, actions) => {
                         <option value="paid">Paid</option>
                     </select>
                 </div>
+
+                <div class="toggle-group" style="display: flex; align-items: center; gap: 8px;">
+                    <label class="switch-container" style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 500;">
+                        <input type="checkbox" id="carriedForwardToggle" checked style="margin-right: 5px;">
+                        <span>Show Overdue</span>
+                    </label>
+                </div>
             </div>
         </div>
     `;
@@ -84,6 +91,10 @@ export const initializeHeader = (paychecks, actions) => {
         actions.onFilterChange(e.target.value);
     });
 
+    document.getElementById('carriedForwardToggle').addEventListener('change', (e) => {
+        actions.onToggleCarriedForward(e.target.checked);
+    });
+
     // Display mode buttons
     const setDisplayModeActive = (mode) => {
         [listViewBtn, calendarViewBtn, analyticsViewBtn].forEach(btn => btn.classList.remove('active'));
@@ -112,14 +123,16 @@ export const initializeHeader = (paychecks, actions) => {
  * @param {string} viewMode - Current view mode ('all' for all bills, or specific paycheck index)
  * @param {number|null} selectedPaycheck - Index of selected paycheck, or null if viewing all bills
  * @param {string} displayMode - Current display mode ('list', 'calendar', 'analytics')
+ * @param {boolean} showCarriedForward - Whether to show carried forward bills
  * @returns {void}
  */
-export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode) => {
+export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward) => {
     const payPeriodSelect = document.getElementById('payPeriodSelect');
     const allBillsBtn = document.getElementById('allBillsBtn');
     const listViewBtn = document.getElementById('listViewBtn');
     const calendarViewBtn = document.getElementById('calendarViewBtn');
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
+    const carriedForwardToggle = document.getElementById('carriedForwardToggle');
 
     if (viewMode === 'all') {
         allBillsBtn.classList.add('active');
