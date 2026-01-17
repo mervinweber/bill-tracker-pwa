@@ -23,11 +23,11 @@
 
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from './dates.js';
 import { billStore } from '../store/BillStore.js';
-import { 
-    safeGetFromStorage, 
-    safeSetToStorage, 
+import {
+    safeGetFromStorage,
+    safeSetToStorage,
     ValidationError,
-    validateRequired 
+    validateRequired
 } from './errorHandling.js';
 
 /**
@@ -71,13 +71,13 @@ class PaycheckManager {
                 console.warn('⚠️ No payment settings found. Using defaults.');
                 return this.getDefaultSettings();
             }
-            
+
             const validation = this.validateSettings(stored);
             if (!validation.isValid) {
                 console.warn('⚠️ Invalid payment settings:', validation.errors);
                 return this.getDefaultSettings();
             }
-            
+
             return stored;
         } catch (error) {
             console.error('❌ Error loading payment settings:', error.message);
@@ -90,7 +90,7 @@ class PaycheckManager {
      */
     validateSettings(settings) {
         const validation = validateRequired(settings, ['startDate', 'frequency', 'payPeriodsToShow']);
-        
+
         if (!validation.isValid) {
             return validation;
         }
@@ -138,6 +138,9 @@ class PaycheckManager {
                 throw new ValidationError('Missing required paycheck settings', 'paymentSettings');
             }
 
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
             const parsedStartDate = createLocalDate(startDate);
             if (!parsedStartDate || isNaN(parsedStartDate.getTime())) {
                 throw new ValidationError(`Invalid start date format`, 'startDate', startDate);
@@ -146,9 +149,17 @@ class PaycheckManager {
             const daysBetweenPaychecks =
                 frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
 
+            // Calculate how many periods to skip to start from today or the next upcoming paycheck
+            let periodsToSkip = 0;
+            const diffMs = today.getTime() - parsedStartDate.getTime();
+            if (diffMs > 0) {
+                const msPerPeriod = daysBetweenPaychecks * 24 * 60 * 60 * 1000;
+                periodsToSkip = Math.ceil(diffMs / msPerPeriod);
+            }
+
             for (let i = 0; i < payPeriodsToShow; i++) {
                 const payDate = new Date(parsedStartDate);
-                payDate.setDate(payDate.getDate() + i * daysBetweenPaychecks);
+                payDate.setDate(payDate.getDate() + (periodsToSkip + i) * daysBetweenPaychecks);
                 this.payCheckDates.push(payDate);
             }
 
