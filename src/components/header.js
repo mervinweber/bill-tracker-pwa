@@ -151,4 +151,8 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
         if (displayMode === 'calendar') calendarViewBtn.classList.add('active');
         if (displayMode === 'analytics') analyticsViewBtn.classList.add('active');
     }
+
+    if (carriedForwardToggle && typeof showCarriedForward !== 'undefined') {
+        carriedForwardToggle.checked = showCarriedForward;
+    }
 };
