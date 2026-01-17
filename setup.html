@@ -127,11 +127,18 @@
             
             <div class="form-group">
                 <label for="setupFrequency"><strong>Payment Frequency</strong></label>
-                <select id="setupFrequency" required>
+                <select id="setupFrequency" required onchange="handleFrequencyChange()">
                     <option value="weekly">Weekly (every 7 days)</option>
                     <option value="bi-weekly" selected>Bi-weekly (every 14 days)</option>
                     <option value="monthly">Monthly (every 30 days)</option>
+                    <option value="custom">Custom (specify days)</option>
                 </select>
+            </div>
+            
+            <div class="form-group" id="customDaysGroup" style="display: none;">
+                <label for="setupCustomDays"><strong>Custom Frequency (in days)</strong></label>
+                <input type="number" id="setupCustomDays" min="1" max="365" placeholder="e.g., 90 for quarterly">
+                <small>Enter the number of days between paychecks. Example: 90 for quarterly paychecks</small>
             </div>
             
             <div class="form-group">
@@ -154,18 +161,49 @@
         // Set today's date as default
         document.getElementById('setupStartDate').valueAsDate = new Date();
         
+        function handleFrequencyChange() {
+            const frequency = document.getElementById('setupFrequency').value;
+            const customDaysGroup = document.getElementById('customDaysGroup');
+            
+            if (frequency === 'custom') {
+                customDaysGroup.style.display = 'block';
+                document.getElementById('setupCustomDays').required = true;
+            } else {
+                customDaysGroup.style.display = 'none';
+                document.getElementById('setupCustomDays').required = false;
+                document.getElementById('setupCustomDays').value = '';
+            }
+        }
+        
         document.getElementById('setupForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const startDate = document.getElementById('setupStartDate').value;
-            const frequency = document.getElementById('setupFrequency').value;
+            let frequency = document.getElementById('setupFrequency').value;
             const weeks = document.getElementById('setupWeeks').value;
+            let customDays = null;
+            
+            // Handle custom frequency
+            if (frequency === 'custom') {
+                customDays = parseInt(document.getElementById('setupCustomDays').value);
+                if (!customDays || customDays < 1 || customDays > 365) {
+                    alert('Please enter a valid number of days between 1 and 365');
+                    return;
+                }
+            }
             
             // Save to localStorage
-            localStorage.setItem('paymentSettings', JSON.stringify({
+            const settings = {
                 startDate: startDate,
                 frequency: frequency,
                 payPeriodsToShow: parseInt(weeks)
-            }));
+            };
+            
+            // Add custom days if applicable
+            if (customDays) {
+                settings.customDays = customDays;
+            }
+            
+            localStorage.setItem('paymentSettings', JSON.stringify(settings));
             
             // Redirect to main app
             window.location.href = 'index.html';
