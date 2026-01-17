@@ -280,7 +280,7 @@ class AppOrchestrator {
                 if (dashboard) dashboard.style.display = 'block';
 
                 // Render dashboard
-                renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates);
+                renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward);
 
                 renderBillGrid(
                     {
