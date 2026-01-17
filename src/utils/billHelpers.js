@@ -1,3 +1,6 @@
+import { createLocalDate } from './dates.js';
+import { paycheckManager } from './paycheckManager.js';
+
 /**
  * Bill Helper Utilities
  * 
@@ -217,4 +220,63 @@ export const getRemainingBalance = (bill) => {
     const totalDue = bill.balance || bill.amountDue || 0;
     const totalPaid = getTotalPaid(bill);
     return Math.max(0, totalDue - totalPaid);
+};
+
+/**
+ * Filters bills based on a specific pay period, category, and carry-forward rules.
+ * 
+ * @param {Array<Object>} bills - All bills
+ * @param {string} viewMode - 'all' or 'filtered'
+ * @param {number|null} selectedPaycheck - Index of selected paycheck
+ * @param {string|null} selectedCategory - Selected category
+ * @param {string} paymentFilter - 'all'|'paid'|'unpaid'
+ * @param {Array<Date>} payCheckDates - Array of paycheck dates
+ * @returns {Array<Object>} Filtered and sorted bills
+ */
+export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates) => {
+    if (viewMode === 'all') {
+        let filtered = [...bills];
+        if (paymentFilter === 'unpaid') filtered = filtered.filter(b => !b.isPaid);
+        if (paymentFilter === 'paid') filtered = filtered.filter(b => b.isPaid);
+        return filtered.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    }
+
+    if (selectedPaycheck === null || selectedCategory === null || !payCheckDates || payCheckDates.length === 0) {
+        return [];
+    }
+
+    const currentPaycheckDate = payCheckDates[selectedPaycheck];
+    const frequency = paycheckManager.paymentSettings.frequency;
+    const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+
+    const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1
+        ? payCheckDates[selectedPaycheck + 1]
+        : new Date(currentPaycheckDate.getTime() + (days * 24 * 60 * 60 * 1000));
+
+    // Carry Forward Logic Bounds
+    const activeIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
+    const planningBoundaryIndex = activeIndex + 1;
+    const planningBoundaryDate = payCheckDates[planningBoundaryIndex] || new Date(9999, 0, 1);
+
+    let filtered = bills.filter(bill => {
+        const billDate = createLocalDate(bill.dueDate);
+        const isMatch = bill.category === selectedCategory;
+        if (!isMatch) return false;
+
+        const isInPeriod = billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+
+        const isOverdueAndUnpaid = !bill.isPaid &&
+            billDate < currentPaycheckDate &&
+            currentPaycheckDate <= planningBoundaryDate;
+
+        return isInPeriod || isOverdueAndUnpaid;
+    });
+
+    if (paymentFilter === 'unpaid') {
+        filtered = filtered.filter(bill => !bill.isPaid);
+    } else if (paymentFilter === 'paid') {
+        filtered = filtered.filter(bill => bill.isPaid);
+    }
+
+    return filtered.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 };

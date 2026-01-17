@@ -1,3 +1,5 @@
+import { filterBillsByPeriod } from '../utils/billHelpers.js';
+
 /**
  * Dashboard Component
  * 
@@ -73,26 +75,9 @@ export const initializeDashboard = () => {
 export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates) => {
     const dashboard = document.getElementById('dashboard');
 
-    // Calculate metrics
-    let displayBills = bills;
+    // Use shared filtering logic to ensure consistency with grid
+    const displayBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates);
 
-    // Filter by payment status
-    if (paymentFilter === 'unpaid') {
-        displayBills = displayBills.filter(b => !b.isPaid);
-    } else if (paymentFilter === 'paid') {
-        displayBills = displayBills.filter(b => b.isPaid);
-    }
-    // if 'all', no filtering needed
-
-    // In filtered mode, further filter by current paycheck and category
-    if (viewMode === 'filtered' && selectedPaycheck !== null && selectedCategory !== null) {
-        const currentPaycheckDate = payCheckDates[selectedPaycheck];
-        const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
-        displayBills = displayBills.filter(bill => {
-            const billDate = new Date(bill.dueDate);
-            return bill.category === selectedCategory && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
-        });
-    }
 
     const totalBills = displayBills.length;
     const totalAmountDue = displayBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);

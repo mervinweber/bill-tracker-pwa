@@ -26,6 +26,8 @@ import {
     bulkMarkAsPaid,
     migrateBillsToPaymentHistory
 } from './handlers/billActionHandlers.js';
+import { filterBillsByPeriod } from './utils/billHelpers.js';
+
 import { settingsHandlers } from './handlers/settingsHandler.js';
 
 import {
@@ -626,35 +628,12 @@ class AppOrchestrator {
         let visibleBills = [];
 
         if (viewMode === 'all') {
-            visibleBills = [...bills];
+            visibleBills = filterBillsByPeriod(bills, 'all', null, null, paymentFilter, payCheckDates);
         } else {
             if (selectedPaycheck === null || selectedCategory === null) return;
-
-            const currentPayDate = payCheckDates[selectedPaycheck];
-            const frequency = paycheckManager.paymentSettings.frequency;
-            const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
-
-            const nextPayDate = selectedPaycheck < payCheckDates.length - 1
-                ? payCheckDates[selectedPaycheck + 1]
-                : new Date(currentPayDate.getTime() + (days * 24 * 60 * 60 * 1000));
-
-            visibleBills = bills.filter(bill => {
-                const billDate = createLocalDate(bill.dueDate);
-                const isMatch = bill.category === selectedCategory;
-                if (!isMatch) return false;
-
-                const isInPeriod = billDate >= currentPayDate && billDate < nextPayDate;
-
-                const activeIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
-                const planningBoundaryIndex = activeIndex + 1;
-                const planningBoundaryDate = payCheckDates[planningBoundaryIndex] || new Date(9999, 0, 1);
-
-                const isOverdueAndUnpaid = !bill.isPaid &&
-                    billDate < currentPayDate &&
-                    currentPayDate <= planningBoundaryDate;
-                return isInPeriod || isOverdueAndUnpaid;
-            });
+            visibleBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates);
         }
+
 
         // Apply same payment filter as grid (though mark paid only makes sense for unpaid)
         if (paymentFilter === 'unpaid') {

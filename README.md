@@ -48,6 +48,8 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
     *   Track partial payments.
     *   View full payment history for any bill.
     *   Auto-select current pay period.
+    *   **Bulk Actions**: Mark all visible bills as paid or clear all data with one click.
+    *   **Smart Overdue Tracking**: Unpaid bills carry forward from your current cycle into your next planning window automatically.
 *   **Data Safety**:
     *   Persistent local storage.
     *   Automatic local backup.

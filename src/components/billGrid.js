@@ -1,5 +1,7 @@
 import { createLocalDate } from '../utils/dates.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
+import { filterBillsByPeriod } from '../utils/billHelpers.js';
+
 
 /**
  * Initializes the bill grid with empty state message
@@ -43,61 +45,13 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     const billGrid = document.getElementById('billGrid');
     billGrid.innerHTML = '';
 
-    let dueBills = [];
+    // Use shared filtering logic
+    const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates);
 
-    if (viewMode === 'all') {
-        // Show all bills sorted by due date
-        dueBills = bills.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-    } else {
-        // Filtered mode: require paycheck and category selection
-        if (selectedPaycheck === null || selectedCategory === null) {
-            billGrid.innerHTML = '<p aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>';
-            return;
-        }
-
-        const currentPaycheckDate = payCheckDates[selectedPaycheck];
-        const frequency = paycheckManager.paymentSettings.frequency;
-        const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
-
-        const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1
-            ? payCheckDates[selectedPaycheck + 1]
-            : new Date(currentPaycheckDate.getTime() + (days * 24 * 60 * 60 * 1000));
-
-        dueBills = bills.filter(bill => {
-            const billDate = createLocalDate(bill.dueDate);
-            const isMatch = bill.category === selectedCategory;
-
-            if (!isMatch) return false;
-
-            // Definition of "visible in this period":
-            // 1. Due date falls within [current, next)
-            // 2. OR Due date is in the past AND bill is UNPAID (Overdue)
-            //    BUT only show overdue bills in current or past paycheck views.
-
-            const isInPeriod = billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
-
-            // Carry Forward Logic:
-            // Unpaid bills follow you into the active/past views AND the very next planning view.
-            // But they disappear from far-future views to keep them clean.
-            const activeIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
-            const planningBoundaryIndex = activeIndex + 1;
-            const planningBoundaryDate = payCheckDates[planningBoundaryIndex] || new Date(9999, 0, 1);
-
-            const isOverdueAndUnpaid = !bill.isPaid &&
-                billDate < currentPaycheckDate &&
-                currentPaycheckDate <= planningBoundaryDate;
-
-            return isInPeriod || isOverdueAndUnpaid;
-        }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    if (viewMode !== 'all' && (selectedPaycheck === null || selectedCategory === null)) {
+        billGrid.innerHTML = '<p aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>';
+        return;
     }
-
-    // Apply payment filter
-    if (paymentFilter === 'unpaid') {
-        dueBills = dueBills.filter(bill => !bill.isPaid);
-    } else if (paymentFilter === 'paid') {
-        dueBills = dueBills.filter(bill => bill.isPaid);
-    }
-    // if 'all', no filtering needed
 
     let html = `<div class="bill-grid-container" role="region" aria-label="Bills table">
         <table class="bill-table" role="table" aria-label="List of bills with payment status">

@@ -582,31 +582,77 @@ main {
     font-size: 14px;
 }
 
-.edit-btn {
-    background-color: var(--accent-color);
-    color: white;
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-start;
+    align-items: center;
+    white-space: nowrap;
 }
 
-.delete-btn {
-    background-color: var(--danger-color);
-    color: white;
+.icon-btn {
+    padding: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    min-width: 32px;
+    height: 32px;
+}
+
+.icon-btn:hover {
+    background-color: var(--table-hover);
+    transform: scale(1.15);
+}
+
+.link-btn {
+    color: var(--primary-color);
 }
 
 .pay-btn {
-    background-color: var(--success-color);
-    color: white;
+    color: var(--success-color);
 }
 
 .history-btn {
-    background-color: var(--primary-color);
-    color: white;
+    color: var(--primary-color);
 }
 
-.edit-btn:hover,
-.delete-btn:hover,
-.pay-btn:hover,
-.history-btn:hover {
-    filter: brightness(1.1);
+.edit-btn {
+    color: var(--accent-color);
+}
+
+.delete-btn {
+    color: var(--danger-color);
+}
+
+.dark-mode .link-btn {
+    color: var(--accent-color);
+}
+
+.dark-mode .pay-btn {
+    color: var(--success-color);
+}
+
+.dark-mode .history-btn {
+    color: var(--primary-color);
+}
+
+.dark-mode .edit-btn {
+    color: var(--accent-color);
+}
+
+.dark-mode .delete-btn {
+    color: var(--danger-color);
+}
+
+.icon-btn:hover {
+    filter: brightness(1.2);
 }
 
 #billForm,
@@ -709,7 +755,8 @@ main {
         grid-template-columns: 1fr 1fr;
     }
 
-    .form-group.full-width {
+    .form-group.full-width,
+    .form-group.grid-full {
         grid-column: span 2;
     }
 }
