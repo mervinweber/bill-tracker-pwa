@@ -64,6 +64,24 @@ export const signOut = async () => {
     return { error };
 };
 
+export const resetPassword = async (email) => {
+    console.log('Attempting password reset for:', email);
+    if (!supabase) {
+        console.error('Supabase not initialized for resetPassword');
+        return { error: { message: 'Supabase not initialized' } };
+    }
+    try {
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin
+        });
+        console.log('Reset password response:', { data, error });
+        return { data, error };
+    } catch (err) {
+        console.error('Exception in resetPassword:', err);
+        return { error: err };
+    }
+};
+
 export const getUser = async () => {
     if (!supabase) return null;
     const { data: { user } } = await supabase.auth.getUser();

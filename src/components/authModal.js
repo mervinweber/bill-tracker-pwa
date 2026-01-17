@@ -14,6 +14,7 @@
  * @param {Object} actions - Action handlers object
  * @param {Function} actions.onLogin - Callback for login button click
  * @param {Function} actions.onSignUp - Callback for signup button click
+ * @param {Function} actions.onResetPassword - Callback for password reset link click
  */
 export const initializeAuthModal = (actions) => {
     const modalHTML = `
@@ -35,6 +36,7 @@ export const initializeAuthModal = (actions) => {
                     <div class="auth-input-group">
                         <label for="authPassword">Password</label>
                         <input type="password" id="authPassword" placeholder="••••••••" required>
+                        <button id="forgotPasswordLink" class="auth-link-btn" type="button">Forgot Password?</button>
                     </div>
 
                     <div id="authMessage" class="auth-message"></div>
@@ -112,6 +114,16 @@ export const initializeAuthModal = (actions) => {
 
     loginBtn.onclick = () => handleAuthAction(loginBtn, actions.onLogin);
     signUpBtn.onclick = () => handleAuthAction(signUpBtn, actions.onSignUp);
+
+    document.getElementById('forgotPasswordLink').onclick = () => {
+        const email = emailInput.value.trim();
+        if (!email) {
+            setAuthMessage('Please enter your email address first', true);
+            emailInput.focus();
+            return;
+        }
+        actions.onResetPassword(email);
+    };
 
     // Allow Enter key to submit
     passwordInput.addEventListener('keypress', (e) => {

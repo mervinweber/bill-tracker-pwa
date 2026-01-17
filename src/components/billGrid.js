@@ -1,4 +1,5 @@
 import { createLocalDate } from '../utils/dates.js';
+import { paycheckManager } from '../utils/paycheckManager.js';
 
 /**
  * Initializes the bill grid with empty state message
@@ -55,7 +56,12 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         }
 
         const currentPaycheckDate = payCheckDates[selectedPaycheck];
-        const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
+        const frequency = paycheckManager.paymentSettings.frequency;
+        const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+
+        const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1
+            ? payCheckDates[selectedPaycheck + 1]
+            : new Date(currentPaycheckDate.getTime() + (days * 24 * 60 * 60 * 1000));
 
         dueBills = bills.filter(bill => {
             const billDate = createLocalDate(bill.dueDate);
@@ -63,12 +69,25 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
             if (!isMatch) return false;
 
-            // If it's the first paycheck, include all past due unpaid bills
-            if (selectedPaycheck === 0) {
-                return billDate < nextPaycheckDate && (!bill.isPaid || billDate >= currentPaycheckDate);
-            }
+            // Definition of "visible in this period":
+            // 1. Due date falls within [current, next)
+            // 2. OR Due date is in the past AND bill is UNPAID (Overdue)
+            //    BUT only show overdue bills in current or past paycheck views.
 
-            return billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+            const isInPeriod = billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+
+            // Carry Forward Logic:
+            // Unpaid bills follow you into the active/past views AND the very next planning view.
+            // But they disappear from far-future views to keep them clean.
+            const activeIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
+            const planningBoundaryIndex = activeIndex + 1;
+            const planningBoundaryDate = payCheckDates[planningBoundaryIndex] || new Date(9999, 0, 1);
+
+            const isOverdueAndUnpaid = !bill.isPaid &&
+                billDate < currentPaycheckDate &&
+                currentPaycheckDate <= planningBoundaryDate;
+
+            return isInPeriod || isOverdueAndUnpaid;
         }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     }
 
@@ -128,6 +147,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
                 <td role="cell">${bill.recurrence}</td>
                 <td role="cell">
                     <div class="action-buttons" role="group" aria-label="Actions for ${bill.name}">
+                        ${bill.website ? `<button class="icon-btn link-btn" title="Pay Online" data-url="${bill.website}" aria-label="Pay ${bill.name} online">🔗</button>` : ''}
                         <button class="icon-btn pay-btn" title="Record Payment" data-bill-id="${bill.id}" aria-label="Record payment for ${bill.name}">💳</button>
                         <button class="icon-btn history-btn" title="View History" data-bill-id="${bill.id}" aria-label="View payment history for ${bill.name}">📜</button>
                         <button class="icon-btn edit-btn" title="Edit" data-bill-id="${bill.id}" aria-label="Edit ${bill.name}">✏️</button>
@@ -149,6 +169,12 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     });
     document.querySelectorAll('.payment-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', (e) => actions.onTogglePayment(e.target.dataset.billId, e.target.checked));
+    });
+    document.querySelectorAll('.link-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const url = e.target.closest('button').dataset.url;
+            if (url) window.open(url, '_blank');
+        });
     });
     document.querySelectorAll('.pay-btn').forEach(btn => {
         btn.addEventListener('click', (e) => actions.onRecordPayment(e.target.closest('button').dataset.billId));

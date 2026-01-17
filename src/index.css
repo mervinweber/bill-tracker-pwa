@@ -1416,3 +1416,71 @@ input:checked+.slider:before {
         padding: 1.5rem;
     }
 }
+
+.auth-link-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 5px;
+    text-decoration: underline;
+    display: inline-block;
+    transition: color 0.2s;
+}
+
+.auth-link-btn:hover {
+    color: var(--primary-hover);
+}
+
+.dark-mode .auth-link-btn {
+    color: var(--accent-color);
+}
+
+.dark-mode .auth-link-btn:hover {
+    color: var(--accent-hover);
+}
+
+/* Bulk Actions in Sidebar */
+.bulk-actions {
+    margin: 1.5rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .bulk-actions {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bulk-actions h3 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-color);
+    opacity: 0.7;
+    margin-bottom: 0.75rem;
+}
+
+.bulk-btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    justify-content: center;
+    font-weight: 500;
+}
+
+.bulk-btn.danger {
+    background: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+}
+
+.bulk-btn.danger:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+.dark-mode .bulk-btn.danger:hover {
+    background: #ff4d4d;
+    border-color: #ff4d4d;
+}

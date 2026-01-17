@@ -7,6 +7,7 @@
 import { appState } from './store/appState.js';
 import { billStore } from './store/BillStore.js';
 import { paycheckManager } from './utils/paycheckManager.js';
+import { createLocalDate } from './utils/dates.js';
 
 import { initializeHeader, updateHeaderUI } from './components/header.js';
 import { initializeSidebar } from './components/sidebar.js';
@@ -21,6 +22,8 @@ import { initializeAnalyticsView, renderAnalytics, cleanupCharts } from './views
 import {
     billActionHandlers,
     validateBill,
+    bulkDelete,
+    bulkMarkAsPaid,
     migrateBillsToPaymentHistory
 } from './handlers/billActionHandlers.js';
 import { settingsHandlers } from './handlers/settingsHandler.js';
@@ -31,6 +34,7 @@ import {
     signIn,
     signUp,
     signOut,
+    resetPassword,
     syncBills,
     fetchCloudBills
 } from './services/supabase.js';
@@ -96,17 +100,30 @@ class AppOrchestrator {
                 onExportData: () => this.handleExportData(),
                 onImportData: (file) => this.handleImportData(file),
                 onOpenAuth: () => openAuthModal(),
-                onLogout: () => this.handleLogout()
+                onLogout: () => this.handleLogout(),
+                onBulkDelete: () => this.handleBulkDelete(),
+                onBulkMarkPaid: () => this.handleBulkMarkPaid()
             });
 
             // Fetch cloud data if logged in
             if (user) {
+                console.log('Diagnostic: User logged in:', user.email);
                 const { data, error } = await fetchCloudBills();
                 if (data && data.length > 0) {
-                    console.log('Fetched bills from cloud:', data.length);
+                    console.log(`Diagnostic: Found ${data.length} bills in cloud. Updating local store.`);
                     billStore.setBills(data);
+                } else {
+                    console.log('Diagnostic: No bills found in cloud (or empty).');
+                    if (error) console.error('Cloud fetch error:', error);
                 }
+            } else {
+                console.log('Diagnostic: No user logged in.');
             }
+
+            console.log(`Diagnostic: Total bills in store: ${billStore.getAll().length}`);
+            const categoriesFound = [...new Set(billStore.getAll().map(b => b.category))];
+            console.log(`Diagnostic: Categories detected: ${categoriesFound.join(', ')}`);
+            console.log('Diagnostic: Current app state category:', appState.getState('selectedCategory'));
 
             initializeBillForm(this.categories, {
                 onSaveBill: () => this.handleSaveBill()
@@ -114,7 +131,8 @@ class AppOrchestrator {
 
             initializeAuthModal({
                 onLogin: (email, password) => this.handleLogin(email, password),
-                onSignUp: (email, password) => this.handleSignUp(email, password)
+                onSignUp: (email, password) => this.handleSignUp(email, password),
+                onResetPassword: (email) => this.handleResetPassword(email)
             });
 
             // Initialize payment modals
@@ -331,7 +349,8 @@ class AppOrchestrator {
             amountDue: '',
             balance: '',
             recurrence: '',
-            notes: ''
+            notes: '',
+            website: ''
         });
     }
 
@@ -342,7 +361,7 @@ class AppOrchestrator {
             const existingBill = id ? bills.find(b => b.id === id) : null;
 
             let dueDateString = document.getElementById('billDueDate').value;
-            
+
             // Snap bill date to closest paycheck if it falls outside the paycheck range
             const billDueDate = new Date(dueDateString);
             const snappedDate = paycheckManager.snapBillDateToPaycheck(billDueDate);
@@ -359,6 +378,7 @@ class AppOrchestrator {
                     : parseFloat(document.getElementById('billAmountDue').value),
                 recurrence: document.getElementById('billRecurrence').value,
                 notes: document.getElementById('billNotes').value,
+                website: document.getElementById('billWebsite').value,
                 isPaid: existingBill ? existingBill.isPaid || false : false,
                 lastPaymentDate: existingBill ? existingBill.lastPaymentDate || null : null,
                 paymentHistory: existingBill ? existingBill.paymentHistory || [] : []
@@ -429,15 +449,7 @@ class AppOrchestrator {
         const bills = billStore.getAll();
         const bill = bills.find(b => b.id === billId);
         if (bill) {
-            document.getElementById('billId').value = bill.id;
-            document.getElementById('billCategory').value = bill.category;
-            document.getElementById('billName').value = bill.name;
-            document.getElementById('billDueDate').value = bill.dueDate;
-            document.getElementById('billAmountDue').value = bill.amountDue || 0;
-            document.getElementById('billBalance').value = bill.balance || 0;
-            document.getElementById('billRecurrence').value = bill.recurrence;
-            document.getElementById('billNotes').value = bill.notes || '';
-            openBillForm();
+            openBillForm(bill);
         }
     }
 
@@ -577,6 +589,90 @@ class AppOrchestrator {
         await signOut();
         localStorage.removeItem('userEmail');
         window.location.reload();
+    }
+
+    async handleResetPassword(email) {
+        console.log('AppOrchestrator: handleResetPassword called for', email);
+        setAuthMessage('Sending reset email...', false);
+        try {
+            const { error } = await resetPassword(email);
+            if (error) {
+                console.error('Reset password error:', error);
+                setAuthMessage(error.message || 'Failed to send reset email', true);
+            } else {
+                console.log('Reset email sent successfully');
+                setAuthMessage('Success! Check your inbox (and Spam folder).', false);
+            }
+        } catch (err) {
+            console.error('Unexpected error during password reset:', err);
+            setAuthMessage('An unexpected error occurred. Check the console.', true);
+        }
+    }
+
+    handleBulkDelete() {
+        const bills = billStore.getAll();
+        const ids = bills.map(b => b.id);
+        if (bulkDelete(ids)) {
+            this.rerender();
+        }
+    }
+
+    handleBulkMarkPaid() {
+        const bills = billStore.getAll();
+        const state = appState.getState();
+        const { viewMode, selectedPaycheck, selectedCategory, paymentFilter } = state;
+        const payCheckDates = paycheckManager.payCheckDates;
+
+        let visibleBills = [];
+
+        if (viewMode === 'all') {
+            visibleBills = [...bills];
+        } else {
+            if (selectedPaycheck === null || selectedCategory === null) return;
+
+            const currentPayDate = payCheckDates[selectedPaycheck];
+            const frequency = paycheckManager.paymentSettings.frequency;
+            const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+
+            const nextPayDate = selectedPaycheck < payCheckDates.length - 1
+                ? payCheckDates[selectedPaycheck + 1]
+                : new Date(currentPayDate.getTime() + (days * 24 * 60 * 60 * 1000));
+
+            visibleBills = bills.filter(bill => {
+                const billDate = createLocalDate(bill.dueDate);
+                const isMatch = bill.category === selectedCategory;
+                if (!isMatch) return false;
+
+                const isInPeriod = billDate >= currentPayDate && billDate < nextPayDate;
+
+                const activeIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
+                const planningBoundaryIndex = activeIndex + 1;
+                const planningBoundaryDate = payCheckDates[planningBoundaryIndex] || new Date(9999, 0, 1);
+
+                const isOverdueAndUnpaid = !bill.isPaid &&
+                    billDate < currentPayDate &&
+                    currentPayDate <= planningBoundaryDate;
+                return isInPeriod || isOverdueAndUnpaid;
+            });
+        }
+
+        // Apply same payment filter as grid (though mark paid only makes sense for unpaid)
+        if (paymentFilter === 'unpaid') {
+            visibleBills = visibleBills.filter(bill => !bill.isPaid);
+        } else if (paymentFilter === 'paid') {
+            visibleBills = visibleBills.filter(bill => bill.isPaid);
+        }
+
+        const ids = visibleBills.filter(b => !b.isPaid).map(b => b.id);
+
+        if (ids.length === 0) {
+            billActionHandlers.showErrorNotification('No unpaid bills visible to mark as paid.', 'Bulk Action');
+            return;
+        }
+
+        if (bulkMarkAsPaid(ids)) {
+            this.rerender();
+        }
     }
 
     handleToggleTheme() {

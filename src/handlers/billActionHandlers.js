@@ -197,6 +197,97 @@ export function deleteBill(billId) {
 }
 
 /**
+ * Bulk delete bills
+ */
+export function bulkDelete(billIds) {
+    try {
+        console.log('bulkDelete called with IDs:', billIds);
+        if (!billIds || billIds.length === 0) {
+            showErrorNotification('No bills selected to delete.', 'Bulk Action');
+            return false;
+        }
+
+        if (!confirm(`Delete ${billIds.length} bills? This action cannot be undone.`)) {
+            return false;
+        }
+
+        const currentBills = billStore.getAll();
+        const updatedBills = currentBills.filter(b => !billIds.includes(b.id));
+
+        billStore.setBills(updatedBills);
+        showSuccessNotification(`Successfully deleted ${billIds.length} bills`);
+        return true;
+    } catch (error) {
+        console.error('Error in bulk delete:', error);
+        showErrorNotification(error.message, 'Bulk Delete Failed');
+        return false;
+    }
+}
+
+/**
+ * Bulk mark bills as paid
+ */
+export function bulkMarkAsPaid(billIds) {
+    try {
+        console.log('bulkMarkAsPaid called with IDs:', billIds);
+        if (!billIds || billIds.length === 0) {
+            showErrorNotification('No bills currently showing to mark as paid.', 'Bulk Action');
+            return false;
+        }
+
+        if (!confirm(`Mark ${billIds.length} bills as paid?`)) {
+            return false;
+        }
+
+        const currentBills = [...billStore.getAll()];
+        let updateCount = 0;
+        const now = new Date().toISOString();
+        const todayStr = now.split('T')[0];
+
+        billIds.forEach(id => {
+            const index = currentBills.findIndex(b => b.id === id);
+            if (index !== -1 && !currentBills[index].isPaid) {
+                const bill = { ...currentBills[index] };
+                bill.isPaid = true;
+                bill.lastPaymentDate = now;
+
+                // Record payment if there is balance
+                const remaining = getRemainingBalance(bill);
+                if (remaining > 0) {
+                    if (!bill.paymentHistory) bill.paymentHistory = [];
+                    bill.paymentHistory.push({
+                        id: 'bulk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        date: todayStr,
+                        amount: remaining,
+                        method: 'Bulk Action',
+                        notes: 'Marked as paid via bulk action'
+                    });
+                    bill.balance = 0;
+                }
+
+                currentBills[index] = bill;
+                updateCount++;
+            }
+        });
+
+        console.log(`Diagnostic: Preparing to update ${updateCount} bills. Total bills: ${currentBills.length}`);
+
+        if (updateCount > 0) {
+            billStore.setBills(currentBills);
+            showSuccessNotification(`Marked ${updateCount} bills as paid`);
+            return true;
+        } else {
+            showErrorNotification('All selected bills are already marked as paid.', 'Bulk Action');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error in bulk mark as paid:', error);
+        showErrorNotification(error.message, 'Bulk Update Failed');
+        return false;
+    }
+}
+
+/**
  * Get total paid from payment history
  */
 export function getTotalPaid(bill) {
@@ -493,6 +584,8 @@ export const billActionHandlers = {
     exportData,
     importData,
     validateBill,
+    bulkDelete,
+    bulkMarkAsPaid,
     showErrorNotification,
     showSuccessNotification
 };

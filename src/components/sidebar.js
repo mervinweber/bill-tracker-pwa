@@ -10,6 +10,8 @@
  * @param {Function} actions.onImportData - Called when user selects a file to import (receives File object)
  * @param {Function} actions.onLogout - Called when user clicks "Logout" button
  * @param {Function} actions.onOpenAuth - Called when user clicks "Login" button
+ * @param {Function} actions.onBulkDelete - Called when user clicks "Clear All Data" button
+ * @param {Function} actions.onBulkMarkPaid - Called when user clicks "Mark All Paid" button
  * @returns {void}
  * @description Sets up the sidebar with:
  *   - Category list with keyboard navigation (arrow keys)
@@ -34,16 +36,22 @@ export const initializeSidebar = (categories, actions) => {
         html += `<li><button class="category-btn" data-category="${cat}" role="menuitemradio" aria-checked="false" tabindex="${idx === 0 ? '0' : '-1'}">${cat}</button></li>`;
     });
     html += '</ul>';
-    
+
     html += '<div class="sidebar-actions">';
     html += '<button id="addBillBtn" class="add-bill-btn" aria-label="Add a new bill">➕ Add Bill</button>';
     html += '<button id="regenerateBillsBtn" class="regenerate-btn" aria-label="Regenerate all recurring bills for the next pay period" title="Regenerate all recurring bills">🔄 Regenerate</button>';
     html += '</div>';
-    
+
     html += '<div class="backup-controls" role="region" aria-label="Data backup controls">';
     html += '<button id="exportDataBtn" class="action-btn" aria-label="Export bills data to JSON file">⬇️ Export</button>';
     html += '<button id="importDataBtn" class="action-btn" aria-label="Import bills data from JSON file">⬆️ Import</button>';
     html += '<input type="file" id="importFileInput" accept=".json" style="display: none;" aria-label="Select JSON file to import">';
+    html += '</div>';
+
+    html += '<div class="bulk-actions" role="region" aria-label="Bulk actions">';
+    html += '<h3>Bulk Actions</h3>';
+    html += '<button id="bulkMarkPaidBtn" class="action-btn bulk-btn" aria-label="Mark all visible bills as paid">✅ Mark All Paid</button>';
+    html += '<button id="bulkDeleteBtn" class="action-btn bulk-btn danger" aria-label="Delete all bill data">🗑️ Clear All Data</button>';
     html += '</div>';
 
     // Theme Toggle HTML
@@ -104,7 +112,7 @@ export const initializeSidebar = (categories, actions) => {
             e.target.focus();
             actions.onCategorySelect(e.target.dataset.category);
         });
-        
+
         // Keyboard navigation for categories (arrow keys)
         btn.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown') {
@@ -144,4 +152,7 @@ export const initializeSidebar = (categories, actions) => {
             fileInput.value = ''; // Reset so same file can be selected again
         }
     });
+
+    document.getElementById('bulkMarkPaidBtn').onclick = () => actions.onBulkMarkPaid();
+    document.getElementById('bulkDeleteBtn').onclick = () => actions.onBulkDelete();
 };

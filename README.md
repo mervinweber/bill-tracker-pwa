@@ -169,6 +169,7 @@ You can bulk import bills by uploading a JSON file. The system will automaticall
 | **`amountDue`**| Number | Yes | The total amount of the bill. |
 | **`recurrence`**| String | Yes | Values: `One-time`, `Weekly`, `Bi-weekly`, `Monthly`, `Yearly`. |
 | **`notes`** | String | No | Optional additional details. |
+| **`website`** | String | No | Optional URL for payment/login. |
 | **`balance`** | Number | No | Defaults to `amountDue` if omitted. |
 | **`isPaid`** | Boolean| No | Defaults to `false` if omitted. |
 | **`id`** | String | No | **Auto-generated** if omitted. Safe to leave blank. |
@@ -179,7 +180,7 @@ If you have your bills in Excel or Google Sheets, you can easily convert them to
 
 ### 1. Prepare your Spreadsheet
 Create a spreadsheet with the following headers:
-`Name, Category, Due Date, Amount, Recurrence, Notes`
+`Name, Category, Due Date, Amount, Recurrence, Notes, Website`
 
 ### 2. Export as CSV
 Save your spreadsheet as `bills.csv` in the project root.

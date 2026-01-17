@@ -67,6 +67,12 @@ export const initializeBillForm = (categories, actions) => {
                     <span id="recurrenceHelp" class="sr-only">Select how often this bill recurs</span>
                 </div>
                 
+                <div class="form-group grid-full">
+                    <label for="billWebsite">Website / Login URL:</label>
+                    <input type="url" id="billWebsite" placeholder="https://..." aria-describedby="websiteHelp">
+                    <span id="websiteHelp" class="sr-only">Enter the website where you pay this bill</span>
+                </div>
+
                 <div class="form-group">
                     <label for="billNotes">Notes:</label>
                     <textarea id="billNotes" rows="3" placeholder="Add any notes or comments..." aria-describedby="notesHelp"></textarea>
@@ -125,7 +131,8 @@ export const initializeBillForm = (categories, actions) => {
             amountDue: amount,
             balance: parseFloat(document.getElementById('billBalance').value),
             recurrence: document.getElementById('billRecurrence').value,
-            notes: document.getElementById('billNotes').value
+            notes: document.getElementById('billNotes').value,
+            website: document.getElementById('billWebsite').value
         };
         actions.onSaveBill(billData);
     });
@@ -149,7 +156,8 @@ export const openBillForm = (bill) => {
         amountDue: 0,
         balance: 0,
         recurrence: 'One-time',
-        notes: ''
+        notes: '',
+        website: ''
     };
 
     document.getElementById('billId').value = billData.id;
@@ -160,6 +168,7 @@ export const openBillForm = (bill) => {
     document.getElementById('billBalance').value = billData.balance || 0;
     document.getElementById('billRecurrence').value = billData.recurrence;
     document.getElementById('billNotes').value = billData.notes || '';
+    document.getElementById('billWebsite').value = billData.website || '';
     document.getElementById('billForm').style.display = 'block';
     document.getElementById('billCategory').focus();
 };
