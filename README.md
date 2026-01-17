@@ -4,14 +4,15 @@
 The Bill Tracker PWA is a Progressive Web Application designed to help users keep track of their bills due each pay period. It features a user-friendly interface that allows users to manage their bills efficiently.
 
 ## Features
-- A header displaying the title and a list of payroll checks.
-- A sidebar with predefined categories for bills.
-- A main grid for displaying bills, including:
-  - Bill name
-  - Due date
-  - Recurrence frequency
-  - Balance tracking
-- A form for adding or editing bills.
+- **Unified Dashboard**: View total due, paid, and overdue bills at a glance.
+- **Dynamic Views**:
+  - **📋 List View**: Detailed table with balance tracking and payment toggles.
+  - **📅 Calendar View**: Monthly grid with color-coded bill indicators.
+  - **📊 Analytics View**: Spending breakdown by category and 6-month historical trends.
+- **Paycheck Synchronization**: Views automatically sync to your selected pay period date range.
+- **Cloud Sync**: Securely sync your data across devices using Supabase.
+- **Theme Engine**: Robust Dark Mode and Light Mode support.
+- **PWA Core**: Installable on mobile/desktop with offline support.
 
 ## Project Structure
 ```
@@ -47,15 +48,10 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
     *   Track partial payments.
     *   View full payment history for any bill.
     *   Auto-select current pay period.
-*   **Cloud Sync**: Integrated with **Supabase** to sync your data across all your devices.
-*   **Theme Engine**: Built-in Dark Mode & Light Mode with persistent preferences.
-*   **Interactive Calendar View**: View your monthly bills at a glance with color-coded status indicators.
-*   **Visual Analytics**: Visualize your spending habits with interactive charts:
-    *   **Spending by Category**: Doughnut chart breaking down expenses.
-    *   **Monthly Trends**: Bar chart showing payment history over the last 6 months.
 *   **Data Safety**:
     *   Persistent local storage.
     *   Automatic local backup.
+    *   Cloud synchronization via Supabase.
 
 ## 🛠️ Setup & Configuration
 
@@ -125,17 +121,79 @@ To enable Cloud Sync, you need to provide your own free Supabase credentials.
 
 Here is where we left off and what you can tackle next:
 
-1.  **Visualize Spending**: Add a charts library (like Chart.js) to visualize spending breakdown by category.
-2.  **Push Notifications**: Use the Web Push API to send reminders when bills are due.
-3.  **Mobile Polish**: Add swipe gestures for "Quick Pay" on mobile devices.
+1.  **Push Notifications**: Use the Web Push API to send reminders when bills are due.
+2.  **Mobile Polish**: Add swipe gestures for "Quick Pay" on mobile devices.
+3.  **Bill Splitting**: Add functionality to split bills with other users.
 
 ## 📂 Project Structure
 
-*   `src/index.js` - Main controller and app orchestrator.
+*   `src/app.js` - Main controller and app orchestrator.
 *   `src/components/` - UI modules (Sidebar, Header, BillGrid, AuthModal).
 *   `src/services/` - Supabase integration.
 *   `src/utils/` - Helpers for date calculation and storage.
 *   `public/service-worker.js` - PWA caching logic.
+
+## 💾 JSON Import Specification
+
+You can bulk import bills by uploading a JSON file. The system will automatically handle unique ID generation, so you don't need to provide them in your source file.
+
+### Basic Payload Format
+```json
+{
+  "bills": [
+    {
+      "name": "Electric Bill",
+      "category": "Utilities",
+      "dueDate": "2026-02-01",
+      "amountDue": 150.00,
+      "recurrence": "Monthly"
+    },
+    {
+      "name": "Rent",
+      "category": "Rent",
+      "dueDate": "2026-02-01",
+      "amountDue": 1200.00,
+      "recurrence": "Monthly"
+    }
+  ]
+}
+```
+
+### Field Definitions
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| **`name`** | String | Yes | The display name of the bill. |
+| **`category`** | String | Yes | Must match one of your categories (e.g., "Utilities", "Rent"). |
+| **`dueDate`** | String | Yes | Format: `YYYY-MM-DD`. |
+| **`amountDue`**| Number | Yes | The total amount of the bill. |
+| **`recurrence`**| String | Yes | Values: `One-time`, `Weekly`, `Bi-weekly`, `Monthly`, `Yearly`. |
+| **`notes`** | String | No | Optional additional details. |
+| **`balance`** | Number | No | Defaults to `amountDue` if omitted. |
+| **`isPaid`** | Boolean| No | Defaults to `false` if omitted. |
+| **`id`** | String | No | **Auto-generated** if omitted. Safe to leave blank. |
+
+## 📊 Importing from Spreadsheets (CSV)
+
+If you have your bills in Excel or Google Sheets, you can easily convert them to the required JSON format using the provided utility script.
+
+### 1. Prepare your Spreadsheet
+Create a spreadsheet with the following headers:
+`Name, Category, Due Date, Amount, Recurrence, Notes`
+
+### 2. Export as CSV
+Save your spreadsheet as `bills.csv` in the project root.
+
+### 3. Run the Conversion Script
+```bash
+python3 scripts/csv_to_json.py
+```
+This will create a file named `bills-import.json`.
+
+### 4. Import into App
+1. Open the Bill Tracker PWA.
+2. Go to **Settings** or **Sidebar** > **Import Data**.
+3. Select the `bills-import.json` file.
 
 ## Contributing
 Contributions are welcome! Please submit a pull request or open an issue for any enhancements or bug fixes.

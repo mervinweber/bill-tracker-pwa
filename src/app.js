@@ -140,6 +140,12 @@ class AppOrchestrator {
                 this.handleCloudSync(bills);
             });
 
+            // Auto-select current pay period if none selected
+            if (appState.getState('selectedPaycheck') === null) {
+                const autoIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
+                appState.setSelectedPaycheck(autoIndex);
+            }
+
             // Initial render
             this.rerender();
 
@@ -190,8 +196,19 @@ class AppOrchestrator {
             'Insurance',
             'Entertainment'
         ];
-        this.categories =
-            JSON.parse(localStorage.getItem('customCategories')) || [...DEFAULT_CATEGORIES];
+
+        // Get from storage
+        let categories = JSON.parse(localStorage.getItem('customCategories')) || [...DEFAULT_CATEGORIES];
+
+        // Safety check: ensure categories from existing bills are included
+        const bills = billStore.getAll();
+        if (bills.length > 0) {
+            const billCats = [...new Set(bills.map(b => b.category))].filter(c => c && c.trim() !== '');
+            categories = [...new Set([...categories, ...billCats])];
+        }
+
+        this.categories = categories;
+        localStorage.setItem('customCategories', JSON.stringify(categories));
     }
 
     /**

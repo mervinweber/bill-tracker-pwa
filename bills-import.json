@@ -1,0 +1,358 @@
+{
+  "exportDate": "2026-01-16T19:12:53.120256Z",
+  "version": "1.0",
+  "bills": [
+    {
+      "name": "Penny / House Clean  Week 1",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-15",
+      "amountDue": 80.0,
+      "recurrence": "Bi-weekly",
+      "notes": "Pay via portal"
+    },
+    {
+      "name": "Home Telecom",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-11-25",
+      "amountDue": 104.95,
+      "recurrence": "Monthly",
+      "notes": "Auto-pay"
+    },
+    {
+      "name": "Penny / House Clean Week 3",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-29",
+      "amountDue": 80.0,
+      "recurrence": "Bi-weekly",
+      "notes": ""
+    },
+    {
+      "name": "Berkley Electric",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-27",
+      "amountDue": 150.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Newrez / Mortgage",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2026-01-01",
+      "amountDue": 1773.95,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Google 1 Drive - Mervin",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-05",
+      "amountDue": 3.26,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Simpli Safe",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-08",
+      "amountDue": 31.99,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Bcwsa / Water",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2026-01-09",
+      "amountDue": 76.55,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Grass Cutting week 1",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2026-05-01",
+      "amountDue": 0.0,
+      "recurrence": "Bi-weekly",
+      "notes": ""
+    },
+    {
+      "name": "Mint Mobile - Kylee",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2026-01-27",
+      "amountDue": 75.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Mint Mobile",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-13",
+      "amountDue": 90.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Grass Cutting week 3",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2026-05-01",
+      "amountDue": 0.0,
+      "recurrence": "Bi-weekly",
+      "notes": ""
+    },
+    {
+      "name": "Carolina Waste",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-15",
+      "amountDue": 45.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Mint - Mervin",
+      "category": "House Items (Utilities and mortgage)",
+      "dueDate": "2025-12-09",
+      "amountDue": 210.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Karate",
+      "category": "Daycare / Afterschool",
+      "dueDate": "2026-01-30",
+      "amountDue": 86.0,
+      "recurrence": "Weekly",
+      "notes": ""
+    },
+    {
+      "name": "Karate",
+      "category": "Daycare / Afterschool",
+      "dueDate": "2026-02-06",
+      "amountDue": 86.0,
+      "recurrence": "Weekly",
+      "notes": ""
+    },
+    {
+      "name": "Karate",
+      "category": "Daycare / Afterschool",
+      "dueDate": "2025-11-14",
+      "amountDue": 86.0,
+      "recurrence": "Weekly",
+      "notes": ""
+    },
+    {
+      "name": "Karate",
+      "category": "Daycare / Afterschool",
+      "dueDate": "2025-11-21",
+      "amountDue": 86.0,
+      "recurrence": "Weekly",
+      "notes": ""
+    },
+    {
+      "name": "IQIY",
+      "category": "Entertainment",
+      "dueDate": "2025-11-01",
+      "amountDue": 11.99,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Amazon prime",
+      "category": "Entertainment",
+      "dueDate": "2025-11-14",
+      "amountDue": 7.62,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Spotify",
+      "category": "Entertainment",
+      "dueDate": "2025-11-18",
+      "amountDue": 6.53,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Netflix",
+      "category": "Entertainment",
+      "dueDate": "2025-11-23",
+      "amountDue": 20.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Disney Plus",
+      "category": "Entertainment",
+      "dueDate": "2025-11-28",
+      "amountDue": 18.52,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Viki - Via Play Store",
+      "category": "Entertainment",
+      "dueDate": "2025-11-01",
+      "amountDue": 10.89,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Bridgecrest / Acadia",
+      "category": "Car related stuff",
+      "dueDate": "2025-12-27",
+      "amountDue": 235.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Frontier",
+      "category": "Car related stuff",
+      "dueDate": "2025-12-21",
+      "amountDue": 557.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "progressive Car Insurance",
+      "category": "Car related stuff",
+      "dueDate": "2025-11-28",
+      "amountDue": 175.04,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Camper Insurance",
+      "category": "Car related stuff",
+      "dueDate": "2026-11-16",
+      "amountDue": 26.49,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Camper",
+      "category": "Car related stuff",
+      "dueDate": "2025-11-15",
+      "amountDue": 198.8,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "ISPY",
+      "category": "Fun/Personal/Vacation Items",
+      "dueDate": "2025-11-02",
+      "amountDue": 16.34,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "YMCA",
+      "category": "Fun/Personal/Vacation Items",
+      "dueDate": "2025-12-02",
+      "amountDue": 54.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Trmobone Rental",
+      "category": "Fun/Personal/Vacation Items",
+      "dueDate": "2025-12-06",
+      "amountDue": 42.5,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Affirm - Angileigh",
+      "category": "Fun/Personal/Vacation Items",
+      "dueDate": "2025-12-06",
+      "amountDue": 87.74,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Affirm - Mervin",
+      "category": "Fun/Personal/Vacation Items",
+      "dueDate": "2025-12-03",
+      "amountDue": 234.04,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Discover Credit card",
+      "category": "Credit Cards",
+      "dueDate": "2025-11-18",
+      "amountDue": 63.0,
+      "recurrence": "Monthly",
+      "notes": "4018.35"
+    },
+    {
+      "name": "Lowes credit card - Mervin",
+      "category": "Credit Cards",
+      "dueDate": "2025-12-02",
+      "amountDue": 26.0,
+      "recurrence": "Monthly",
+      "notes": "838.80"
+    },
+    {
+      "name": "Capital One",
+      "category": "Credit Cards",
+      "dueDate": "2025-12-03",
+      "amountDue": 31.42,
+      "recurrence": "Monthly",
+      "notes": "281.50"
+    },
+    {
+      "name": "BOA",
+      "category": "Credit Cards",
+      "dueDate": "2025-08-05",
+      "amountDue": 400.0,
+      "recurrence": "Monthly",
+      "notes": "4900.00"
+    },
+    {
+      "name": "Citi Credit",
+      "category": "Credit Cards",
+      "dueDate": "2025-12-04",
+      "amountDue": 100.0,
+      "recurrence": "Monthly",
+      "notes": "10342.34"
+    },
+    {
+      "name": "USAA",
+      "category": "Credit Cards",
+      "dueDate": "2025-12-25",
+      "amountDue": 0.0,
+      "recurrence": "Monthly",
+      "notes": ""
+    },
+    {
+      "name": "Citi Credit - 2",
+      "category": "Credit Cards",
+      "dueDate": "2025-12-25",
+      "amountDue": 0.0,
+      "recurrence": "Monthly",
+      "notes": "704.20"
+    },
+    {
+      "name": "Lowes credit card - Angil",
+      "category": "Credit Cards",
+      "dueDate": "2025-12-19",
+      "amountDue": 47.0,
+      "recurrence": "Monthly",
+      "notes": "469.66"
+    },
+    {
+      "name": "Google Store card",
+      "category": "Credit Cards",
+      "dueDate": "2025-10-03",
+      "amountDue": 12.08,
+      "recurrence": "Monthly",
+      "notes": ""
+    }
+  ],
+  "customCategories": [
+    "Car related stuff",
+    "Credit Cards",
+    "Daycare / Afterschool",
+    "Entertainment",
+    "Fun/Personal/Vacation Items",
+    "House Items (Utilities and mortgage)"
+  ]
+}

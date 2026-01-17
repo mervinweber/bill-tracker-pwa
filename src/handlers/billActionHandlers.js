@@ -32,8 +32,8 @@ import { formatErrorMessage, ValidationError } from '../utils/errorHandling.js';
 export function showErrorNotification(message, title = 'Error') {
     try {
         // Format message for user display
-        const displayMessage = message instanceof Error 
-            ? formatErrorMessage(message) 
+        const displayMessage = message instanceof Error
+            ? formatErrorMessage(message)
             : message;
 
         const notification = document.createElement('div');
@@ -385,19 +385,49 @@ export function importData(file) {
                         throw new Error('File contains no bills to import.');
                     }
 
+                    // Process bills: Generate IDs and ensure structure
+                    const processedBills = data.bills.map(bill => {
+                        // Generate a unique ID if missing or seems like a placeholder
+                        // We use Date.now() + a random string for uniqueness
+                        const newBill = { ...bill };
+
+                        if (!newBill.id) {
+                            newBill.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                        }
+
+                        // Ensure required fields have at least empty values/defaults
+                        if (!newBill.paymentHistory) newBill.paymentHistory = [];
+                        if (newBill.isPaid === undefined) newBill.isPaid = false;
+                        if (newBill.balance === undefined) newBill.balance = newBill.amountDue || 0;
+
+                        return newBill;
+                    });
+
                     // Import data
-                    if (data.bills) {
-                        billStore.setBills(data.bills);
-                    }
-                    if (Array.isArray(data.customCategories) && data.customCategories.length > 0) {
-                        localStorage.setItem('customCategories', JSON.stringify(data.customCategories));
-                    }
+                    billStore.setBills(processedBills);
+
+                    // Sync custom categories from imported bills if not explicitly provided
+                    // Sync custom categories from imported bills
+                    const defaultCategories = ['Rent', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Entertainment'];
+                    const existingCategories = JSON.parse(localStorage.getItem('customCategories')) || defaultCategories;
+
+                    const billCategories = [...new Set(processedBills.map(b => b.category))].filter(c => c && c.trim() !== '');
+                    const importedMetadataCategories = data.customCategories || [];
+
+                    const allCategories = [...new Set([
+                        ...existingCategories,
+                        ...billCategories,
+                        ...importedMetadataCategories
+                    ])];
+
+                    localStorage.setItem('customCategories', JSON.stringify(allCategories));
+
                     if (data.paymentSettings && typeof data.paymentSettings === 'object') {
                         localStorage.setItem('paymentSettings', JSON.stringify(data.paymentSettings));
                     }
 
                     showSuccessNotification(
-                        `Successfully imported ${data.bills.length} bill(s). Refreshing...`
+                        `Successfully imported ${processedBills.length} bill(s). Refreshing...`
                     );
                     setTimeout(() => window.location.reload(), 1500);
                     resolve(true);

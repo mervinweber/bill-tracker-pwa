@@ -1,3 +1,5 @@
+import { createLocalDate } from '../utils/dates.js';
+
 /**
  * Initializes the bill grid with empty state message
  * 
@@ -56,8 +58,17 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1 ? payCheckDates[selectedPaycheck + 1] : new Date(2026, 2, 5);
 
         dueBills = bills.filter(bill => {
-            const billDate = new Date(bill.dueDate);
-            return bill.category === selectedCategory && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+            const billDate = createLocalDate(bill.dueDate);
+            const isMatch = bill.category === selectedCategory;
+
+            if (!isMatch) return false;
+
+            // If it's the first paycheck, include all past due unpaid bills
+            if (selectedPaycheck === 0) {
+                return billDate < nextPaycheckDate && (!bill.isPaid || billDate >= currentPaycheckDate);
+            }
+
+            return billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
         }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     }
 
