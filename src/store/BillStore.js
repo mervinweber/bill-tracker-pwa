@@ -22,6 +22,7 @@
  */
 
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
+import { queueOfflineTransaction } from '../utils/indexedDBUtils.js';
 
 /**
  * Bill Store Class
@@ -83,8 +84,16 @@ class BillStore {
      * // Automatically called after bill modifications
      * store.add(newBill); // Calls save() internally
      */
-    save() {
+    save(action = 'update', data = null) {
         localStorage.setItem('bills', JSON.stringify(this.bills));
+
+        // Queue for offline sync if needed (especially for Supabase)
+        if (data) {
+            queueOfflineTransaction({ action, data }).catch(err => {
+                console.error('Failed to queue offline transaction:', err);
+            });
+        }
+
         this.notify();
     }
 
@@ -156,7 +165,7 @@ class BillStore {
             // Refactor Strategy: Move Logic HERE.
             this.bills.push(bill);
         }
-        this.save();
+        this.save('add', bill);
     }
 
     /**
@@ -196,7 +205,7 @@ class BillStore {
         const index = this.bills.findIndex(b => b.id === updatedBill.id);
         if (index !== -1) {
             this.bills[index] = updatedBill;
-            this.save();
+            this.save('update', updatedBill);
         }
     }
 
@@ -216,8 +225,9 @@ class BillStore {
      * store.delete("1702681200000"); // Delete specific bill
      */
     delete(id) {
+        const billToDelete = this.bills.find(b => b.id === id);
         this.bills = this.bills.filter(b => b.id !== id);
-        this.save();
+        this.save('delete', { id });
     }
 
     /**

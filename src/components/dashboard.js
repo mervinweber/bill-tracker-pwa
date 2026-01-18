@@ -133,3 +133,4 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         </div>
     `;
 };
+
