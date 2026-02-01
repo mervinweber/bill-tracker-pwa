@@ -219,7 +219,7 @@ class AppOrchestrator {
         ];
 
         // Get from storage
-        let categories = JSON.parse(localStorage.getItem('customCategories')) || [...DEFAULT_CATEGORIES];
+        let categories = safeJSONParse(localStorage.getItem('customCategories'), [...DEFAULT_CATEGORIES]);
 
         // Safety check: ensure categories from existing bills are included
         const bills = billStore.getAll();

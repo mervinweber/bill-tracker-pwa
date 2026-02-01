@@ -23,6 +23,7 @@
 
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
 import { queueOfflineTransaction } from '../utils/indexedDBUtils.js';
+import { safeJSONParse } from '../utils/validation.js';
 
 /**
  * Bill Store Class
@@ -63,9 +64,23 @@ class BillStore {
      * // Bills automatically loaded from localStorage during construction
      */
     load() {
-        const storedBills = localStorage.getItem('bills');
-        if (storedBills) {
-            this.bills = JSON.parse(storedBills);
+        try {
+            const storedBills = localStorage.getItem('bills');
+            if (storedBills) {
+                const parsed = safeJSONParse(storedBills, []);
+
+                // Validate that we got an array
+                if (!Array.isArray(parsed)) {
+                    console.warn('Stored bills data is not an array, resetting to empty');
+                    this.bills = [];
+                    return;
+                }
+
+                this.bills = parsed;
+            }
+        } catch (error) {
+            console.error('Failed to load bills from localStorage:', error);
+            this.bills = [];
         }
     }
 

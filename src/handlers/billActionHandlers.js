@@ -13,11 +13,23 @@
  * @requires billStore
  * @requires appState
  * @requires errorHandling
+ * @requires validation
  */
 
 import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
 import { formatErrorMessage, ValidationError } from '../utils/errorHandling.js';
+import {
+    sanitizeInput,
+    validateBillName,
+    validateDate,
+    validateAmount,
+    validateCategory,
+    validateNotes,
+    validateRecurrence,
+    isValidURL,
+    safeJSONParse
+} from '../utils/validation.js';
 
 /**
  * Display error notification to user with formatted message
@@ -419,8 +431,8 @@ export function migrateBillsToPaymentHistory() {
 export function exportData() {
     try {
         const bills = billStore.getAll();
-        const customCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
-        const paymentSettings = JSON.parse(localStorage.getItem('paymentSettings') || '{}');
+        const customCategories = safeJSONParse(localStorage.getItem('customCategories'), []);
+        const paymentSettings = safeJSONParse(localStorage.getItem('paymentSettings'), {});
 
         const data = {
             exportDate: new Date().toISOString(),
@@ -465,7 +477,11 @@ export function importData(file) {
 
             reader.onload = (e) => {
                 try {
-                    const data = JSON.parse(e.target.result);
+                    const data = safeJSONParse(e.target.result, null);
+
+                    if (!data) {
+                        throw new Error('Invalid JSON format in file');
+                    }
 
                     // Validate structure
                     if (!Array.isArray(data.bills)) {
@@ -500,7 +516,7 @@ export function importData(file) {
                     // Sync custom categories from imported bills if not explicitly provided
                     // Sync custom categories from imported bills
                     const defaultCategories = ['Rent', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Entertainment'];
-                    const existingCategories = JSON.parse(localStorage.getItem('customCategories')) || defaultCategories;
+                    const existingCategories = safeJSONParse(localStorage.getItem('customCategories'), defaultCategories);
 
                     const billCategories = [...new Set(processedBills.map(b => b.category))].filter(c => c && c.trim() !== '');
                     const importedMetadataCategories = data.customCategories || [];
@@ -541,30 +557,64 @@ export function importData(file) {
 }
 
 /**
- * Validate bill data before saving
+ * Validate bill data before saving with comprehensive security checks
+ * 
+ * @param {Object} billData - Bill data to validate
+ * @returns {Object} Validation result with isValid flag and errors array
  */
 export function validateBill(billData) {
     const errors = [];
 
-    if (!billData.name || billData.name.trim() === '') {
-        errors.push('Bill name is required');
+    // Validate bill name
+    const nameValidation = validateBillName(billData.name);
+    if (!nameValidation.isValid) {
+        errors.push(nameValidation.error);
     }
 
-    if (!billData.category || billData.category.trim() === '') {
-        errors.push('Category is required');
+    // Validate category
+    const categoryValidation = validateCategory(billData.category);
+    if (!categoryValidation.isValid) {
+        errors.push(categoryValidation.error);
     }
 
-    if (!billData.dueDate || billData.dueDate.trim() === '') {
-        errors.push('Due date is required');
+    // Validate due date
+    const dateValidation = validateDate(billData.dueDate, true); // Allow past dates
+    if (!dateValidation.isValid) {
+        errors.push(dateValidation.error);
     }
 
-    const amount = parseFloat(billData.amountDue);
-    if (isNaN(amount) || amount < 0) {
-        errors.push('Amount due must be a positive number');
+    // Validate amount
+    const amountValidation = validateAmount(billData.amountDue);
+    if (!amountValidation.isValid) {
+        errors.push(amountValidation.error);
     }
 
-    if (!billData.recurrence) {
-        errors.push('Recurrence type is required');
+    // Validate recurrence
+    const recurrenceValidation = validateRecurrence(billData.recurrence);
+    if (!recurrenceValidation.isValid) {
+        errors.push(recurrenceValidation.error);
+    }
+
+    // Validate optional fields
+    if (billData.notes) {
+        const notesValidation = validateNotes(billData.notes);
+        if (!notesValidation.isValid) {
+            errors.push(notesValidation.error);
+        }
+    }
+
+    if (billData.website) {
+        if (!isValidURL(billData.website)) {
+            errors.push('Website must be a valid HTTP or HTTPS URL');
+        }
+    }
+
+    // Validate balance if provided
+    if (billData.balance !== undefined) {
+        const balanceValidation = validateAmount(billData.balance);
+        if (!balanceValidation.isValid) {
+            errors.push('Balance: ' + balanceValidation.error);
+        }
     }
 
     return {

@@ -1,6 +1,7 @@
 {
   "name": "bill-tracker-pwa",
   "version": "1.0.0",
+  "type": "module",
   "description": "A Progressive Web App for tracking bills due each pay period",
   "main": "src/index.js",
   "scripts": {

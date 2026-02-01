@@ -6,13 +6,14 @@
 import { billStore } from '../store/BillStore.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import { billActionHandlers } from './billActionHandlers.js';
+import { safeJSONParse } from '../utils/validation.js';
 
 /**
  * Show settings modal
  */
 export function showSettingsModal(categoriesList) {
     try {
-        const settings = JSON.parse(localStorage.getItem('paymentSettings') || '{}');
+        const settings = safeJSONParse(localStorage.getItem('paymentSettings'), {});
 
         if (!settings.startDate) {
             throw new Error('Payment settings not configured. Please run setup again.');
@@ -60,8 +61,8 @@ export function showSettingsModal(categoriesList) {
                     </div>
                     <div class="category-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px;">
                         ${categoriesList
-                            .map(
-                                cat => `
+                .map(
+                    cat => `
                             <div class="category-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
                                 <span>${cat}</span>
                                 <div>
@@ -70,8 +71,8 @@ export function showSettingsModal(categoriesList) {
                                 </div>
                             </div>
                         `
-                            )
-                            .join('')}
+                )
+                .join('')}
                     </div>
                     <div style="margin-top: 20px; display: flex; gap: 10px;">
                         <button type="submit" class="submit-btn" style="flex: 1;">Save Settings</button>
