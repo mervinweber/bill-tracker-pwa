@@ -99,37 +99,84 @@ function openViewHistory(billId) {
 
     const payments = (bill.paymentHistory || []).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    let html = `
-        <div class="history-summary">
-            <p><strong>${bill.name}</strong></p>
-            <p>Total Due: $${totalDue.toFixed(2)} | Total Paid: $${totalPaid.toFixed(2)} | Remaining: $${remaining.toFixed(2)}</p>
-        </div>
-        <div class="history-list">
-    `;
+    const historyContent = document.getElementById('historyContent');
+    historyContent.innerHTML = '';
+
+    // Summary Section
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'history-summary';
+
+    const nameP = document.createElement('p');
+    const nameStrong = document.createElement('strong');
+    nameStrong.textContent = bill.name;
+    nameP.appendChild(nameStrong);
+    summaryDiv.appendChild(nameP);
+
+    const statsP = document.createElement('p');
+    statsP.textContent = `Total Due: $${totalDue.toFixed(2)} | Total Paid: $${totalPaid.toFixed(2)} | Remaining: $${remaining.toFixed(2)}`;
+    summaryDiv.appendChild(statsP);
+
+    historyContent.appendChild(summaryDiv);
+
+    // List Section
+    const listDiv = document.createElement('div');
+    listDiv.className = 'history-list';
 
     if (payments.length > 0) {
         payments.forEach(payment => {
-            html += `
-                <div class="payment-record">
-                    <div class="payment-header">
-                        <span class="payment-date">${new Date(payment.date).toLocaleDateString()}</span>
-                        <span class="payment-amount">$${payment.amount.toFixed(2)}</span>
-                    </div>
-                    <div class="payment-details">
-                        <span class="payment-method">💳 ${payment.method}</span>
-                        ${payment.confirmationNumber ? `<span class="payment-conf">Conf: ${payment.confirmationNumber}</span>` : ''}
-                    </div>
-                    ${payment.notes ? `<div class="payment-notes">${payment.notes}</div>` : ''}
-                </div>
-            `;
+            const recordDiv = document.createElement('div');
+            recordDiv.className = 'payment-record';
+
+            // Header (Date and Amount)
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'payment-header';
+
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'payment-date';
+            dateSpan.textContent = new Date(payment.date).toLocaleDateString();
+            headerDiv.appendChild(dateSpan);
+
+            const amountSpan = document.createElement('span');
+            amountSpan.className = 'payment-amount';
+            amountSpan.textContent = `$${payment.amount.toFixed(2)}`;
+            headerDiv.appendChild(amountSpan);
+
+            recordDiv.appendChild(headerDiv);
+
+            // Details (Method and Confirmation)
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'payment-details';
+
+            const methodSpan = document.createElement('span');
+            methodSpan.className = 'payment-method';
+            methodSpan.textContent = `💳 ${payment.method}`;
+            detailsDiv.appendChild(methodSpan);
+
+            if (payment.confirmationNumber) {
+                const confSpan = document.createElement('span');
+                confSpan.className = 'payment-conf';
+                confSpan.textContent = `Conf: ${payment.confirmationNumber}`;
+                detailsDiv.appendChild(confSpan);
+            }
+            recordDiv.appendChild(detailsDiv);
+
+            // Notes
+            if (payment.notes) {
+                const notesDiv = document.createElement('div');
+                notesDiv.className = 'payment-notes';
+                notesDiv.textContent = payment.notes;
+                recordDiv.appendChild(notesDiv);
+            }
+
+            listDiv.appendChild(recordDiv);
         });
     } else {
-        html += '<p>No payments recorded yet.</p>';
+        const noPayP = document.createElement('p');
+        noPayP.textContent = 'No payments recorded yet.';
+        listDiv.appendChild(noPayP);
     }
 
-    html += '</div>';
-
-    document.getElementById('historyContent').innerHTML = html;
+    historyContent.appendChild(listDiv);
     document.getElementById('viewHistoryModal').style.display = 'block';
 }
 

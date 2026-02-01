@@ -102,105 +102,65 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here  # Public key only
 ## Input Validation & Sanitization
 
 ### Bill Data Validation
-
-**All bill inputs are validated before saving**:
+**Centralized Validation Module**:
+The application now uses a dedicated validation module (`src/utils/validation.js`) that enforces strict rules for all data entry points.
 
 ```javascript
-import { validateBill } from './handlers/billActionHandlers.js';
+import { validateBill, validateDate, validateAmount } from './utils/validation.js';
 
-function handleBillSubmit(formData) {
-  // Validate before processing
-  const errors = validateBill(formData);
-  
-  if (errors.length > 0) {
-    showErrorNotification('Please fix: ' + errors.join(', '));
-    return false;
-  }
-  
-  // Safe to process validated data
-  billStore.add(formData);
+// Example: Validating a full bill object
+const validation = validateBill(formData);
+if (!validation.isValid) {
+  showErrorNotification(validation.errors.join(', '));
+  return;
 }
 ```
 
 ### Validation Rules
-
 **Bill Name**
-- ✅ Required, non-empty
-- ✅ Max 100 characters
-- ✅ Alphanumeric + common punctuation only
-- ❌ Rejects: HTML tags, scripts, special characters
+- ✅ Required, non-empty, max 100 chars
+- ✅ Sanitized against XSS payloads
+- ❌ Rejects: HTML tags, scripts
 
-**Due Date**
-- ✅ Required, valid date format (YYYY-MM-DD)
-- ✅ Must be in future or today
-- ❌ Rejects: Invalid dates, past dates (for new bills)
+**Date Handling**
+- ✅ Strict YYYY-MM-DD format enforcement
+- ✅ Timezone-aware validation (prevents off-by-one errors)
+- ✅ Logic preventing unreasonable dates (e.g., > 10 years future)
 
-**Amount Due**
-- ✅ Required, positive number
-- ✅ Valid currency format (2 decimals max)
-- ❌ Rejects: Negative amounts, non-numeric input
-
-**Category**
-- ✅ Required, from predefined list
-- ✅ User can add custom categories
-- ❌ Rejects: Invalid category names
-
-**Example Validation**:
-```javascript
-export function validateBill(bill) {
-  const errors = [];
-
-  // Required field check
-  if (!bill.name || bill.name.trim() === '') {
-    errors.push('Bill name is required');
-  }
-
-  // Length check
-  if (bill.name && bill.name.length > 100) {
-    errors.push('Bill name must be 100 characters or less');
-  }
-
-  // Type check
-  if (typeof bill.amountDue !== 'number' || bill.amountDue < 0) {
-    errors.push('Amount must be a positive number');
-  }
-
-  // Date format check
-  if (!isValidDate(bill.dueDate)) {
-    errors.push('Due date must be in YYYY-MM-DD format');
-  }
-
-  return errors; // Empty if valid
-}
-```
+**Safe JSON Parsing**
+- ✅ Replaced all `JSON.parse()` with `safeJSONParse()`
+- ✅ Enforces 5MB size limit on imported files
+- ✅ Graceful error handling for malformed data
 
 ### XSS (Cross-Site Scripting) Prevention
 
-**No HTML injection attacks possible**:
-
-```javascript
-// ❌ UNSAFE (never done in this app)
-element.innerHTML = bill.name;  // Could execute scripts!
-
-// ✅ SAFE (used throughout)
-element.textContent = bill.name;  // Always escapes HTML
-```
+**Systematic innerHTML Removal**:
+We have auditted the codebase and replaced `innerHTML` with `document.createElement()` and `textContent` in all views handling user data:
+- `billGrid.js`: Renders bill list safely
+- `sidebar.js`: Renders category lists safely
+- `settingsHandler.js`: Renders settings details safely
+- `payment-history.js`: Renders transaction logs safely
 
 **Protection measures**:
-- Always use `textContent` instead of `innerHTML` for user data
-- Use `setAttribute()` for HTML attributes
-- Framework/template-safe approach
+- ✅ `textContent` for all text interpolation
+- ✅ `document.createElement` for structural updates
+- ✅ Sanitized inputs at the entry point (double defense)
 
-**Example**:
+**Example Implementation**:
 ```javascript
 // src/components/billGrid.js
 const row = document.createElement('tr');
 const nameCell = document.createElement('td');
 
-// Safe - no script execution possible
-nameCell.textContent = bill.name;  // ✅ User can't inject scripts
+// ✅ Secure text rendering
+nameCell.textContent = bill.name; 
+
+// ✅ Secure event binding (no onclick strings)
+const btn = document.createElement('button');
+btn.addEventListener('click', () => handleAction(bill.id));
 
 row.appendChild(nameCell);
+row.appendChild(btn);
 ```
 
 ### CSRF (Cross-Site Request Forgery) Protection

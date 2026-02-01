@@ -53,26 +53,40 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         return;
     }
 
-    let html = `<div class="bill-grid-container" role="region" aria-label="Bills table">
-        <table class="bill-table" role="table" aria-label="List of bills with payment status">
-            <thead role="rowgroup">
-                <tr role="row">
-                    <th scope="col" role="columnheader">Bill Name</th>
-                    <th scope="col" role="columnheader">Due Date</th>
-                    ${viewMode === 'all' ? '<th scope="col" role="columnheader">Category</th>' : ''}
-                    <th scope="col" role="columnheader">Amount Due</th>
-                    <th scope="col" role="columnheader">Balance</th>
-                    <th scope="col" role="columnheader">Paid <span class="sr-only">(checkbox)</span></th>
-                    <th scope="col" role="columnheader">Last Payment</th>
-                    <th scope="col" role="columnheader">Notes</th>
-                    <th scope="col" role="columnheader">Recurrence</th>
-                    <th scope="col" role="columnheader">Actions <span class="sr-only">(buttons)</span></th>
-                </tr>
-            </thead>
-            <tbody role="rowgroup">`;
+    const container = document.createElement('div');
+    container.className = 'bill-grid-container';
+    container.setAttribute('role', 'region');
+    container.setAttribute('aria-label', 'Bills table');
+
+    const table = document.createElement('table');
+    table.className = 'bill-table';
+    table.setAttribute('role', 'table');
+    table.setAttribute('aria-label', 'List of bills with payment status');
+
+    const thead = document.createElement('thead');
+    thead.setAttribute('role', 'rowgroup');
+    // Headers are static and safe
+    thead.innerHTML = `
+        <tr role="row">
+            <th scope="col" role="columnheader">Bill Name</th>
+            <th scope="col" role="columnheader">Due Date</th>
+            ${viewMode === 'all' ? '<th scope="col" role="columnheader">Category</th>' : ''}
+            <th scope="col" role="columnheader">Amount Due</th>
+            <th scope="col" role="columnheader">Balance</th>
+            <th scope="col" role="columnheader">Paid <span class="sr-only">(checkbox)</span></th>
+            <th scope="col" role="columnheader">Last Payment</th>
+            <th scope="col" role="columnheader">Notes</th>
+            <th scope="col" role="columnheader">Recurrence</th>
+            <th scope="col" role="columnheader">Actions <span class="sr-only">(buttons)</span></th>
+        </tr>
+    `;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    tbody.setAttribute('role', 'rowgroup');
 
     if (dueBills.length > 0) {
-        html += dueBills.map(bill => {
+        dueBills.forEach(bill => {
             const isPaid = bill.isPaid || false;
             const lastPayment = bill.lastPaymentDate ? new Date(bill.lastPaymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not paid';
             const notes = bill.notes || '';
@@ -86,60 +100,168 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             dueDate.setHours(0, 0, 0, 0);
             const isOverdue = dueDate < today && !isPaid;
 
-            const rowClass = `${isPaid ? 'paid-bill' : ''} ${isOverdue ? 'overdue-bill' : ''}`;
-            const ariaLabel = `${bill.name}, due ${bill.dueDate}, $${(bill.amountDue || 0).toFixed(2)}, ${isPaid ? 'paid' : 'unpaid'}${isOverdue ? ', overdue' : ''}`;
+            const row = document.createElement('tr');
+            row.className = `${isPaid ? 'paid-bill' : ''} ${isOverdue ? 'overdue-bill' : ''}`;
+            row.setAttribute('role', 'row');
+            row.setAttribute('aria-label', `${bill.name}, due ${bill.dueDate}, $${(bill.amountDue || 0).toFixed(2)}, ${isPaid ? 'paid' : 'unpaid'}${isOverdue ? ', overdue' : ''}`);
 
-            return `<tr class="${rowClass}" role="row" aria-label="${ariaLabel}">
-                <td role="cell">${bill.name}</td>
-                <td class="${isOverdue ? 'overdue-date' : ''}" role="cell" aria-label="Due date: ${bill.dueDate}${isOverdue ? ' (overdue)' : ''}">${bill.dueDate}${isOverdue ? ' ⚠️' : ''}</td>
-                ${viewMode === 'all' ? `<td role="cell">${bill.category}</td>` : ''}
-                <td role="cell" aria-label="Amount due: $${(bill.amountDue || 0).toFixed(2)}">$${(bill.amountDue || 0).toFixed(2)}</td>
-                <td role="cell"><input type="number" class="balance-input" data-bill-id="${bill.id}" value="${(bill.balance || 0).toFixed(2)}" step="0.01" aria-label="Balance for ${bill.name}"></td>
-                <td role="cell"><label class="payment-toggle"><input type="checkbox" class="payment-checkbox" data-bill-id="${bill.id}" aria-label="Mark ${bill.name} as ${isPaid ? 'unpaid' : 'paid'}" ${isPaid ? 'checked' : ''}><span class="toggle-slider" aria-hidden="true"></span></label></td>
-                <td class="payment-date" role="cell" aria-label="Last payment: ${lastPayment}">${lastPayment}</td>
-                <td class="notes-cell" role="cell" title="${notesTitle}" aria-label="Notes: ${notesDisplay === '-' ? 'none' : notesTitle}">${notesDisplay}</td>
-                <td role="cell">${bill.recurrence}</td>
-                <td role="cell">
-                    <div class="action-buttons" role="group" aria-label="Actions for ${bill.name}">
-                        ${bill.website ? `<button class="icon-btn link-btn" title="Pay Online" data-url="${bill.website}" aria-label="Pay ${bill.name} online">🔗</button>` : ''}
-                        <button class="icon-btn pay-btn" title="Record Payment" data-bill-id="${bill.id}" aria-label="Record payment for ${bill.name}">💳</button>
-                        <button class="icon-btn history-btn" title="View History" data-bill-id="${bill.id}" aria-label="View payment history for ${bill.name}">📜</button>
-                        <button class="icon-btn edit-btn" title="Edit" data-bill-id="${bill.id}" aria-label="Edit ${bill.name}">✏️</button>
-                        <button class="icon-btn delete-btn" title="Delete" data-bill-id="${bill.id}" aria-label="Delete ${bill.name}">🗑️</button>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
+            // Bill Name
+            const nameCell = document.createElement('td');
+            nameCell.setAttribute('role', 'cell');
+            nameCell.textContent = bill.name;
+            row.appendChild(nameCell);
+
+            // Due Date
+            const dateCell = document.createElement('td');
+            dateCell.setAttribute('role', 'cell');
+            if (isOverdue) dateCell.className = 'overdue-date';
+            dateCell.setAttribute('aria-label', `Due date: ${bill.dueDate}${isOverdue ? ' (overdue)' : ''}`);
+            dateCell.textContent = bill.dueDate + (isOverdue ? ' ⚠️' : '');
+            row.appendChild(dateCell);
+
+            // Category (conditional)
+            if (viewMode === 'all') {
+                const catCell = document.createElement('td');
+                catCell.setAttribute('role', 'cell');
+                catCell.textContent = bill.category;
+                row.appendChild(catCell);
+            }
+
+            // Amount Due
+            const amountCell = document.createElement('td');
+            amountCell.setAttribute('role', 'cell');
+            amountCell.textContent = `$${(bill.amountDue || 0).toFixed(2)}`;
+            row.appendChild(amountCell);
+
+            // Balance Input
+            const balanceCell = document.createElement('td');
+            balanceCell.setAttribute('role', 'cell');
+            const balanceInput = document.createElement('input');
+            balanceInput.type = 'number';
+            balanceInput.className = 'balance-input';
+            balanceInput.dataset.billId = bill.id;
+            balanceInput.value = (bill.balance || 0).toFixed(2);
+            balanceInput.step = '0.01';
+            balanceInput.ariaLabel = `Balance for ${bill.name}`;
+            balanceInput.addEventListener('change', (e) => actions.onUpdateBalance(bill.id, parseFloat(e.target.value)));
+            balanceCell.appendChild(balanceInput);
+            row.appendChild(balanceCell);
+
+            // Paid Checkbox
+            const paidCell = document.createElement('td');
+            paidCell.setAttribute('role', 'cell');
+            const toggleLabel = document.createElement('label');
+            toggleLabel.className = 'payment-toggle';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'payment-checkbox';
+            checkbox.dataset.billId = bill.id;
+            checkbox.ariaLabel = `Mark ${bill.name} as ${isPaid ? 'unpaid' : 'paid'}`;
+            checkbox.checked = isPaid;
+            checkbox.addEventListener('change', (e) => actions.onTogglePayment(bill.id, e.target.checked));
+
+            const slider = document.createElement('span');
+            slider.className = 'toggle-slider';
+            slider.setAttribute('aria-hidden', 'true');
+
+            toggleLabel.appendChild(checkbox);
+            toggleLabel.appendChild(slider);
+            paidCell.appendChild(toggleLabel);
+            row.appendChild(paidCell);
+
+            // Last Payment
+            const lastPaymentCell = document.createElement('td');
+            lastPaymentCell.className = 'payment-date';
+            lastPaymentCell.setAttribute('role', 'cell');
+            lastPaymentCell.textContent = lastPayment;
+            row.appendChild(lastPaymentCell);
+
+            // Notes
+            const notesCell = document.createElement('td');
+            notesCell.className = 'notes-cell';
+            notesCell.setAttribute('role', 'cell');
+            notesCell.title = notesTitle; // Tooltips are safe text
+            notesCell.textContent = notesDisplay;
+            row.appendChild(notesCell);
+
+            // Recurrence
+            const recurrenceCell = document.createElement('td');
+            recurrenceCell.setAttribute('role', 'cell');
+            recurrenceCell.textContent = bill.recurrence;
+            row.appendChild(recurrenceCell);
+
+            // Actions
+            const actionsCell = document.createElement('td');
+            actionsCell.setAttribute('role', 'cell');
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'action-buttons';
+            btnGroup.setAttribute('role', 'group');
+            btnGroup.ariaLabel = `Actions for ${bill.name}`;
+
+            if (bill.website) {
+                const linkBtn = document.createElement('button');
+                linkBtn.className = 'icon-btn link-btn';
+                linkBtn.title = 'Pay Online';
+                linkBtn.ariaLabel = `Pay ${bill.name} online`;
+                linkBtn.textContent = '🔗';
+                linkBtn.addEventListener('click', () => window.open(bill.website, '_blank'));
+                btnGroup.appendChild(linkBtn);
+            }
+
+            const payBtn = document.createElement('button');
+            payBtn.className = 'icon-btn pay-btn';
+            payBtn.title = 'Record Payment';
+            payBtn.ariaLabel = `Record payment for ${bill.name}`;
+            payBtn.textContent = '💳';
+            payBtn.addEventListener('click', () => actions.onRecordPayment(bill.id));
+            btnGroup.appendChild(payBtn);
+
+            const historyBtn = document.createElement('button');
+            historyBtn.className = 'icon-btn history-btn';
+            historyBtn.title = 'View History';
+            historyBtn.ariaLabel = `View payment history for ${bill.name}`;
+            historyBtn.textContent = '📜';
+            historyBtn.addEventListener('click', () => actions.onViewHistory(bill.id));
+            btnGroup.appendChild(historyBtn);
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'icon-btn edit-btn';
+            editBtn.title = 'Edit';
+            editBtn.ariaLabel = `Edit ${bill.name}`;
+            editBtn.textContent = '✏️';
+            editBtn.addEventListener('click', () => actions.onEditBill(bill.id));
+            btnGroup.appendChild(editBtn);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'icon-btn delete-btn';
+            deleteBtn.title = 'Delete';
+            deleteBtn.ariaLabel = `Delete ${bill.name}`;
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.addEventListener('click', () => actions.onDeleteBill(bill.id));
+            btnGroup.appendChild(deleteBtn);
+
+            actionsCell.appendChild(btnGroup);
+            row.appendChild(actionsCell);
+
+            tbody.appendChild(row);
+        });
     } else {
         const message = viewMode === 'all' ? 'No bills found' : 'No bills in this category due before the next paycheck';
-        html += `<tr role="row"><td colspan="100%" role="cell" aria-live="polite">${message}</td></tr>`;
+        const emptyRow = document.createElement('tr');
+        emptyRow.setAttribute('role', 'row');
+        const emptyCell = document.createElement('td');
+        emptyCell.colSpan = 10;
+        emptyCell.setAttribute('role', 'cell');
+        emptyCell.setAttribute('aria-live', 'polite');
+        emptyCell.textContent = message;
+        emptyRow.appendChild(emptyCell);
+        tbody.appendChild(emptyRow);
     }
-    html += '</tbody></table></div>';
-    billGrid.innerHTML = html;
 
-    // Attach Event Listeners
-    document.querySelectorAll('.balance-input').forEach(input => {
-        input.addEventListener('change', (e) => actions.onUpdateBalance(e.target.dataset.billId, parseFloat(e.target.value)));
-    });
-    document.querySelectorAll('.payment-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => actions.onTogglePayment(e.target.dataset.billId, e.target.checked));
-    });
-    document.querySelectorAll('.link-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const url = e.target.closest('button').dataset.url;
-            if (url) window.open(url, '_blank');
-        });
-    });
-    document.querySelectorAll('.pay-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => actions.onRecordPayment(e.target.closest('button').dataset.billId));
-    });
-    document.querySelectorAll('.history-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => actions.onViewHistory(e.target.closest('button').dataset.billId));
-    });
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => actions.onDeleteBill(e.target.closest('button').dataset.billId));
-    });
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => actions.onEditBill(e.target.closest('button').dataset.billId));
-    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+    billGrid.appendChild(container);
+
+    // Event listeners are already attached during element creation above
 };

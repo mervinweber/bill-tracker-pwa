@@ -490,43 +490,100 @@ class AppOrchestrator {
             (a, b) => new Date(b.date) - new Date(a.date)
         );
 
-        let html = `
-            <div style="padding: 15px; background: #f8f9fa; border-radius: 4px; margin-bottom: 15px;">
-                <h3 style="margin: 0 0 10px 0;">${bill.name}</h3>
-                <div style="display: flex; gap: 20px; font-size: 14px;">
-                    <span><strong>Total Due:</strong> $${totalDue.toFixed(2)}</span>
-                    <span><strong>Total Paid:</strong> $${totalPaid.toFixed(2)}</span>
-                    <span style="color: ${remaining > 0 ? '#e74c3c' : '#27ae60'};"><strong>Remaining:</strong> $${remaining.toFixed(2)}</span>
-                </div>
-            </div>
-            <div style="max-height: 400px; overflow-y: auto;">
-        `;
+        const historyContent = document.getElementById('historyContent');
+        historyContent.innerHTML = ''; // safe to clear
+
+        const summaryCard = document.createElement('div');
+        summaryCard.style.padding = '15px';
+        summaryCard.style.background = '#f8f9fa';
+        summaryCard.style.borderRadius = '4px';
+        summaryCard.style.marginBottom = '15px';
+
+        const title = document.createElement('h3');
+        title.style.margin = '0 0 10px 0';
+        title.textContent = bill.name;
+        summaryCard.appendChild(title);
+
+        const statsDiv = document.createElement('div');
+        statsDiv.style.display = 'flex';
+        statsDiv.style.gap = '20px';
+        statsDiv.style.fontSize = '14px';
+
+        const createStat = (label, value, color = null) => {
+            const span = document.createElement('span');
+            if (color) span.style.color = color;
+            const strong = document.createElement('strong');
+            strong.textContent = `${label}: `;
+            span.appendChild(strong);
+            span.appendChild(document.createTextNode(`$${value.toFixed(2)}`));
+            return span;
+        };
+
+        statsDiv.appendChild(createStat('Total Due', totalDue));
+        statsDiv.appendChild(createStat('Total Paid', totalPaid));
+        statsDiv.appendChild(createStat('Remaining', remaining, remaining > 0 ? '#e74c3c' : '#27ae60'));
+
+        summaryCard.appendChild(statsDiv);
+        historyContent.appendChild(summaryCard);
+
+        const listContainer = document.createElement('div');
+        listContainer.style.maxHeight = '400px';
+        listContainer.style.overflowY = 'auto';
 
         if (payments.length > 0) {
             payments.forEach(payment => {
-                html += `
-                    <div style="padding: 12px; border-left: 3px solid #5eb3d6; background: white; margin-bottom: 10px; border-radius: 4px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong>${new Date(payment.date).toLocaleDateString('en-US', {
+                const item = document.createElement('div');
+                item.style.padding = '12px';
+                item.style.borderLeft = '3px solid #5eb3d6';
+                item.style.background = 'white';
+                item.style.marginBottom = '10px';
+                item.style.borderRadius = '4px';
+
+                const header = document.createElement('div');
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.marginBottom = '5px';
+
+                const dateStr = new Date(payment.date).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
-                })}</strong>
-                            <strong style="color: #27ae60;">$${payment.amount.toFixed(2)}</strong>
-                        </div>
-                        <div style="font-size: 13px; color: #666;">
-                            ${payment.method} ${payment.confirmationNumber ? `| Conf: ${payment.confirmationNumber}` : ''}
-                        </div>
-                    </div>
-                `;
+                });
+
+                const dateStrong = document.createElement('strong');
+                dateStrong.textContent = dateStr;
+                header.appendChild(dateStrong);
+
+                const amountStrong = document.createElement('strong');
+                amountStrong.style.color = '#27ae60';
+                amountStrong.textContent = `$${payment.amount.toFixed(2)}`;
+                header.appendChild(amountStrong);
+
+                item.appendChild(header);
+
+                const details = document.createElement('div');
+                details.style.fontSize = '13px';
+                details.style.color = '#666';
+
+                let detailText = payment.method;
+                if (payment.confirmationNumber) {
+                    detailText += ` | Conf: ${payment.confirmationNumber}`;
+                }
+                details.textContent = detailText;
+
+                item.appendChild(details);
+                listContainer.appendChild(item);
             });
         } else {
-            html +=
-                '<p style="text-align: center; color: #999; padding: 20px;">No payments recorded yet</p>';
+            const emptyState = document.createElement('p');
+            emptyState.style.textAlign = 'center';
+            emptyState.style.color = '#999';
+            emptyState.style.padding = '20px';
+            emptyState.textContent = 'No payments recorded yet';
+            listContainer.appendChild(emptyState);
         }
 
-        html += '</div>';
-        document.getElementById('historyContent').innerHTML = html;
+        historyContent.appendChild(listContainer);
         document.getElementById('viewHistoryModal').style.display = 'block';
     }
 

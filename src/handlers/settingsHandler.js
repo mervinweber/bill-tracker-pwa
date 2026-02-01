@@ -22,70 +22,137 @@ export function showSettingsModal(categoriesList) {
         const modal = document.createElement('div');
         modal.id = 'settingsModal';
         modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h2>⚙️ Settings</h2>
-                <p style="color: #666; margin-bottom: 20px;">Update your payment configuration</p>
-                <form id="settingsForm">
-                    <div class="form-group">
-                        <label><strong>First Paycheck Date:</strong></label>
-                        <input type="date" id="settingsStartDate" value="${settings.startDate}" required>
-                    </div>
-                    <div class="form-group">
-                        <label><strong>Payment Frequency:</strong></label>
-                        <select id="settingsFrequency" required>
-                            <option value="weekly" ${settings.frequency === 'weekly' ? 'selected' : ''}>Weekly (every 7 days)</option>
-                            <option value="bi-weekly" ${settings.frequency === 'bi-weekly' ? 'selected' : ''}>Bi-weekly (every 14 days)</option>
-                            <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label><strong>Number of Pay Periods to Show:</strong></label>
-                        <select id="settingsWeeks" required>
-                            <option value="3" ${settings.payPeriodsToShow === 3 ? 'selected' : ''}>3 Pay Periods</option>
-                            <option value="4" ${settings.payPeriodsToShow === 4 ? 'selected' : ''}>4 Pay Periods</option>
-                            <option value="6" ${settings.payPeriodsToShow === 6 ? 'selected' : ''}>6 Pay Periods</option>
-                            <option value="8" ${settings.payPeriodsToShow === 8 ? 'selected' : ''}>8 Pay Periods</option>
-                            <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
-                        </select>
-                    </div>
 
-                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
-                    
-                    <h3>Manage Categories</h3>
-                    <div class="form-group">
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="newCategoryInput" placeholder="New Category Name" style="flex: 1;">
-                            <button type="button" id="addNewCategoryBtn" class="view-btn">Add</button>
-                        </div>
-                    </div>
-                    <div class="category-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px;">
-                        ${categoriesList
-                .map(
-                    cat => `
-                            <div class="category-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                                <span>${cat}</span>
-                                <div>
-                                    <button type="button" class="settings-btn edit-cat-btn" data-cat="${cat}" title="Edit" style="display: inline-flex; margin-right: 5px;">✏️</button>
-                                    <button type="button" class="settings-btn delete-cat-btn" data-cat="${cat}" title="Delete" style="display: inline-flex; background-color: var(--danger-color);">🗑️</button>
-                                </div>
-                            </div>
-                        `
-                )
-                .join('')}
-                    </div>
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button type="submit" class="submit-btn" style="flex: 1;">Save Settings</button>
-                        <button type="button" id="closeSettingsBtn" class="cancel-btn" style="flex: 1;">Cancel</button>
-                    </div>
-                </form>
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+
+        const title = document.createElement('h2');
+        title.textContent = '⚙️ Settings';
+
+        const subtitle = document.createElement('p');
+        subtitle.style.color = '#666';
+        subtitle.style.marginBottom = '20px';
+        subtitle.textContent = 'Update your payment configuration';
+
+        const form = document.createElement('form');
+        form.id = 'settingsForm';
+
+        // Static Form Fields
+        form.innerHTML = `
+            <div class="form-group">
+                <label><strong>First Paycheck Date:</strong></label>
+                <input type="date" id="settingsStartDate" value="${settings.startDate}" required>
+            </div>
+            <div class="form-group">
+                <label><strong>Payment Frequency:</strong></label>
+                <select id="settingsFrequency" required>
+                    <option value="weekly" ${settings.frequency === 'weekly' ? 'selected' : ''}>Weekly (every 7 days)</option>
+                    <option value="bi-weekly" ${settings.frequency === 'bi-weekly' ? 'selected' : ''}>Bi-weekly (every 14 days)</option>
+                    <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><strong>Number of Pay Periods to Show:</strong></label>
+                <select id="settingsWeeks" required>
+                    <option value="3" ${settings.payPeriodsToShow === 3 ? 'selected' : ''}>3 Pay Periods</option>
+                    <option value="4" ${settings.payPeriodsToShow === 4 ? 'selected' : ''}>4 Pay Periods</option>
+                    <option value="6" ${settings.payPeriodsToShow === 6 ? 'selected' : ''}>6 Pay Periods</option>
+                    <option value="8" ${settings.payPeriodsToShow === 8 ? 'selected' : ''}>8 Pay Periods</option>
+                    <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
+                </select>
+            </div>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+            <h3>Manage Categories</h3>
+            <div class="form-group">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="newCategoryInput" placeholder="New Category Name" style="flex: 1;">
+                    <button type="button" id="addNewCategoryBtn" class="view-btn">Add</button>
+                </div>
             </div>
         `;
+
+        // Category List Container
+        const catListContainer = document.createElement('div');
+        catListContainer.className = 'category-list';
+        catListContainer.style.maxHeight = '200px';
+        catListContainer.style.overflowY = 'auto';
+        catListContainer.style.border = '1px solid var(--border-color)';
+        catListContainer.style.borderRadius = '6px';
+        catListContainer.style.padding = '10px';
+
+        categoriesList.forEach(cat => {
+            const item = document.createElement('div');
+            item.className = 'category-item';
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            item.style.alignItems = 'center';
+            item.style.padding = '8px 0';
+            item.style.borderBottom = '1px solid var(--border-color)';
+
+            const span = document.createElement('span');
+            span.textContent = cat;
+            item.appendChild(span);
+
+            const btnContainer = document.createElement('div');
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'settings-btn edit-cat-btn';
+            editBtn.dataset.cat = cat;
+            editBtn.title = 'Edit';
+            editBtn.style.display = 'inline-flex';
+            editBtn.style.marginRight = '5px';
+            editBtn.textContent = '✏️';
+            btnContainer.appendChild(editBtn);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'settings-btn delete-cat-btn';
+            deleteBtn.dataset.cat = cat;
+            deleteBtn.title = 'Delete';
+            deleteBtn.style.display = 'inline-flex';
+            deleteBtn.style.backgroundColor = 'var(--danger-color)';
+            deleteBtn.textContent = '🗑️';
+            btnContainer.appendChild(deleteBtn);
+
+            item.appendChild(btnContainer);
+            catListContainer.appendChild(item);
+        });
+
+        form.appendChild(catListContainer);
+
+        // Buttons
+        const buttonGroup = document.createElement('div');
+        buttonGroup.style.marginTop = '20px';
+        buttonGroup.style.display = 'flex';
+        buttonGroup.style.gap = '10px';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'submit';
+        saveBtn.className = 'submit-btn';
+        saveBtn.style.flex = '1';
+        saveBtn.textContent = 'Save Settings';
+        buttonGroup.appendChild(saveBtn);
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.id = 'closeSettingsBtn';
+        cancelBtn.className = 'cancel-btn';
+        cancelBtn.style.flex = '1';
+        cancelBtn.textContent = 'Cancel';
+        buttonGroup.appendChild(cancelBtn);
+
+        form.appendChild(buttonGroup);
+
+        modalContent.appendChild(title);
+        modalContent.appendChild(subtitle);
+        modalContent.appendChild(form);
+        modal.appendChild(modalContent);
 
         document.body.appendChild(modal);
 
         // Close button handler
-        document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+        cancelBtn.addEventListener('click', () => {
             modal.remove();
         });
 
@@ -102,15 +169,17 @@ export function showSettingsModal(categoriesList) {
         });
 
         // Delete category handlers
-        document.querySelectorAll('.delete-cat-btn').forEach(btn => {
+        // Need to attach to the dynamically created buttons specifically or delegate
+        // Since we created them, we can attach directly in the loop, or query select from form
+        // Querying from form works fine.
+        form.querySelectorAll('.delete-cat-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const catToDelete = e.target.closest('button').dataset.cat;
                 handleDeleteCategory(catToDelete, categoriesList, modal);
             });
         });
 
-        // Edit category handlers
-        document.querySelectorAll('.edit-cat-btn').forEach(btn => {
+        form.querySelectorAll('.edit-cat-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const oldName = e.target.closest('button').dataset.cat;
                 handleEditCategory(oldName, categoriesList);
@@ -118,7 +187,7 @@ export function showSettingsModal(categoriesList) {
         });
 
         // Settings form submit handler
-        document.getElementById('settingsForm').addEventListener('submit', e => {
+        form.addEventListener('submit', e => {
             handleSettingsSave(e, modal);
         });
     } catch (error) {
@@ -260,49 +329,121 @@ function showDeleteCategoryConflictModal(categoryName, billCount, categoriesList
 
         const otherCategories = categoriesList.filter(c => c !== categoryName);
 
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 400px;">
-                <h3 style="color: var(--danger-color);">Delete Category</h3>
-                <p style="margin: 15px 0;">
-                    The category "<strong>${categoryName}</strong>" is used by <strong>${billCount}</strong> bill(s).
-                    What would you like to do?
-                </p>
-                
-                <form id="deleteCategoryForm">
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                            <input type="radio" name="deleteAction" value="move" checked>
-                            <span>Move bills to another category</span>
-                        </label>
-                        <select id="targetCategory" style="margin-left: 24px; margin-top: 5px; width: calc(100% - 24px);">
-                            ${otherCategories.map(c => `<option value="${c}">${c}</option>`).join('')}
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                            <input type="radio" name="deleteAction" value="delete">
-                            <span style="color: var(--danger-color);">Delete bills permanently</span>
-                        </label>
-                    </div>
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.style.maxWidth = '400px';
 
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="submit" class="submit-btn" style="flex: 1;">Confirm</button>
-                        <button type="button" id="cancelDeleteConflict" class="cancel-btn">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        `;
+        const title = document.createElement('h3');
+        title.style.color = 'var(--danger-color)';
+        title.textContent = 'Delete Category';
+        modalContent.appendChild(title);
+
+        const p = document.createElement('p');
+        p.style.margin = '15px 0';
+        p.appendChild(document.createTextNode('The category "'));
+        const strongCat = document.createElement('strong');
+        strongCat.textContent = categoryName;
+        p.appendChild(strongCat);
+        p.appendChild(document.createTextNode(`" is used by `));
+        const strongCount = document.createElement('strong');
+        strongCount.textContent = billCount;
+        p.appendChild(strongCount);
+        p.appendChild(document.createTextNode(' bill(s). What would you like to do?'));
+        modalContent.appendChild(p);
+
+        const form = document.createElement('form');
+        form.id = 'deleteCategoryForm';
+
+        // Move Option
+        const moveGroup = document.createElement('div');
+        moveGroup.className = 'form-group';
+
+        const moveLabel = document.createElement('label');
+        moveLabel.style.display = 'flex';
+        moveLabel.style.alignItems = 'center';
+        moveLabel.style.gap = '10px';
+        moveLabel.style.cursor = 'pointer';
+
+        const moveRadio = document.createElement('input');
+        moveRadio.type = 'radio';
+        moveRadio.name = 'deleteAction';
+        moveRadio.value = 'move';
+        moveRadio.checked = true;
+        moveLabel.appendChild(moveRadio);
+        moveLabel.appendChild(document.createTextNode('Move bills to another category'));
+        moveGroup.appendChild(moveLabel);
+
+        const select = document.createElement('select');
+        select.id = 'targetCategory';
+        select.style.marginLeft = '24px';
+        select.style.marginTop = '5px';
+        select.style.width = 'calc(100% - 24px)';
+        otherCategories.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c;
+            option.textContent = c;
+            select.appendChild(option);
+        });
+        moveGroup.appendChild(select);
+        form.appendChild(moveGroup);
+
+        // Delete Option
+        const deleteGroup = document.createElement('div');
+        deleteGroup.className = 'form-group';
+
+        const deleteLabel = document.createElement('label');
+        deleteLabel.style.display = 'flex';
+        deleteLabel.style.alignItems = 'center';
+        deleteLabel.style.gap = '10px';
+        deleteLabel.style.cursor = 'pointer';
+
+        const deleteRadio = document.createElement('input');
+        deleteRadio.type = 'radio';
+        deleteRadio.name = 'deleteAction';
+        deleteRadio.value = 'delete';
+        deleteLabel.appendChild(deleteRadio);
+
+        const deleteSpan = document.createElement('span');
+        deleteSpan.style.color = 'var(--danger-color)';
+        deleteSpan.textContent = 'Delete bills permanently';
+        deleteLabel.appendChild(deleteSpan);
+
+        deleteGroup.appendChild(deleteLabel);
+        form.appendChild(deleteGroup);
+
+        // Buttons
+        const btnGroup = document.createElement('div');
+        btnGroup.style.display = 'flex';
+        btnGroup.style.gap = '10px';
+        btnGroup.style.marginTop = '20px';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'submit';
+        confirmBtn.className = 'submit-btn';
+        confirmBtn.style.flex = '1';
+        confirmBtn.textContent = 'Confirm';
+        btnGroup.appendChild(confirmBtn);
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.id = 'cancelDeleteConflict';
+        cancelBtn.className = 'cancel-btn';
+        cancelBtn.textContent = 'Cancel';
+        btnGroup.appendChild(cancelBtn);
+
+        form.appendChild(btnGroup);
+        modalContent.appendChild(form);
+        modal.appendChild(modalContent);
 
         document.body.appendChild(modal);
 
-        document.getElementById('cancelDeleteConflict').addEventListener('click', () => {
+        cancelBtn.addEventListener('click', () => {
             modal.remove();
         });
 
-        document.getElementById('deleteCategoryForm').addEventListener('submit', e => {
+        form.addEventListener('submit', e => {
             e.preventDefault();
-            const action = document.querySelector('input[name="deleteAction"]:checked').value;
+            const action = form.querySelector('input[name="deleteAction"]:checked').value;
 
             if (action === 'move') {
                 const targetCat = document.getElementById('targetCategory').value;

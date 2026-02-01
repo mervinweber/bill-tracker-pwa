@@ -22,6 +22,7 @@
  */
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
+    sidebar.innerHTML = '';
 
     // Dark Mode Logic - Check localStorage for theme preference on load
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -29,55 +30,148 @@ export const initializeSidebar = (categories, actions) => {
         document.body.classList.add('dark-mode');
     }
 
-    let html = '<nav class="sidebar-nav" role="navigation" aria-label="Main navigation">';
-    html += '<h2>Categories</h2>';
-    html += '<ul class="categories-list" role="group" aria-label="Bill categories">';
+    const nav = document.createElement('nav');
+    nav.className = 'sidebar-nav';
+    nav.setAttribute('role', 'navigation');
+    nav.setAttribute('aria-label', 'Main navigation');
+
+    // Categories Header
+    const catHeader = document.createElement('h2');
+    catHeader.textContent = 'Categories';
+    nav.appendChild(catHeader);
+
+    // Categories List
+    const catList = document.createElement('ul');
+    catList.className = 'categories-list';
+    catList.setAttribute('role', 'group');
+    catList.setAttribute('aria-label', 'Bill categories');
+
     categories.forEach((cat, idx) => {
-        html += `<li><button class="category-btn" data-category="${cat}" role="menuitemradio" aria-checked="false" tabindex="${idx === 0 ? '0' : '-1'}">${cat}</button></li>`;
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.className = 'category-btn';
+        btn.dataset.category = cat;
+        btn.setAttribute('role', 'menuitemradio');
+        btn.setAttribute('aria-checked', 'false');
+        btn.tabIndex = idx === 0 ? 0 : -1;
+        btn.textContent = cat; // Safe text content
+        li.appendChild(btn);
+        catList.appendChild(li);
     });
-    html += '</ul>';
+    nav.appendChild(catList);
 
-    html += '<div class="sidebar-actions">';
-    html += '<button id="addBillBtn" class="add-bill-btn" aria-label="Add a new bill">➕ Add Bill</button>';
-    html += '<button id="regenerateBillsBtn" class="regenerate-btn" aria-label="Regenerate all recurring bills for the next pay period" title="Regenerate all recurring bills">🔄 Regenerate</button>';
-    html += '</div>';
+    // Sidebar Actions
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'sidebar-actions';
 
-    html += '<div class="backup-controls" role="region" aria-label="Data backup controls">';
-    html += '<button id="exportDataBtn" class="action-btn" aria-label="Export bills data to JSON file">⬇️ Export</button>';
-    html += '<button id="importDataBtn" class="action-btn" aria-label="Import bills data from JSON file">⬆️ Import</button>';
-    html += '<input type="file" id="importFileInput" accept=".json" style="display: none;" aria-label="Select JSON file to import">';
-    html += '</div>';
+    const addBtn = document.createElement('button');
+    addBtn.id = 'addBillBtn';
+    addBtn.className = 'add-bill-btn';
+    addBtn.ariaLabel = 'Add a new bill';
+    addBtn.textContent = '➕ Add Bill';
+    addBtn.addEventListener('click', actions.onOpenAddBill);
+    actionsDiv.appendChild(addBtn);
 
-    html += '<div class="bulk-actions" role="region" aria-label="Bulk actions">';
-    html += '<h3>Bulk Actions</h3>';
-    html += '<button id="bulkMarkPaidBtn" class="action-btn bulk-btn" aria-label="Mark all visible bills as paid">✅ Mark All Paid</button>';
-    html += '<button id="bulkDeleteBtn" class="action-btn bulk-btn danger" aria-label="Delete all bill data">🗑️ Clear All Data</button>';
-    html += '</div>';
+    const regenBtn = document.createElement('button');
+    regenBtn.id = 'regenerateBillsBtn';
+    regenBtn.className = 'regenerate-btn';
+    regenBtn.ariaLabel = 'Regenerate all recurring bills for the next pay period';
+    regenBtn.title = 'Regenerate all recurring bills';
+    regenBtn.textContent = '🔄 Regenerate';
+    regenBtn.addEventListener('click', actions.onRegenerateBills);
+    actionsDiv.appendChild(regenBtn);
 
-    // Theme Toggle HTML
-    html += `
-        <div class="theme-toggle-container" role="region" aria-label="Theme settings">
-            <label for="themeToggle" class="theme-label">Dark Mode</label>
-            <label class="theme-switch" aria-label="Toggle dark mode">
-                <input type="checkbox" id="themeToggle" aria-checked="${savedTheme === 'dark' ? 'true' : 'false'}" ${savedTheme === 'dark' ? 'checked' : ''}>
-                <span class="slider" aria-hidden="true"></span>
-            </label>
-        </div>
-    `;
+    nav.appendChild(actionsDiv);
 
-    // Auth Button
-    const userEmail = localStorage.getItem('userEmail');
-    if (userEmail) {
-        html += `<div class="auth-info" role="region" aria-label="Account information"><p class="user-email">Logged in as:<br><span>${userEmail}</span></p><button id="authBtn" class="action-btn" aria-label="Logout from cloud sync">🚪 Logout</button></div>`;
-    } else {
-        html += `<button id="authBtn" class="action-btn" aria-label="Login to enable cloud sync">☁️ Sync (Login)</button>`;
-    }
+    // Backup Controls
+    const backupDiv = document.createElement('div');
+    backupDiv.className = 'backup-controls';
+    backupDiv.setAttribute('role', 'region');
+    backupDiv.ariaLabel = 'Data backup controls';
 
-    html += '</nav>';
-    sidebar.innerHTML = html;
+    const exportBtn = document.createElement('button');
+    exportBtn.id = 'exportDataBtn';
+    exportBtn.className = 'action-btn';
+    exportBtn.ariaLabel = 'Export bills data to JSON file';
+    exportBtn.textContent = '⬇️ Export';
+    exportBtn.addEventListener('click', actions.onExportData);
+    backupDiv.appendChild(exportBtn);
 
-    // Theme Toggle Event Listener
-    document.getElementById('themeToggle').addEventListener('change', (e) => {
+    const importBtn = document.createElement('button');
+    importBtn.id = 'importDataBtn';
+    importBtn.className = 'action-btn';
+    importBtn.ariaLabel = 'Import bills data from JSON file';
+    importBtn.textContent = '⬆️ Import';
+
+    // File Input
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = 'importFileInput';
+    fileInput.accept = '.json';
+    fileInput.style.display = 'none';
+    fileInput.ariaLabel = 'Select JSON file to import';
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            actions.onImportData(e.target.files[0]);
+            fileInput.value = '';
+        }
+    });
+
+    importBtn.addEventListener('click', () => fileInput.click());
+    backupDiv.appendChild(importBtn);
+    backupDiv.appendChild(fileInput);
+    nav.appendChild(backupDiv);
+
+    // Bulk Actions
+    const bulkDiv = document.createElement('div');
+    bulkDiv.className = 'bulk-actions';
+    bulkDiv.setAttribute('role', 'region');
+    bulkDiv.ariaLabel = 'Bulk actions';
+
+    const bulkHeader = document.createElement('h3');
+    bulkHeader.textContent = 'Bulk Actions';
+    bulkDiv.appendChild(bulkHeader);
+
+    const bulkPaidBtn = document.createElement('button');
+    bulkPaidBtn.id = 'bulkMarkPaidBtn';
+    bulkPaidBtn.className = 'action-btn bulk-btn';
+    bulkPaidBtn.ariaLabel = 'Mark all visible bills as paid';
+    bulkPaidBtn.textContent = '✅ Mark All Paid';
+    bulkPaidBtn.addEventListener('click', actions.onBulkMarkPaid);
+    bulkDiv.appendChild(bulkPaidBtn);
+
+    const bulkDelBtn = document.createElement('button');
+    bulkDelBtn.id = 'bulkDeleteBtn';
+    bulkDelBtn.className = 'action-btn bulk-btn danger';
+    bulkDelBtn.ariaLabel = 'Delete all bill data';
+    bulkDelBtn.textContent = '🗑️ Clear All Data';
+    bulkDelBtn.addEventListener('click', actions.onBulkDelete);
+    bulkDiv.appendChild(bulkDelBtn);
+
+    nav.appendChild(bulkDiv);
+
+    // Theme Toggle
+    const themeDiv = document.createElement('div');
+    themeDiv.className = 'theme-toggle-container';
+    themeDiv.setAttribute('role', 'region');
+    themeDiv.ariaLabel = 'Theme settings';
+
+    const themeLabel = document.createElement('label');
+    themeLabel.htmlFor = 'themeToggle';
+    themeLabel.className = 'theme-label';
+    themeLabel.textContent = 'Dark Mode';
+    themeDiv.appendChild(themeLabel);
+
+    const themeSwitch = document.createElement('label');
+    themeSwitch.className = 'theme-switch';
+    themeSwitch.ariaLabel = 'Toggle dark mode';
+
+    const themeInput = document.createElement('input');
+    themeInput.type = 'checkbox';
+    themeInput.id = 'themeToggle';
+    themeInput.ariaChecked = savedTheme === 'dark' ? 'true' : 'false';
+    themeInput.checked = savedTheme === 'dark';
+    themeInput.addEventListener('change', (e) => {
         if (e.target.checked) {
             document.body.classList.add('dark-mode');
             e.target.setAttribute('aria-checked', 'true');
@@ -89,17 +183,61 @@ export const initializeSidebar = (categories, actions) => {
         }
     });
 
-    document.getElementById('authBtn').addEventListener('click', () => {
-        if (userEmail) {
-            actions.onLogout();
-        } else {
-            actions.onOpenAuth();
-        }
-    });
+    const slider = document.createElement('span');
+    slider.className = 'slider';
+    slider.setAttribute('aria-hidden', 'true');
 
-    // Category button management with keyboard navigation
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    categoryBtns.forEach((btn, idx) => {
+    themeSwitch.appendChild(themeInput);
+    themeSwitch.appendChild(slider);
+    themeDiv.appendChild(themeSwitch);
+    nav.appendChild(themeDiv);
+
+    // Auth Info
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+        const authDiv = document.createElement('div');
+        authDiv.className = 'auth-info';
+        authDiv.setAttribute('role', 'region');
+        authDiv.ariaLabel = 'Account information';
+
+        const p = document.createElement('p');
+        p.className = 'user-email';
+        p.innerHTML = `Logged in as:<br><span>${userEmail}</span>`; // Safe as userEmail is from authenticated session, but better to be safe
+        // Let's make this safe too
+        p.innerHTML = '';
+        p.appendChild(document.createTextNode('Logged in as:'));
+        p.appendChild(document.createElement('br'));
+        const span = document.createElement('span');
+        span.textContent = userEmail;
+        p.appendChild(span);
+
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'authBtn';
+        logoutBtn.className = 'action-btn';
+        logoutBtn.ariaLabel = 'Logout from cloud sync';
+        logoutBtn.textContent = '🚪 Logout';
+        logoutBtn.addEventListener('click', actions.onLogout);
+
+        authDiv.appendChild(p);
+        authDiv.appendChild(logoutBtn);
+        nav.appendChild(authDiv);
+    } else {
+        const loginBtn = document.createElement('button');
+        loginBtn.id = 'authBtn';
+        loginBtn.className = 'action-btn';
+        loginBtn.ariaLabel = 'Login to enable cloud sync';
+        loginBtn.textContent = '☁️ Sync (Login)';
+        loginBtn.addEventListener('click', actions.onOpenAuth);
+        nav.appendChild(loginBtn);
+    }
+
+    sidebar.appendChild(nav);
+
+    // Category button logic (delegation or attached above? I removed the selector queries)
+    // I need to re-implement the radio button behavior logic since I'm not querying them anymore
+    // Actually, I can query them from `nav` easily.
+    const categoryBtns = nav.querySelectorAll('.category-btn');
+    categoryBtns.forEach((btn) => {
         btn.addEventListener('click', (e) => {
             categoryBtns.forEach(b => {
                 b.classList.remove('active');
@@ -113,46 +251,22 @@ export const initializeSidebar = (categories, actions) => {
             actions.onCategorySelect(e.target.dataset.category);
         });
 
-        // Keyboard navigation for categories (arrow keys)
+        // Keyboard navigation
         btn.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                const nextBtn = btn.nextElementSibling?.querySelector('.category-btn') || categoryBtns[0];
+                // Logic needs to find next button in the list
+                const nextLi = btn.closest('li').nextElementSibling;
+                const nextBtn = nextLi ? nextLi.querySelector('.category-btn') : categoryBtns[0];
                 nextBtn.focus();
                 nextBtn.click();
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                const prevBtn = btn.previousElementSibling?.querySelector('.category-btn') || categoryBtns[categoryBtns.length - 1];
+                const prevLi = btn.closest('li').previousElementSibling;
+                const prevBtn = prevLi ? prevLi.querySelector('.category-btn') : categoryBtns[categoryBtns.length - 1];
                 prevBtn.focus();
                 prevBtn.click();
             }
         });
     });
-
-    document.getElementById('addBillBtn').addEventListener('click', () => {
-        actions.onOpenAddBill();
-    });
-
-    document.getElementById('regenerateBillsBtn').addEventListener('click', () => {
-        actions.onRegenerateBills();
-    });
-
-    document.getElementById('exportDataBtn').addEventListener('click', () => {
-        actions.onExportData();
-    });
-
-    const fileInput = document.getElementById('importFileInput');
-    document.getElementById('importDataBtn').addEventListener('click', () => {
-        fileInput.click();
-    });
-
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            actions.onImportData(e.target.files[0]);
-            fileInput.value = ''; // Reset so same file can be selected again
-        }
-    });
-
-    document.getElementById('bulkMarkPaidBtn').onclick = () => actions.onBulkMarkPaid();
-    document.getElementById('bulkDeleteBtn').onclick = () => actions.onBulkDelete();
 };
