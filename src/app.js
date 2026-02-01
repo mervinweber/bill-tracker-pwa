@@ -41,6 +41,8 @@ import {
     fetchCloudBills
 } from './services/supabase.js';
 
+import { safeJSONParse } from './utils/validation.js';
+
 class AppOrchestrator {
     constructor() {
         this.categories = [];
