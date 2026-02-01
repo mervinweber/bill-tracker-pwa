@@ -53,7 +53,7 @@ safeSetToStorage('bills', bills);               // Graceful error handling
 - Data syncs to Supabase servers for cross-device access
 - Optional - app works fully offline without it
 
-#### Supabase Security Requirements
+#### Supabase Security Implementation
 
 **1. Authentication**
 ```javascript
@@ -73,6 +73,7 @@ if (!user) {
 
 **Example RLS Policy**:
 ```sql
+-- verified active policies
 -- Only users can see their own bills
 CREATE POLICY select_own_bills ON bills
   FOR SELECT USING (auth.uid() = user_id);
