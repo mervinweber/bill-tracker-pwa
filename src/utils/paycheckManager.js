@@ -12,7 +12,8 @@
  * - Weekly: Every 7 days
  * - Bi-weekly: Every 14 days
  * - Semi-monthly: 15th and last day of month
- * - Monthly: Same day each month
+ * - Monthly: Every 30 days
+ * - Custom: User-specified number of days (1-365)
  * - Annual: Same day each year
  * 
  * @module paycheckManager
@@ -95,9 +96,19 @@ class PaycheckManager {
             return validation;
         }
 
-        if (!['weekly', 'bi-weekly', 'monthly'].includes(settings.frequency)) {
-            validation.errors.push('Frequency must be weekly, bi-weekly, or monthly');
+        // Allow custom frequency or predefined frequencies
+        const validFrequencies = ['weekly', 'bi-weekly', 'monthly', 'custom'];
+        if (!validFrequencies.includes(settings.frequency)) {
+            validation.errors.push('Frequency must be weekly, bi-weekly, monthly, or custom');
             validation.isValid = false;
+        }
+
+        // If custom frequency, validate customDays
+        if (settings.frequency === 'custom') {
+            if (typeof settings.customDays !== 'number' || settings.customDays < 1 || settings.customDays > 365) {
+                validation.errors.push('Custom days must be a number between 1 and 365');
+                validation.isValid = false;
+            }
         }
 
         if (typeof settings.payPeriodsToShow !== 'number' || settings.payPeriodsToShow <= 0) {
@@ -131,7 +142,7 @@ class PaycheckManager {
     generatePaycheckDates() {
         try {
             this.payCheckDates = [];
-            const { startDate, frequency, payPeriodsToShow } = this.paymentSettings;
+            const { startDate, frequency, payPeriodsToShow, customDays } = this.paymentSettings;
 
             // Validate inputs
             if (!startDate || !frequency || !payPeriodsToShow) {
@@ -146,8 +157,17 @@ class PaycheckManager {
                 throw new ValidationError(`Invalid start date format`, 'startDate', startDate);
             }
 
-            const daysBetweenPaychecks =
-                frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+            // Determine days between paychecks
+            let daysBetweenPaychecks;
+            if (frequency === 'custom') {
+                daysBetweenPaychecks = customDays;
+                if (!daysBetweenPaychecks || daysBetweenPaychecks < 1) {
+                    throw new ValidationError('Custom frequency requires valid customDays value', 'customDays', customDays);
+                }
+            } else {
+                daysBetweenPaychecks =
+                    frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+            }
 
             // Calculate how many periods to skip to start from today or the next upcoming paycheck
             let periodsToSkip = 0;
