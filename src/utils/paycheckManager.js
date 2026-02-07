@@ -149,12 +149,14 @@ class PaycheckManager {
             const daysBetweenPaychecks =
                 frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
 
-            // Calculate how many periods to skip to start from today or the next upcoming paycheck
+            // Calculate how many periods to skip to start from the most recent paycheck
+            // Using Math.floor includes the current/most recent pay period (helpful for first-time users)
+            // Using Math.ceil would skip to the next future period
             let periodsToSkip = 0;
             const diffMs = today.getTime() - parsedStartDate.getTime();
             if (diffMs > 0) {
                 const msPerPeriod = daysBetweenPaychecks * 24 * 60 * 60 * 1000;
-                periodsToSkip = Math.ceil(diffMs / msPerPeriod);
+                periodsToSkip = Math.floor(diffMs / msPerPeriod);
             }
 
             for (let i = 0; i < payPeriodsToShow; i++) {
