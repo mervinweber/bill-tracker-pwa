@@ -126,11 +126,24 @@ export function showSettingsModal(categoriesList) {
         buttonGroup.style.marginTop = '20px';
         buttonGroup.style.display = 'flex';
         buttonGroup.style.gap = '10px';
+        buttonGroup.style.flexWrap = 'wrap';
+
+        const cleanupBtn = document.createElement('button');
+        cleanupBtn.type = 'button';
+        cleanupBtn.id = 'cleanupCategoriesBtn';
+        cleanupBtn.className = 'view-btn';
+        cleanupBtn.style.flex = '1';
+        cleanupBtn.style.minWidth = '150px';
+        cleanupBtn.style.backgroundColor = '#9b59b6';
+        cleanupBtn.textContent = '🧹 Clean Up Unused';
+        cleanupBtn.title = 'Remove all categories that have no bills';
+        buttonGroup.appendChild(cleanupBtn);
 
         const saveBtn = document.createElement('button');
         saveBtn.type = 'submit';
         saveBtn.className = 'submit-btn';
         saveBtn.style.flex = '1';
+        saveBtn.style.minWidth = '100px';
         saveBtn.textContent = 'Save Settings';
         buttonGroup.appendChild(saveBtn);
 
@@ -139,6 +152,7 @@ export function showSettingsModal(categoriesList) {
         cancelBtn.id = 'closeSettingsBtn';
         cancelBtn.className = 'cancel-btn';
         cancelBtn.style.flex = '1';
+        cancelBtn.style.minWidth = '100px';
         cancelBtn.textContent = 'Cancel';
         buttonGroup.appendChild(cancelBtn);
 
@@ -166,6 +180,11 @@ export function showSettingsModal(categoriesList) {
         // Add new category handler
         document.getElementById('addNewCategoryBtn').addEventListener('click', () => {
             handleAddNewCategory(categoriesList, modal);
+        });
+
+        // Clean up unused categories handler
+        document.getElementById('cleanupCategoriesBtn').addEventListener('click', () => {
+            handleCleanupUnusedCategories(categoriesList, modal);
         });
 
         // Delete category handlers
@@ -549,6 +568,51 @@ function handleSettingsSave(e, modal) {
     } catch (error) {
         console.error('Error saving settings:', error);
         billActionHandlers.showErrorNotification(error.message, 'Save Failed');
+    }
+}
+
+/**
+ * Handle cleaning up unused categories
+ * Finds all categories with no associated bills and removes them
+ */
+function handleCleanupUnusedCategories(categoriesList, settingsModal) {
+    try {
+        const allBills = billStore.getAll();
+        const usedCategories = new Set(allBills.map(b => b.category).filter(c => c && c.trim() !== ''));
+        
+        const unusedCategories = categoriesList.filter(cat => !usedCategories.has(cat));
+        
+        if (unusedCategories.length === 0) {
+            billActionHandlers.showErrorNotification(
+                'All categories are in use. Nothing to clean up!',
+                'Clean Up Complete'
+            );
+            return;
+        }
+        
+        const confirmed = confirm(
+            `Found ${unusedCategories.length} unused categories:\n\n${unusedCategories.join('\n')}\n\nRemove them?`
+        );
+        
+        if (!confirmed) {
+            return;
+        }
+        
+        // Remove unused categories
+        const cleanedCategories = categoriesList.filter(cat => usedCategories.has(cat));
+        
+        localStorage.setItem('customCategories', JSON.stringify(cleanedCategories));
+        
+        billActionHandlers.showSuccessNotification(
+            `Removed ${unusedCategories.length} unused categor${unusedCategories.length === 1 ? 'y' : 'ies'}`
+        );
+        
+        // Refresh settings modal to show updated list
+        settingsModal.remove();
+        showSettingsModal(cleanedCategories);
+    } catch (error) {
+        console.error('Error cleaning up categories:', error);
+        billActionHandlers.showErrorNotification(error.message, 'Cleanup Failed');
     }
 }
 
