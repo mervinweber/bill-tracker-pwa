@@ -185,7 +185,24 @@ export const openBillForm = (bill) => {
     document.getElementById('billDueDate').value = billData.dueDate;
     document.getElementById('billAmountDue').value = billData.amountDue || 0;
     document.getElementById('billBalance').value = billData.balance || 0;
-    document.getElementById('billRecurrence').value = billData.recurrence;
+    
+    // Ensure all recurrence options are available (safeguard against caching issues)
+    const recurrenceSelect = document.getElementById('billRecurrence');
+    const requiredOptions = ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly'];
+    const currentOptions = Array.from(recurrenceSelect.options).map(o => o.value);
+    
+    // Add missing options
+    requiredOptions.forEach(optValue => {
+        if (!currentOptions.includes(optValue)) {
+            const newOption = document.createElement('option');
+            newOption.value = optValue;
+            newOption.textContent = optValue;
+            recurrenceSelect.appendChild(newOption);
+            console.warn(`Recurrence option "${optValue}" was missing and has been added`);
+        }
+    });
+    
+    recurrenceSelect.value = billData.recurrence;
     document.getElementById('billNotes').value = billData.notes || '';
     document.getElementById('billWebsite').value = billData.website || '';
     
