@@ -539,12 +539,20 @@ export function importData(file) {
                     setTimeout(() => window.location.reload(), 1500);
                     resolve(true);
                 } catch (error) {
-                    throw new Error('Error parsing file: ' + error.message);
+                    console.error('Error parsing file:', error);
+                    showErrorNotification(
+                        error.message || 'Failed to parse import file',
+                        'Import Failed'
+                    );
+                    reject(error);
                 }
             };
 
             reader.onerror = () => {
-                reject(new Error('Error reading file'));
+                const errorMsg = 'Error reading file. Please try again.';
+                console.error(errorMsg);
+                showErrorNotification(errorMsg, 'Import Failed');
+                reject(new Error(errorMsg));
             };
 
             reader.readAsText(file);
