@@ -304,7 +304,7 @@ export function validateNotes(notes) {
 /**
  * Validate recurrence type
  * 
- * @param {string} recurrence - Recurrence type to validate
+ * @param {string} recurrence - Recurrence type to validate (case-insensitive)
  * @returns {Object} Validation result with isValid and error message
  */
 export function validateRecurrence(recurrence) {
@@ -314,7 +314,11 @@ export function validateRecurrence(recurrence) {
         return { isValid: false, error: 'Recurrence type is required' };
     }
 
-    if (!validTypes.includes(recurrence)) {
+    // Case-insensitive comparison
+    const normalizedRecurrence = recurrence.toLowerCase();
+    const isValid = validTypes.some(type => type.toLowerCase() === normalizedRecurrence);
+
+    if (!isValid) {
         return { isValid: false, error: `Recurrence must be one of: ${validTypes.join(', ')}` };
     }
 

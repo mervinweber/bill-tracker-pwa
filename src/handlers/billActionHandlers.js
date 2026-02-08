@@ -502,6 +502,17 @@ export function importData(file) {
                             newBill.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
                         }
 
+                        // Normalize recurrence to proper capitalization
+                        // Handles lowercase imports like 'monthly' → 'Monthly'
+                        if (newBill.recurrence) {
+                            const recurrenceLower = newBill.recurrence.toLowerCase();
+                            if (recurrenceLower === 'one-time') newBill.recurrence = 'One-time';
+                            else if (recurrenceLower === 'weekly') newBill.recurrence = 'Weekly';
+                            else if (recurrenceLower === 'bi-weekly') newBill.recurrence = 'Bi-weekly';
+                            else if (recurrenceLower === 'monthly') newBill.recurrence = 'Monthly';
+                            else if (recurrenceLower === 'yearly') newBill.recurrence = 'Yearly';
+                        }
+
                         // Ensure required fields have at least empty values/defaults
                         if (!newBill.paymentHistory) newBill.paymentHistory = [];
                         if (newBill.isPaid === undefined) newBill.isPaid = false;
