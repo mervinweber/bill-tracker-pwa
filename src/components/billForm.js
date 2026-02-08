@@ -189,6 +189,16 @@ export const openBillForm = (bill) => {
     document.getElementById('billNotes').value = billData.notes || '';
     document.getElementById('billWebsite').value = billData.website || '';
     
+    // Update form title based on create vs edit
+    const titleElement = document.getElementById('billFormTitle');
+    if (isEdit) {
+        titleElement.textContent = 'Edit Bill';
+        titleElement.innerHTML = '✏️ Edit Bill';
+    } else {
+        titleElement.textContent = 'Add Bill';
+        titleElement.innerHTML = '➕ Add Bill';
+    }
+    
     // Show/hide Mark as Paid button based on whether we're editing
     const markPaidBtn = document.getElementById('markPaidBtn');
     if (isEdit) {

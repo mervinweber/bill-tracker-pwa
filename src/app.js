@@ -373,10 +373,13 @@ class AppOrchestrator {
 
             let dueDateString = document.getElementById('billDueDate').value;
 
-            // Snap bill date to closest paycheck if it falls outside the paycheck range
-            const billDueDate = new Date(dueDateString);
-            const snappedDate = paycheckManager.snapBillDateToPaycheck(billDueDate);
-            dueDateString = snappedDate.toISOString().split('T')[0];
+            // Only snap bill date to closest paycheck when CREATING new bills
+            // When editing existing bills, preserve the date as-is to allow editing past/unusual dates
+            if (!existingBill) {
+                const billDueDate = new Date(dueDateString);
+                const snappedDate = paycheckManager.snapBillDateToPaycheck(billDueDate);
+                dueDateString = snappedDate.toISOString().split('T')[0];
+            }
 
             const bill = {
                 id: id || Date.now().toString(),
