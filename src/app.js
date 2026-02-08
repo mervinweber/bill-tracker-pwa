@@ -107,7 +107,8 @@ class AppOrchestrator {
                 onOpenAuth: () => openAuthModal(),
                 onLogout: () => this.handleLogout(),
                 onBulkDelete: () => this.handleBulkDelete(),
-                onBulkMarkPaid: () => this.handleBulkMarkPaid()
+                onBulkMarkPaid: () => this.handleBulkMarkPaid(),
+                onShowSettings: () => this.handleShowSettings()
             });
 
             // Fetch cloud data if logged in
