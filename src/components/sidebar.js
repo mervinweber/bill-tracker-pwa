@@ -20,6 +20,9 @@
  *   - User authentication info and login/logout controls
  *   - Full WCAG 2.1 Level AA accessibility including aria-labels, keyboard nav, and semantic structure
  */
+
+import { isSupabaseConfigured } from '../services/supabase.js';
+
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
     sidebar.innerHTML = '';
@@ -221,7 +224,8 @@ export const initializeSidebar = (categories, actions) => {
         authDiv.appendChild(p);
         authDiv.appendChild(logoutBtn);
         nav.appendChild(authDiv);
-    } else {
+    } else if (isSupabaseConfigured()) {
+        // Only show login button if Supabase is configured
         const loginBtn = document.createElement('button');
         loginBtn.id = 'authBtn';
         loginBtn.className = 'action-btn';

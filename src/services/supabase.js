@@ -28,6 +28,14 @@ export const initializeSupabase = () => {
 
 export const getSupabase = () => supabase;
 
+export const isSupabaseConfigured = () => {
+    return SUPABASE_URL && 
+           SUPABASE_URL !== 'YOUR_SUPABASE_URL' && 
+           SUPABASE_URL.startsWith('http') &&
+           SUPABASE_KEY &&
+           SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+};
+
 // Auth Functions
 export const signUp = async (email, password) => {
     if (!supabase) return { error: { message: 'Supabase not initialized' } };
