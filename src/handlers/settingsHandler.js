@@ -13,7 +13,10 @@ import { safeJSONParse } from '../utils/validation.js';
  */
 export function showSettingsModal(categoriesList) {
     try {
+        console.log('📋 Settings modal requested. Categories:', categoriesList);
+        
         const settings = safeJSONParse(localStorage.getItem('paymentSettings'), {});
+        console.log('💾 Payment settings loaded:', settings);
 
         if (!settings.startDate) {
             throw new Error('Payment settings not configured. Please run setup again.');
@@ -164,6 +167,7 @@ export function showSettingsModal(categoriesList) {
         modal.appendChild(modalContent);
 
         document.body.appendChild(modal);
+        console.log('✅ Settings modal created and appended to DOM');
 
         // Close button handler
         cancelBtn.addEventListener('click', () => {
