@@ -151,6 +151,14 @@ export const initializeSidebar = (categories, actions) => {
     bulkDelBtn.addEventListener('click', actions.onBulkDelete);
     bulkDiv.appendChild(bulkDelBtn);
 
+    const settingsBtn = document.createElement('button');
+    settingsBtn.id = 'settingsBtn';
+    settingsBtn.className = 'action-btn';
+    settingsBtn.ariaLabel = 'Open settings modal for category management';
+    settingsBtn.textContent = '⚙️ Settings';
+    settingsBtn.addEventListener('click', actions.onShowSettings);
+    bulkDiv.appendChild(settingsBtn);
+
     nav.appendChild(bulkDiv);
 
     // Theme Toggle
