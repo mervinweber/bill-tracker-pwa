@@ -4,6 +4,7 @@
  * @param {string[]} categories - Array of available bill categories
  * @param {Object} actions - Object containing action handler functions
  * @param {Function} actions.onSaveBill - Called when form is submitted (receives billData object)
+ * @param {Function} actions.onMarkPaid - Called when Mark as Paid button is clicked (receives billId and isPaid boolean)
  * @returns {void}
  * @description Creates a modal form with:
  *   - All required fields: category, name, due date, amount due, balance, recurrence, notes
@@ -12,8 +13,14 @@
  *   - Close button and Escape key handler
  *   - Help text linked via aria-describedby for all fields
  *   - Required field indicators and aria-required attributes
+ *   - Mark as Paid button for quick payment status toggling
  */
+
+// Module-level variable to store actions for use in openBillForm
+let formActions = {};
+
 export const initializeBillForm = (categories, actions) => {
+    formActions = actions;
     const form = document.getElementById('billForm');
     form.innerHTML = `<div class="modal" role="dialog" aria-labelledby="billFormTitle" aria-modal="true">
         <div class="modal-content">
@@ -81,6 +88,7 @@ export const initializeBillForm = (categories, actions) => {
                 
                 <div class="form-actions">
                     <button type="submit" class="submit-btn">Save Bill</button>
+                    <button type="button" id="markPaidBtn" class="action-btn" style="display: none;"></button>
                     <button type="button" id="cancelBillBtn" class="cancel-btn">Cancel</button>
                 </div>
             </form>
@@ -97,6 +105,17 @@ export const initializeBillForm = (categories, actions) => {
 
     document.getElementById('cancelBillBtn').addEventListener('click', () => {
         form.style.display = 'none';
+    });
+
+    // Mark as Paid/Unpaid button handler
+    const markPaidBtn = document.getElementById('markPaidBtn');
+    markPaidBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const billId = document.getElementById('billId').value;
+        const billIsPaid = markPaidBtn.dataset.isPaid === 'true';
+        if (formActions.onMarkPaid) {
+            formActions.onMarkPaid(billId, !billIsPaid);
+        }
     });
 
     window.addEventListener('click', (e) => {
@@ -169,6 +188,18 @@ export const openBillForm = (bill) => {
     document.getElementById('billRecurrence').value = billData.recurrence;
     document.getElementById('billNotes').value = billData.notes || '';
     document.getElementById('billWebsite').value = billData.website || '';
+    
+    // Show/hide Mark as Paid button based on whether we're editing
+    const markPaidBtn = document.getElementById('markPaidBtn');
+    if (isEdit) {
+        const isPaid = billData.isPaid || false;
+        markPaidBtn.textContent = isPaid ? '↩️ Mark as Unpaid' : '✅ Mark as Paid';
+        markPaidBtn.dataset.isPaid = isPaid;
+        markPaidBtn.style.display = 'block';
+    } else {
+        markPaidBtn.style.display = 'none';
+    }
+    
     document.getElementById('billForm').style.display = 'block';
     document.getElementById('billCategory').focus();
 };

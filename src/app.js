@@ -131,7 +131,8 @@ class AppOrchestrator {
             console.log('Diagnostic: Current app state category:', appState.getState('selectedCategory'));
 
             initializeBillForm(this.categories, {
-                onSaveBill: () => this.handleSaveBill()
+                onSaveBill: () => this.handleSaveBill(),
+                onMarkPaid: (billId, isPaid) => this.handleMarkPaidFromModal(billId, isPaid)
             });
 
             initializeAuthModal({
@@ -461,6 +462,14 @@ class AppOrchestrator {
         if (bill) {
             openBillForm(bill);
         }
+    }
+
+    handleMarkPaidFromModal(billId, isPaid) {
+        // Toggle payment status using existing handler
+        billActionHandlers.togglePaymentStatus(billId, isPaid);
+        // Close the modal and refresh the view
+        closeBillForm();
+        this.rerender();
     }
 
     handleRecordPayment(billId) {
