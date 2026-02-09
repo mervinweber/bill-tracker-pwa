@@ -121,6 +121,18 @@ class AppOrchestrator {
                 } else {
                     console.log('Diagnostic: No bills found in cloud (or empty).');
                     if (error) console.error('Cloud fetch error:', error);
+                    
+                    // If cloud is empty but we have local bills, sync them to cloud
+                    const localBills = billStore.getAll();
+                    if (localBills.length > 0) {
+                        console.log(`📤 Syncing ${localBills.length} local bills to cloud...`);
+                        const { error: syncError } = await syncBills(localBills);
+                        if (syncError) {
+                            console.error('Failed to sync local bills to cloud:', syncError);
+                        } else {
+                            console.log('✅ Local bills synced to cloud successfully');
+                        }
+                    }
                 }
             } else {
                 console.log('Diagnostic: No user logged in.');
