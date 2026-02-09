@@ -113,18 +113,24 @@ class AppOrchestrator {
 
             // Fetch cloud data if logged in
             if (user) {
-                console.log('Diagnostic: User logged in:', user.email);
-                const { data, error } = await fetchCloudBills();
-                if (data && data.length > 0) {
-                    console.log(`Diagnostic: Found ${data.length} bills in cloud. Updating local store.`);
-                    billStore.setBills(data);
-                } else {
-                    console.log('Diagnostic: No bills found in cloud (or empty).');
-                    if (error) console.error('Cloud fetch error:', error);
+                console.log('User logged in:', user.email);
+                try {
+                    const { data: cloudBills, error } = await fetchCloudBills();
+                    if (cloudBills && Array.isArray(cloudBills) && cloudBills.length > 0) {
+                        console.log(`✅ Found ${cloudBills.length} bills in cloud. Updating local store.`);
+                        billStore.setBills(cloudBills);
+                        // Ensure persisted to localStorage
+                        localStorage.setItem('bills', JSON.stringify(cloudBills));
+                    } else if (error) {
+                        console.warn('Cloud fetch error:', error);
+                        billActionHandlers.showErrorNotification('Could not fetch bills from cloud', 'Sync Warning');
+                    } else {
+                        console.log('No bills found in cloud.');
+                    }
                     
                     // If cloud is empty but we have local bills, sync them to cloud
                     const localBills = billStore.getAll();
-                    if (localBills.length > 0) {
+                    if ((!cloudBills || cloudBills.length === 0) && localBills.length > 0) {
                         console.log(`📤 Syncing ${localBills.length} local bills to cloud...`);
                         const { error: syncError } = await syncBills(localBills);
                         if (syncError) {
@@ -133,15 +139,15 @@ class AppOrchestrator {
                             console.log('✅ Local bills synced to cloud successfully');
                         }
                     }
+                } catch (error) {
+                    console.error('Unexpected error during cloud sync on app init:', error);
                 }
-            } else {
-                console.log('Diagnostic: No user logged in.');
             }
 
-            console.log(`Diagnostic: Total bills in store: ${billStore.getAll().length}`);
+            console.log(`Total bills in store: ${billStore.getAll().length}`);
             const categoriesFound = [...new Set(billStore.getAll().map(b => b.category))];
-            console.log(`Diagnostic: Categories detected: ${categoriesFound.join(', ')}`);
-            console.log('Diagnostic: Current app state category:', appState.getState('selectedCategory'));
+            console.log(`Categories detected: ${categoriesFound.join(', ')}`);
+            console.log('Current app state category:', appState.getState('selectedCategory'));
 
             initializeBillForm(this.categories, {
                 onSaveBill: () => this.handleSaveBill(),
@@ -658,12 +664,35 @@ class AppOrchestrator {
             // Sync/Fetch on login
             const { data: bills, error: fetchError } = await fetchCloudBills();
             if (bills && bills.length > 0) {
+                console.log(`📥 Fetched ${bills.length} bills from cloud on login`);
                 billStore.setBills(bills);
+                // Ensure bills are saved to localStorage before reload
+                try {
+                    localStorage.setItem('bills', JSON.stringify(bills));
+                    console.log('✅ Bills saved to localStorage');
+                } catch (e) {
+                    console.error('Failed to save bills to localStorage:', e);
+                    billActionHandlers.showErrorNotification('Warning: Could not persist bills locally', 'Storage Error');
+                }
             } else if (billStore.getAll().length > 0) {
                 // If cloud empty but local has data, upload local
-                await syncBills(billStore.getAll());
+                console.log(`📤 No cloud bills found, syncing ${billStore.getAll().length} local bills...`);
+                const { error: syncError } = await syncBills(billStore.getAll());
+                if (syncError) {
+                    console.error('Failed to sync local bills:', syncError);
+                    billActionHandlers.showErrorNotification('Could not sync bills to cloud', 'Sync Error');
+                } else {
+                    console.log('✅ Local bills synced to cloud');
+                }
+            } else {
+                console.log('No bills found in cloud or locally');
             }
-            window.location.reload(); // To refresh sidebar user state/icon
+            
+            // Add small delay to ensure storage is written before reload
+            // This is especially important on mobile devices
+            setTimeout(() => {
+                window.location.reload(); // To refresh sidebar user state/icon
+            }, 500);
         }
     }
 
