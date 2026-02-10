@@ -31,6 +31,7 @@ import {
     safeJSONParse
 } from '../utils/validation.js';
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
+import logger from '../utils/logger.js';
 
 /**
  * Display error notification to user with formatted message
@@ -120,6 +121,21 @@ export function showSuccessNotification(message) {
     }, 3000);
 }
 
+function advanceRecurringBillIfNeeded(bill, updated) {
+    if (updated.isPaid && bill.recurrence && bill.recurrence !== 'One-time') {
+        const currentDueDate = createLocalDate(bill.dueDate);
+        const nextDueDate = calculateNextDueDate(currentDueDate, bill.recurrence);
+        if (nextDueDate) {
+            updated.dueDate = formatLocalDate(nextDueDate);
+            logger.info('Recurring bill moved to next cycle', {
+                from: bill.dueDate,
+                to: updated.dueDate,
+                billId: bill.id
+            });
+        }
+    }
+}
+
 /**
  * Update bill balance with validation
  */
@@ -163,14 +179,7 @@ export function togglePaymentStatus(billId, isPaid) {
         updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
 
         // If marking as paid and bill is recurring, move to next payment cycle
-        if (isPaid && bill.recurrence && bill.recurrence !== 'One-time') {
-            const currentDueDate = createLocalDate(bill.dueDate);
-            const nextDueDate = calculateNextDueDate(currentDueDate, bill.recurrence);
-            if (nextDueDate) {
-                updated.dueDate = formatLocalDate(nextDueDate);
-                console.log(`📅 Recurring bill moved from ${bill.dueDate} to ${updated.dueDate}`);
-            }
-        }
+        advanceRecurringBillIfNeeded(bill, updated);
 
         billStore.update(updated);
 
@@ -392,14 +401,7 @@ export function recordPayment(billId, paymentData) {
         updated.isPaid = remaining <= 0;
 
         // If fully paid and bill is recurring, move to next payment cycle
-        if (updated.isPaid && bill.recurrence && bill.recurrence !== 'One-time') {
-            const currentDueDate = createLocalDate(bill.dueDate);
-            const nextDueDate = calculateNextDueDate(currentDueDate, bill.recurrence);
-            if (nextDueDate) {
-                updated.dueDate = formatLocalDate(nextDueDate);
-                console.log(`📅 Recurring bill moved from ${bill.dueDate} to ${updated.dueDate}`);
-            }
-        }
+        advanceRecurringBillIfNeeded(bill, updated);
 
         billStore.update(updated);
         

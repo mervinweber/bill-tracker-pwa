@@ -17,6 +17,10 @@
  * appState.setState({ selectedCategory: 'Utilities' });
  * appState.subscribe((newState) => console.log(newState));
  */
+import StorageManager from '../utils/StorageManager.js';
+import { STORAGE_KEYS } from '../utils/constants.js';
+import logger from '../utils/logger.js';
+
 class AppState {
     constructor() {
         this.state = {
@@ -43,7 +47,7 @@ class AppState {
      * @description Restores selectedCategory from localStorage on initialization
      */
     loadSavedState() {
-        const savedCategory = localStorage.getItem('selectedCategory');
+        const savedCategory = StorageManager.get(STORAGE_KEYS.SELECTED_CATEGORY);
         if (savedCategory) {
             this.state.selectedCategory = savedCategory;
         }
@@ -102,7 +106,7 @@ class AppState {
      */
     setSelectedCategory(category) {
         this.state.selectedCategory = category;
-        localStorage.setItem('selectedCategory', category);
+        StorageManager.set(STORAGE_KEYS.SELECTED_CATEGORY, category);
         this.notifySubscribers();
     }
 
@@ -177,7 +181,7 @@ class AppState {
             try {
                 callback(this.state);
             } catch (error) {
-                console.error('Error in app state subscriber:', error);
+                logger.error('Error in app state subscriber', error);
             }
         });
     }
@@ -188,7 +192,7 @@ class AppState {
     reset() {
         this.state = {
             selectedPaycheck: null,
-            selectedCategory: localStorage.getItem('selectedCategory') || null,
+            selectedCategory: StorageManager.get(STORAGE_KEYS.SELECTED_CATEGORY) || null,
             viewMode: 'filtered',
             displayMode: 'list',
             paymentFilter: 'all',

@@ -10,6 +10,7 @@ import { safeJSONParse } from '../utils/validation.js';
 import { syncPaymentSettings, getUser } from '../services/supabase.js';
 import StorageManager from '../utils/StorageManager.js';
 import logger from '../utils/logger.js';
+import { STORAGE_KEYS } from '../utils/constants.js';
 
 /**
  * Show settings modal
@@ -18,7 +19,7 @@ export function showSettingsModal(categoriesList) {
     try {
         logger.info('Settings modal requested', { categories: categoriesList });
         
-        const settings = StorageManager.get('paymentSettings', {});
+        const settings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, {});
         logger.info('Payment settings loaded', { settings });
 
         if (!settings.startDate) {
@@ -170,7 +171,7 @@ export function showSettingsModal(categoriesList) {
         modal.appendChild(modalContent);
 
         document.body.appendChild(modal);
-        console.log('✅ Settings modal created and appended to DOM');
+        logger.info('Settings modal created and appended to DOM');
 
         // Close button handler
         cancelBtn.addEventListener('click', () => {
@@ -217,7 +218,7 @@ export function showSettingsModal(categoriesList) {
             handleSettingsSave(e, modal);
         });
     } catch (error) {
-        console.error('Error showing settings modal:', error);
+        logger.error('Error showing settings modal', error);
         billActionHandlers.showErrorNotification(error.message, 'Settings Error');
     }
 }
@@ -246,8 +247,8 @@ function handleAddNewCategory(categoriesList, settingsModal) {
         }
 
         categoriesList.push(name);
-        StorageManager.set('customCategories', categoriesList);
-        StorageManager.set('selectedCategory', name);
+        StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, categoriesList);
+        StorageManager.set(STORAGE_KEYS.SELECTED_CATEGORY, name);
 
         billActionHandlers.showSuccessNotification(`Category "${name}" added successfully`);
 
@@ -255,7 +256,7 @@ function handleAddNewCategory(categoriesList, settingsModal) {
         settingsModal.remove();
         showSettingsModal(categoriesList);
     } catch (error) {
-        console.error('Error adding category:', error);
+        logger.error('Error adding category', error);
         billActionHandlers.showErrorNotification(error.message, 'Add Category Failed');
     }
 }
@@ -287,7 +288,7 @@ function handleEditCategory(oldName, categoriesList) {
 
         updateCategoryName(oldName, newName, categoriesList);
     } catch (error) {
-        console.error('Error editing category:', error);
+        logger.error('Error editing category', error);
         billActionHandlers.showErrorNotification(error.message, 'Edit Category Failed');
     }
 }
@@ -314,7 +315,7 @@ function handleDeleteCategory(categoryName, categoriesList, settingsModal) {
             );
         }
     } catch (error) {
-        console.error('Error deleting category:', error);
+        logger.error('Error deleting category', error);
         billActionHandlers.showErrorNotification(error.message, 'Delete Category Failed');
     }
 }
@@ -327,11 +328,11 @@ function deleteCategoryClean(categoryName, categoriesList, settingsModal) {
         const index = categoriesList.indexOf(categoryName);
         if (index > -1) {
             categoriesList.splice(index, 1);
-            StorageManager.set('customCategories', categoriesList);
+            StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, categoriesList);
 
             // Reset selection if needed
-            if (StorageManager.get('selectedCategory') === categoryName) {
-                StorageManager.set('selectedCategory', categoriesList[0] || 'All');
+            if (StorageManager.get(STORAGE_KEYS.SELECTED_CATEGORY) === categoryName) {
+                StorageManager.set(STORAGE_KEYS.SELECTED_CATEGORY, categoriesList[0] || 'All');
             }
 
             billActionHandlers.showSuccessNotification(`Category "${categoryName}" deleted`);
@@ -339,7 +340,7 @@ function deleteCategoryClean(categoryName, categoriesList, settingsModal) {
             showSettingsModal(categoriesList);
         }
     } catch (error) {
-        console.error('Error deleting category:', error);
+        logger.error('Error deleting category', error);
         billActionHandlers.showErrorNotification(error.message, 'Delete Failed');
     }
 }
@@ -494,11 +495,11 @@ function showDeleteCategoryConflictModal(categoryName, billCount, categoriesList
             if (index > -1) {
                 categoriesList.splice(index, 1);
             }
-            StorageManager.set('customCategories', categoriesList);
+            StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, categoriesList);
 
             // Reset selection
-            if (StorageManager.get('selectedCategory') === categoryName) {
-                StorageManager.set('selectedCategory', categoriesList[0] || 'All');
+            if (StorageManager.get(STORAGE_KEYS.SELECTED_CATEGORY) === categoryName) {
+                StorageManager.set(STORAGE_KEYS.SELECTED_CATEGORY, categoriesList[0] || 'All');
             }
 
             billActionHandlers.showSuccessNotification(`Category "${categoryName}" deleted`);
@@ -521,7 +522,7 @@ function updateCategoryName(oldName, newName, categoriesList) {
         const index = categoriesList.indexOf(oldName);
         if (index !== -1) {
             categoriesList[index] = newName;
-            StorageManager.set('customCategories', categoriesList);
+            StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, categoriesList);
         }
 
         // Update all bills with this category
@@ -536,7 +537,7 @@ function updateCategoryName(oldName, newName, categoriesList) {
         billActionHandlers.showSuccessNotification(`Category renamed to "${newName}"`);
         return true;
     } catch (error) {
-        console.error('Error updating category name:', error);
+        logger.error('Error updating category name', error);
         billActionHandlers.showErrorNotification(error.message, 'Update Failed');
         return false;
     }
@@ -567,7 +568,7 @@ function handleSettingsSave(e, modal) {
         paycheckManager.updateSettings(newSettings);
 
         // Save to localStorage
-        StorageManager.set('paymentSettings', newSettings);
+        StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, newSettings);
 
         // Sync to cloud if user is logged in
         (async () => {
@@ -576,13 +577,13 @@ function handleSettingsSave(e, modal) {
                 try {
                     const { error } = await syncPaymentSettings(newSettings);
                     if (error) {
-                        console.error('Failed to sync payment settings to cloud:', error);
+                        logger.error('Failed to sync payment settings to cloud', error);
                         billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
                     } else {
-                        console.log('✅ Payment settings synced to cloud');
+                        logger.info('Payment settings synced to cloud');
                     }
                 } catch (syncErr) {
-                    console.error('Error syncing payment settings:', syncErr);
+                    logger.error('Error syncing payment settings', syncErr);
                     billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
                 }
             }
@@ -592,7 +593,7 @@ function handleSettingsSave(e, modal) {
         modal.remove();
         setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
-        console.error('Error saving settings:', error);
+        logger.error('Error saving settings', error);
         billActionHandlers.showErrorNotification(error.message, 'Save Failed');
     }
 }
@@ -627,7 +628,7 @@ function handleCleanupUnusedCategories(categoriesList, settingsModal) {
         // Remove unused categories
         const cleanedCategories = categoriesList.filter(cat => usedCategories.has(cat));
         
-        StorageManager.set('customCategories', cleanedCategories);
+        StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, cleanedCategories);
         
         billActionHandlers.showSuccessNotification(
             `Removed ${unusedCategories.length} unused categor${unusedCategories.length === 1 ? 'y' : 'ies'}`
@@ -637,7 +638,7 @@ function handleCleanupUnusedCategories(categoriesList, settingsModal) {
         settingsModal.remove();
         showSettingsModal(cleanedCategories);
     } catch (error) {
-        console.error('Error cleaning up categories:', error);
+        logger.error('Error cleaning up categories', error);
         billActionHandlers.showErrorNotification(error.message, 'Cleanup Failed');
     }
 }
