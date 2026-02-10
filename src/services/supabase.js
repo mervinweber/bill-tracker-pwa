@@ -1,4 +1,6 @@
 
+import logger from '../utils/logger.js';
+
 // Supabase Service
 // Secrets are read from .env file (Vite)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -10,19 +12,19 @@ export const initializeSupabase = () => {
     if (window.supabase) {
         // Validate URL before attempting init to prevent crash
         if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL' || !SUPABASE_URL.startsWith('http')) {
-            console.warn('Supabase URL not configured in .env. Skipping initialization.');
+            logger.warn('Supabase URL not configured in .env. Skipping initialization.');
             return;
         }
 
         try {
             // @ts-ignore
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log('Supabase initialized');
+            logger.info('Supabase initialized');
         } catch (error) {
-            console.error('Failed to initialize Supabase:', error);
+            logger.error('Failed to initialize Supabase', error);
         }
     } else {
-        console.error('Supabase client not loaded');
+        logger.error('Supabase client not loaded');
     }
 };
 
@@ -73,19 +75,19 @@ export const signOut = async () => {
 };
 
 export const resetPassword = async (email) => {
-    console.log('Attempting password reset for:', email);
+    logger.info('Attempting password reset', { email });
     if (!supabase) {
-        console.error('Supabase not initialized for resetPassword');
+        logger.error('Supabase not initialized for resetPassword');
         return { error: { message: 'Supabase not initialized' } };
     }
     try {
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: window.location.origin
         });
-        console.log('Reset password response:', { data, error });
+        logger.info('Reset password response', { data, error });
         return { data, error };
     } catch (err) {
-        console.error('Exception in resetPassword:', err);
+        logger.error('Exception in resetPassword', err);
         return { error: err };
     }
 };

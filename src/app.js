@@ -10,6 +10,7 @@ import { paycheckManager } from './utils/paycheckManager.js';
 import { createLocalDate } from './utils/dates.js';
 import StorageManager from './utils/StorageManager.js';
 import logger from './utils/logger.js';
+import { STORAGE_KEYS } from './utils/constants.js';
 
 import { initializeHeader, updateHeaderUI } from './components/header.js';
 import { initializeSidebar } from './components/sidebar.js';
@@ -61,7 +62,7 @@ class AppOrchestrator {
     async initialize() {
         try {
             // Check if user has payment settings
-            const hasSettings = StorageManager.get('paymentSettings');
+            const hasSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS);
             if (!hasSettings) {
                 window.location.href = 'setup.html';
                 return;
@@ -80,9 +81,9 @@ class AppOrchestrator {
             const user = await getUser();
             if (user) {
                 logger.info('User logged in', { email: user.email });
-                StorageManager.set('userEmail', user.email);
+                StorageManager.set(STORAGE_KEYS.USER_EMAIL, user.email);
             } else {
-                StorageManager.remove('userEmail');
+                StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
             }
 
             // Get paycheck labels
@@ -119,12 +120,13 @@ class AppOrchestrator {
             // Fetch cloud data if logged in
             if (user) {
                 logger.info('User logged in', { email: user.email });
+                StorageManager.set(STORAGE_KEYS.USER_EMAIL, user.email);
                 try {
                     // Fetch payment settings from cloud
                     const { data: cloudPaymentSettings, error: settingsError } = await fetchCloudPaymentSettings();
                     if (cloudPaymentSettings && typeof cloudPaymentSettings === 'object') {
                         logger.info('Found payment settings in cloud. Syncing locally.');
-                        StorageManager.set('paymentSettings', cloudPaymentSettings);
+                        StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, cloudPaymentSettings);
                         // Reload paycheckManager to use cloud settings
                         paycheckManager.paymentSettings = cloudPaymentSettings;
                         paycheckManager.generatePaycheckDates();
@@ -138,7 +140,7 @@ class AppOrchestrator {
                         logger.info(`Found ${cloudBills.length} bills in cloud. Updating local store.`);
                         billStore.setBills(cloudBills);
                         // Ensure persisted to localStorage
-                        StorageManager.set('bills', cloudBills);
+                        StorageManager.set(STORAGE_KEYS.BILLS, cloudBills);
                     } else if (error) {
                         logger.warn('Cloud fetch error', { error: error.message });
                         billActionHandlers.showErrorNotification('Could not fetch bills from cloud', 'Sync Warning');
@@ -148,34 +150,36 @@ class AppOrchestrator {
                     
                     // If cloud is empty but we have local data, sync them to cloud
                     const localBills = billStore.getAll();
-                    const localPaymentSettings = StorageManager.get('paymentSettings', null);
+                    const localPaymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
                     if ((!cloudBills || cloudBills.length === 0) && localBills.length > 0) {
                         logger.info(`Syncing ${localBills.length} local bills to cloud...`);
                         const { error: syncError } = await syncUserData(localBills, localPaymentSettings);
                         if (syncError) {
-                            console.error('Failed to sync local data to cloud:', syncError);
+                            logger.error('Failed to sync local data to cloud', syncError);
                         } else {
-                            console.log('✅ Local data synced to cloud successfully');
+                            logger.info('Local data synced to cloud successfully');
                         }
                     } else if (!cloudPaymentSettings && localPaymentSettings) {
                         // Sync local payment settings to cloud even if bills exist
-                        console.log('📤 Syncing local payment settings to cloud...');
+                        logger.info('Syncing local payment settings to cloud...');
                         const { error: syncError } = await syncPaymentSettings(localPaymentSettings);
                         if (syncError) {
-                            console.error('Failed to sync payment settings:', syncError);
+                            logger.error('Failed to sync payment settings', syncError);
                         } else {
-                            console.log('✅ Payment settings synced to cloud');
+                            logger.info('Payment settings synced to cloud');
                         }
                     }
                 } catch (error) {
-                    console.error('Unexpected error during cloud sync on app init:', error);
+                    logger.error('Unexpected error during cloud sync on app init', error);
                 }
             }
 
-            console.log(`Total bills in store: ${billStore.getAll().length}`);
             const categoriesFound = [...new Set(billStore.getAll().map(b => b.category))];
-            console.log(`Categories detected: ${categoriesFound.join(', ')}`);
-            console.log('Current app state category:', appState.getState('selectedCategory'));
+            logger.debug('App state summary', {
+                totalBills: billStore.getAll().length,
+                categories: categoriesFound,
+                selectedCategory: appState.getState('selectedCategory')
+            });
 
             initializeBillForm(this.categories, {
                 onSaveBill: () => this.handleSaveBill(),
@@ -221,9 +225,9 @@ class AppOrchestrator {
             this.rerender();
 
             this.initialized = true;
-            console.log('App initialized successfully');
+            logger.info('App initialized successfully');
         } catch (error) {
-            console.error('Error initializing app:', error);
+            logger.error('Error initializing app', error);
             billActionHandlers.showErrorNotification(error.message, 'Initialization Error');
         }
     }
@@ -246,10 +250,10 @@ class AppOrchestrator {
                 this.isSyncing = false;
 
                 if (error) {
-                    console.error('Cloud sync failed:', error);
+                    logger.error('Cloud sync failed', error);
                     // Silent fail or small indicator?
                 } else {
-                    console.log('Cloud sync successful');
+                    logger.info('Cloud sync successful');
                 }
             }
         }, 2000); // 2 second debounce
@@ -269,7 +273,7 @@ class AppOrchestrator {
         ];
 
         // Get from storage
-        let categories = StorageManager.get('customCategories', [...DEFAULT_CATEGORIES]);
+        let categories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, [...DEFAULT_CATEGORIES]);
 
         // Safety check: ensure categories from existing bills are included
         const bills = billStore.getAll();
@@ -279,7 +283,7 @@ class AppOrchestrator {
         }
 
         this.categories = categories;
-        StorageManager.set('customCategories', categories);
+                        StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, categories);
     }
 
     /**
@@ -355,7 +359,7 @@ class AppOrchestrator {
                 );
             }
         } catch (error) {
-            console.error('Error re-rendering:', error);
+            logger.error('Error re-rendering', error);
         }
     }
 
@@ -487,7 +491,7 @@ class AppOrchestrator {
                 `Bill "${bill.name}" ${id ? 'updated' : 'created'} successfully`
             );
         } catch (error) {
-            console.error('Error saving bill:', error);
+            logger.error('Error saving bill', error);
             billActionHandlers.showErrorNotification(error.message, 'Save Failed');
         }
     }
@@ -662,7 +666,7 @@ class AppOrchestrator {
             );
             this.rerender();
         } catch (error) {
-            console.error('Error regenerating bills:', error);
+            logger.error('Error regenerating bills', error);
             billActionHandlers.showErrorNotification(error.message, 'Regeneration Failed');
         }
     }
@@ -683,7 +687,7 @@ class AppOrchestrator {
         } else {
             // Save user email to localStorage so Sidebar can read it on reload
             if (data.user && data.user.email) {
-                StorageManager.set('userEmail', data.user.email);
+                StorageManager.set(STORAGE_KEYS.USER_EMAIL, data.user.email);
             }
 
             closeAuthModal();
@@ -696,7 +700,7 @@ class AppOrchestrator {
                 const { data: cloudPaymentSettings } = await fetchCloudPaymentSettings();
                 if (cloudPaymentSettings && typeof cloudPaymentSettings === 'object') {
                     logger.info('Fetched payment settings from cloud');
-                    StorageManager.set('paymentSettings', cloudPaymentSettings);
+                    StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, cloudPaymentSettings);
                     // Update paycheckManager with cloud settings
                     paycheckManager.paymentSettings = cloudPaymentSettings;
                     paycheckManager.generatePaycheckDates();
@@ -710,7 +714,7 @@ class AppOrchestrator {
                     billStore.setBills(bills);
                     // Ensure bills are saved to localStorage before reload
                     try {
-                        StorageManager.set('bills', bills);
+                        StorageManager.set(STORAGE_KEYS.BILLS, bills);
                         logger.info('Bills saved to localStorage');
                     } catch (e) {
                         logger.error('Failed to save bills to localStorage', e);
@@ -720,7 +724,7 @@ class AppOrchestrator {
                 } else if (billStore.getAll().length > 0) {
                     // If cloud empty but local has data, upload local with payment settings
                     logger.info(`No cloud bills found, syncing ${billStore.getAll().length} local bills...`);
-                    const localPaymentSettings = StorageManager.get('paymentSettings', null);
+                    const localPaymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
                     const { error: syncError } = await syncUserData(billStore.getAll(), localPaymentSettings);
                     if (syncError) {
                         logger.error('Failed to sync local data', syncError);
@@ -757,7 +761,7 @@ class AppOrchestrator {
 
     async handleLogout() {
         await signOut();
-        StorageManager.remove('userEmail');
+        StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
         window.location.reload();
     }
 
@@ -825,7 +829,7 @@ class AppOrchestrator {
     handleToggleTheme() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
-        StorageManager.set('theme', isDark ? 'dark' : 'light');
+        StorageManager.set(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light');
 
         // Update button icon
         const themeBtn = document.getElementById('themeBtn');
@@ -900,7 +904,7 @@ class AppOrchestrator {
      * Initialize theme from localStorage
      */
     initializeTheme() {
-        const savedTheme = StorageManager.get('theme');
+        const savedTheme = StorageManager.get(STORAGE_KEYS.THEME);
         if (savedTheme === 'dark') {
             document.body.classList.add('dark-mode');
         }

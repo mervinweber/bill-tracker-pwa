@@ -5,6 +5,7 @@
 
 import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
+import logger from '../utils/logger.js';
 
 /**
  * Render calendar view
@@ -127,7 +128,7 @@ export function renderCalendar() {
             renderCalendar();
         });
     } catch (error) {
-        console.error('Error rendering calendar:', error);
+        logger.error('Error rendering calendar', error);
         const calendarView = document.getElementById('calendarView');
         if (calendarView) {
             calendarView.innerHTML = `<div style="padding: 20px; color: var(--danger-color);">Error rendering calendar: ${error.message}</div>`;
@@ -152,6 +153,6 @@ export function initializeCalendarView() {
             main.appendChild(calendarDiv);
         }
     } catch (error) {
-        console.error('Error initializing calendar view:', error);
+        logger.error('Error initializing calendar view', error);
     }
 }

@@ -7,6 +7,8 @@
  * @module authModal
  */
 
+import logger from '../utils/logger.js';
+
 /**
  * Initialize authentication modal with login and signup handlers
  * 
@@ -103,7 +105,7 @@ export const initializeAuthModal = (actions) => {
         try {
             await callback(email, password);
         } catch (error) {
-            console.error(error);
+            logger.error('Auth modal action failed', error);
             setAuthMessage(error.message || 'An error occurred', true);
         } finally {
             // Reset Loading

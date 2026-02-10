@@ -5,6 +5,8 @@
  * and transaction queuing.
  */
 
+import logger from './logger.js';
+
 const DB_NAME = 'BillTrackerOfflineDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'offlineQueue';
@@ -18,7 +20,7 @@ export const initDB = () => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onerror = (event) => {
-            console.error('IndexedDB error:', event.target.error);
+            logger.error('IndexedDB error', event.target.error);
             reject(event.target.error);
         };
 

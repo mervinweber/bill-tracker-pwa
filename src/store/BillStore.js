@@ -23,9 +23,9 @@
 
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
 import { queueOfflineTransaction } from '../utils/indexedDBUtils.js';
-import { safeJSONParse } from '../utils/validation.js';
 import StorageManager from '../utils/StorageManager.js';
 import logger from '../utils/logger.js';
+import { STORAGE_KEYS } from '../utils/constants.js';
 
 /**
  * Bill Store Class
@@ -67,7 +67,7 @@ class BillStore {
      */
     load() {
         try {
-            const storedBills = StorageManager.get('bills', null);
+            const storedBills = StorageManager.get(STORAGE_KEYS.BILLS, null);
             if (storedBills) {
                 // StorageManager already parses JSON, so we don't need safeJSONParse
                 const parsed = Array.isArray(storedBills) ? storedBills : [];
@@ -103,7 +103,7 @@ class BillStore {
      * store.add(newBill); // Calls save() internally
      */
     save(action = 'update', data = null) {
-        StorageManager.set('bills', this.bills);
+        StorageManager.set(STORAGE_KEYS.BILLS, this.bills);
 
         // Queue for offline sync if needed (especially for Supabase)
         if (data) {

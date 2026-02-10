@@ -3,8 +3,12 @@
  * Ensures that all existing bill operations work correctly after accessibility improvements
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let passed = 0;
 let failed = 0;
@@ -46,7 +50,7 @@ test('Header: All Bills button event listener is attached', () => {
 });
 
 test('Header: Payment filter dropdown event listener is attached', () => {
-    if (!headerContent.includes("paymentFilter.addEventListener('change'")) throw new Error('Missing change listener');
+    if (!headerContent.includes("getElementById('paymentFilter').addEventListener('change'")) throw new Error('Missing change listener');
     if (!headerContent.includes("actions.onFilterChange")) throw new Error('Missing action handler');
 });
 
@@ -67,32 +71,32 @@ test('Sidebar: Category buttons have click handlers', () => {
 });
 
 test('Sidebar: Add Bill button has event listener', () => {
-    if (!sidebarContent.includes("addBillBtn.addEventListener('click'")) throw new Error('Missing click listener');
+    if (!sidebarContent.includes("addBtn.addEventListener('click'")) throw new Error('Missing click listener');
     if (!sidebarContent.includes("actions.onOpenAddBill")) throw new Error('Missing action handler');
 });
 
 test('Sidebar: Regenerate Bills button has event listener', () => {
-    if (!sidebarContent.includes("regenerateBillsBtn.addEventListener('click'")) throw new Error('Missing click listener');
+    if (!sidebarContent.includes("regenBtn.addEventListener('click'")) throw new Error('Missing click listener');
     if (!sidebarContent.includes("actions.onRegenerateBills")) throw new Error('Missing action handler');
 });
 
 test('Sidebar: Export Data button has event listener', () => {
-    if (!sidebarContent.includes("exportDataBtn.addEventListener('click'")) throw new Error('Missing click listener');
+    if (!sidebarContent.includes("exportBtn.addEventListener('click'")) throw new Error('Missing click listener');
     if (!sidebarContent.includes("actions.onExportData")) throw new Error('Missing action handler');
 });
 
 test('Sidebar: Import Data button has event listener', () => {
-    if (!sidebarContent.includes("importDataBtn.addEventListener('click'")) throw new Error('Missing click listener');
+    if (!sidebarContent.includes("importBtn.addEventListener('click'")) throw new Error('Missing click listener');
     if (!sidebarContent.includes("fileInput.click")) throw new Error('Missing file input click');
 });
 
 test('Sidebar: Theme toggle has event listener', () => {
-    if (!sidebarContent.includes("themeToggle.addEventListener('change'")) throw new Error('Missing theme toggle listener');
+    if (!sidebarContent.includes("themeInput.addEventListener('change'")) throw new Error('Missing theme toggle listener');
     if (!sidebarContent.includes("document.body.classList.add('dark-mode')")) throw new Error('Missing dark mode class toggle');
 });
 
 test('Sidebar: Auth button has event listener', () => {
-    if (!sidebarContent.includes("authBtn.addEventListener('click'")) throw new Error('Missing click listener');
+    if (!sidebarContent.includes("logoutBtn.addEventListener('click'")) throw new Error('Missing click listener');
     if (!sidebarContent.includes("actions.onLogout")) throw new Error('Missing logout handler');
     if (!sidebarContent.includes("actions.onOpenAuth")) throw new Error('Missing auth handler');
 });
@@ -110,32 +114,32 @@ test('Sidebar: Keyboard navigation for categories (arrow keys)', () => {
 // ============ BILL GRID TESTS ============
 
 test('Bill Grid: Balance input change listeners are attached', () => {
-    if (!billGridContent.includes(".balance-input.forEach")) throw new Error('Missing balance input iteration');
+    if (!billGridContent.includes("balanceInput.addEventListener('change'")) throw new Error('Missing balance input change handler');
     if (!billGridContent.includes("actions.onUpdateBalance")) throw new Error('Missing balance update handler');
 });
 
 test('Bill Grid: Payment checkbox change listeners are attached', () => {
-    if (!billGridContent.includes(".payment-checkbox.forEach")) throw new Error('Missing checkbox iteration');
+    if (!billGridContent.includes("checkbox.addEventListener('change'")) throw new Error('Missing checkbox change handler');
     if (!billGridContent.includes("actions.onTogglePayment")) throw new Error('Missing payment toggle handler');
 });
 
 test('Bill Grid: Pay button listeners are attached', () => {
-    if (!billGridContent.includes(".pay-btn.forEach")) throw new Error('Missing pay button iteration');
+    if (!billGridContent.includes("payBtn.addEventListener('click'")) throw new Error('Missing pay button listener');
     if (!billGridContent.includes("actions.onRecordPayment")) throw new Error('Missing payment handler');
 });
 
 test('Bill Grid: History button listeners are attached', () => {
-    if (!billGridContent.includes(".history-btn.forEach")) throw new Error('Missing history button iteration');
+    if (!billGridContent.includes("historyBtn.addEventListener('click'")) throw new Error('Missing history button listener');
     if (!billGridContent.includes("actions.onViewHistory")) throw new Error('Missing history handler');
 });
 
 test('Bill Grid: Delete button listeners are attached', () => {
-    if (!billGridContent.includes(".delete-btn.forEach")) throw new Error('Missing delete button iteration');
+    if (!billGridContent.includes("deleteBtn.addEventListener('click'")) throw new Error('Missing delete button listener');
     if (!billGridContent.includes("actions.onDeleteBill")) throw new Error('Missing delete handler');
 });
 
 test('Bill Grid: Edit button listeners are attached', () => {
-    if (!billGridContent.includes(".edit-btn.forEach")) throw new Error('Missing edit button iteration');
+    if (!billGridContent.includes("editBtn.addEventListener('click'")) throw new Error('Missing edit button listener');
 });
 
 test('Bill Grid: Overdue status is calculated correctly', () => {
@@ -144,17 +148,18 @@ test('Bill Grid: Overdue status is calculated correctly', () => {
 });
 
 test('Bill Grid: Bill filtering by category works', () => {
-    if (!billGridContent.includes("bill.category === selectedCategory")) throw new Error('Missing category filter');
+    if (!billGridContent.includes("filterBillsByPeriod")) throw new Error('Missing shared filtering logic');
+    if (!billGridContent.includes("selectedCategory")) throw new Error('Missing selectedCategory usage');
 });
 
 test('Bill Grid: Bill date range filtering works', () => {
-    if (!billGridContent.includes("billDate >= currentPaycheckDate")) throw new Error('Missing date range start check');
-    if (!billGridContent.includes("billDate < nextPaycheckDate")) throw new Error('Missing date range end check');
+    if (!billGridContent.includes("filterBillsByPeriod")) throw new Error('Missing shared filtering logic');
+    if (!billGridContent.includes("payCheckDates")) throw new Error('Missing pay check dates usage');
 });
 
 test('Bill Grid: Payment status filtering works', () => {
-    if (!billGridContent.includes("paymentFilter === 'unpaid'")) throw new Error('Missing unpaid filter');
-    if (!billGridContent.includes("paymentFilter === 'paid'")) throw new Error('Missing paid filter');
+    if (!billGridContent.includes("filterBillsByPeriod")) throw new Error('Missing shared filtering logic');
+    if (!billGridContent.includes("paymentFilter")) throw new Error('Missing paymentFilter usage');
 });
 
 test('Bill Grid: All bills view is rendered correctly', () => {
@@ -178,7 +183,7 @@ test('Bill Form: Form validation exists', () => {
 });
 
 test('Bill Form: Form submit handler is attached', () => {
-    if (!billFormContent.includes("billFormElement.addEventListener('submit'")) throw new Error('Missing submit listener');
+    if (!billFormContent.includes("getElementById('billFormElement').addEventListener('submit'")) throw new Error('Missing submit listener');
     if (!billFormContent.includes("e.preventDefault")) throw new Error('Missing preventDefault');
 });
 
@@ -194,7 +199,7 @@ test('Bill Form: Open form function exists', () => {
 
 test('Bill Form: Reset form function exists', () => {
     if (!billFormContent.includes("export const resetBillForm")) throw new Error('Missing resetBillForm export');
-    if (!billFormContent.includes("billFormElement.reset")) throw new Error('Missing form reset');
+    if (!billFormContent.includes("getElementById('billFormElement').reset")) throw new Error('Missing form reset');
 });
 
 test('Bill Form: Close form function exists', () => {

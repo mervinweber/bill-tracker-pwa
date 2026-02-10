@@ -94,7 +94,7 @@ test('should validate bill and catch invalid amount', () => {
     const bill = { ...mockBill, amountDue: -50 };
     const result = validateBill(bill);
     assert(!result.isValid, 'bill with negative amount should fail');
-    assert(result.errors.some(e => e.includes('amount')), 'should have amount error');
+    assert(result.errors.some(e => /amount/i.test(e)), 'should have amount error');
 });
 
 test('should validate bill and catch missing dueDate', () => {
