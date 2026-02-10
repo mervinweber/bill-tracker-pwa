@@ -337,6 +337,7 @@ export function getRemainingBalance(bill) {
 
 /**
  * Record payment with validation
+ * Allows zero payments for bills that are already paid or have credit balances
  */
 export function recordPayment(billId, paymentData) {
     try {
@@ -348,8 +349,8 @@ export function recordPayment(billId, paymentData) {
         }
 
         const amount = parseFloat(paymentData.amount);
-        if (isNaN(amount) || amount <= 0) {
-            throw new Error('Payment amount must be a positive number.');
+        if (isNaN(amount) || amount < 0) {
+            throw new Error('Payment amount must be zero or a positive number.');
         }
 
         const updated = { ...bill };
@@ -379,7 +380,13 @@ export function recordPayment(billId, paymentData) {
         updated.isPaid = remaining <= 0;
 
         billStore.update(updated);
-        showSuccessNotification(`Payment of $${amount.toFixed(2)} recorded for "${bill.name}"`);
+        
+        // Show appropriate message based on payment amount
+        if (amount === 0) {
+            showSuccessNotification(`"${bill.name}" marked as paid (zero balance recorded)`);
+        } else {
+            showSuccessNotification(`Payment of $${amount.toFixed(2)} recorded for "${bill.name}"`);
+        }
         return true;
     } catch (error) {
         console.error('Error recording payment:', error);

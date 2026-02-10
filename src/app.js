@@ -38,7 +38,10 @@ import {
     signOut,
     resetPassword,
     syncBills,
-    fetchCloudBills
+    syncUserData,
+    syncPaymentSettings,
+    fetchCloudBills,
+    fetchCloudPaymentSettings
 } from './services/supabase.js';
 
 import { safeJSONParse } from './utils/validation.js';
@@ -115,6 +118,19 @@ class AppOrchestrator {
             if (user) {
                 console.log('User logged in:', user.email);
                 try {
+                    // Fetch payment settings from cloud
+                    const { data: cloudPaymentSettings, error: settingsError } = await fetchCloudPaymentSettings();
+                    if (cloudPaymentSettings && typeof cloudPaymentSettings === 'object') {
+                        console.log('✅ Found payment settings in cloud. Syncing locally.');
+                        localStorage.setItem('paymentSettings', JSON.stringify(cloudPaymentSettings));
+                        // Reload paycheckManager to use cloud settings
+                        paycheckManager.paymentSettings = cloudPaymentSettings;
+                        paycheckManager.generatePaycheckDates();
+                    } else {
+                        console.log('No payment settings found in cloud');
+                    }
+
+                    // Fetch bills from cloud
                     const { data: cloudBills, error } = await fetchCloudBills();
                     if (cloudBills && Array.isArray(cloudBills) && cloudBills.length > 0) {
                         console.log(`✅ Found ${cloudBills.length} bills in cloud. Updating local store.`);
@@ -128,15 +144,25 @@ class AppOrchestrator {
                         console.log('No bills found in cloud.');
                     }
                     
-                    // If cloud is empty but we have local bills, sync them to cloud
+                    // If cloud is empty but we have local data, sync them to cloud
                     const localBills = billStore.getAll();
+                    const localPaymentSettings = safeJSONParse(localStorage.getItem('paymentSettings'), null);
                     if ((!cloudBills || cloudBills.length === 0) && localBills.length > 0) {
                         console.log(`📤 Syncing ${localBills.length} local bills to cloud...`);
-                        const { error: syncError } = await syncBills(localBills);
+                        const { error: syncError } = await syncUserData(localBills, localPaymentSettings);
                         if (syncError) {
-                            console.error('Failed to sync local bills to cloud:', syncError);
+                            console.error('Failed to sync local data to cloud:', syncError);
                         } else {
-                            console.log('✅ Local bills synced to cloud successfully');
+                            console.log('✅ Local data synced to cloud successfully');
+                        }
+                    } else if (!cloudPaymentSettings && localPaymentSettings) {
+                        // Sync local payment settings to cloud even if bills exist
+                        console.log('📤 Syncing local payment settings to cloud...');
+                        const { error: syncError } = await syncPaymentSettings(localPaymentSettings);
+                        if (syncError) {
+                            console.error('Failed to sync payment settings:', syncError);
+                        } else {
+                            console.log('✅ Payment settings synced to cloud');
                         }
                     }
                 } catch (error) {
@@ -662,36 +688,57 @@ class AppOrchestrator {
             billActionHandlers.showSuccessNotification('Logged in successfully');
 
             // Sync/Fetch on login
-            const { data: bills, error: fetchError } = await fetchCloudBills();
-            if (bills && bills.length > 0) {
-                console.log(`📥 Fetched ${bills.length} bills from cloud on login`);
-                billStore.setBills(bills);
-                // Ensure bills are saved to localStorage before reload
-                try {
-                    localStorage.setItem('bills', JSON.stringify(bills));
-                    console.log('✅ Bills saved to localStorage');
-                } catch (e) {
-                    console.error('Failed to save bills to localStorage:', e);
-                    billActionHandlers.showErrorNotification('Warning: Could not persist bills locally', 'Storage Error');
+            let syncDone = false;
+            try {
+                // Fetch payment settings from cloud first
+                const { data: cloudPaymentSettings } = await fetchCloudPaymentSettings();
+                if (cloudPaymentSettings && typeof cloudPaymentSettings === 'object') {
+                    console.log('✅ Fetched payment settings from cloud');
+                    localStorage.setItem('paymentSettings', JSON.stringify(cloudPaymentSettings));
+                    // Update paycheckManager with cloud settings
+                    paycheckManager.paymentSettings = cloudPaymentSettings;
+                    paycheckManager.generatePaycheckDates();
+                    syncDone = true;
                 }
-            } else if (billStore.getAll().length > 0) {
-                // If cloud empty but local has data, upload local
-                console.log(`📤 No cloud bills found, syncing ${billStore.getAll().length} local bills...`);
-                const { error: syncError } = await syncBills(billStore.getAll());
-                if (syncError) {
-                    console.error('Failed to sync local bills:', syncError);
-                    billActionHandlers.showErrorNotification('Could not sync bills to cloud', 'Sync Error');
+
+                // Fetch bills from cloud
+                const { data: bills, error: fetchError } = await fetchCloudBills();
+                if (bills && bills.length > 0) {
+                    console.log(`📥 Fetched ${bills.length} bills from cloud on login`);
+                    billStore.setBills(bills);
+                    // Ensure bills are saved to localStorage before reload
+                    try {
+                        localStorage.setItem('bills', JSON.stringify(bills));
+                        console.log('✅ Bills saved to localStorage');
+                    } catch (e) {
+                        console.error('Failed to save bills to localStorage:', e);
+                        billActionHandlers.showErrorNotification('Warning: Could not persist bills locally', 'Storage Error');
+                    }
+                    syncDone = true;
+                } else if (billStore.getAll().length > 0) {
+                    // If cloud empty but local has data, upload local with payment settings
+                    console.log(`📤 No cloud bills found, syncing ${billStore.getAll().length} local bills...`);
+                    const localPaymentSettings = safeJSONParse(localStorage.getItem('paymentSettings'), null);
+                    const { error: syncError } = await syncUserData(billStore.getAll(), localPaymentSettings);
+                    if (syncError) {
+                        console.error('Failed to sync local data:', syncError);
+                        billActionHandlers.showErrorNotification('Could not sync data to cloud', 'Sync Error');
+                    } else {
+                        console.log('✅ Local data synced to cloud');
+                    }
+                    syncDone = true;
                 } else {
-                    console.log('✅ Local bills synced to cloud');
+                    console.log('No bills found in cloud or locally');
                 }
-            } else {
-                console.log('No bills found in cloud or locally');
+            } catch (err) {
+                console.error('Error syncing data on login:', err);
+                billActionHandlers.showErrorNotification('Error syncing data from cloud', 'Sync Error');
             }
             
             // Add small delay to ensure storage is written before reload
             // This is especially important on mobile devices
             setTimeout(() => {
-                window.location.reload(); // To refresh sidebar user state/icon
+                window.location.reload(); // To refresh sidebar user state/icon and apply synced settings
             }, 500);
         }
     }

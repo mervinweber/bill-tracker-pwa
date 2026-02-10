@@ -96,34 +96,68 @@ export const getUser = async () => {
     return user;
 };
 
-// Data Functions
-export const syncBills = async (localBills) => {
+// Data Sync Functions
+
+/**
+ * Sync both bills and payment settings to cloud
+ * @param {Array} localBills - Bills array to sync
+ * @param {Object} localPaymentSettings - Payment settings to sync
+ */
+export const syncUserData = async (localBills, localPaymentSettings = null) => {
     if (!supabase) return { error: { message: 'Supabase not initialized' } };
 
     const user = await getUser();
     if (!user) return { error: { message: 'User not logged in' } };
 
-    // Simple Sync Strategy: 
-    // 1. Fetch cloud bills
-    // 2. Merge (Latest win or union? For simplicity: Cloud Overwrites Local if cloud has data, else Push Local)
-    // Actually, safer to Push Local to Cloud for now as "Backup", or Fetch from Cloud as "Restore"
-    // Let's implement "Save to Cloud" (Upsert)
+    const updateData = {
+        user_id: user.id,
+        bills: localBills
+    };
 
-    // We need a table 'bills' in Supabase with columns: id, user_id, data (jsonb)
-    // Or strictly relational columns. JSONB is easiest for this dynamic structure.
-
-    // Let's store the entire bills array as one record for this user to keep it simple locally?
-    // Or simpler: Upsert each bill.
-    // Let's go with: Store entire state as one JSON blob in a 'user_data' table.
+    // Include payment settings if provided
+    if (localPaymentSettings) {
+        updateData.paymentSettings = localPaymentSettings;
+    }
 
     const { data, error } = await supabase
         .from('user_data')
-        .upsert({ user_id: user.id, bills: localBills })
+        .upsert(updateData)
         .select();
 
     return { data, error };
 };
 
+/**
+ * Sync bills to cloud (legacy - now uses syncUserData)
+ */
+export const syncBills = async (localBills) => {
+    return syncUserData(localBills);
+};
+
+/**
+ * Sync payment settings to cloud
+ * @param {Object} paymentSettings - Payment settings to sync
+ */
+export const syncPaymentSettings = async (paymentSettings) => {
+    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+
+    const user = await getUser();
+    if (!user) return { error: { message: 'User not logged in' } };
+
+    const { data, error } = await supabase
+        .from('user_data')
+        .upsert({
+            user_id: user.id,
+            paymentSettings: paymentSettings
+        })
+        .select();
+
+    return { data, error };
+};
+
+/**
+ * Fetch bills from cloud
+ */
 export const fetchCloudBills = async () => {
     if (!supabase) return { error: { message: 'Supabase not initialized' } };
 
@@ -137,4 +171,22 @@ export const fetchCloudBills = async () => {
         .single();
 
     return { data: data ? data.bills : [], error };
+};
+
+/**
+ * Fetch payment settings from cloud
+ */
+export const fetchCloudPaymentSettings = async () => {
+    if (!supabase) return { data: null, error: { message: 'Supabase not initialized' } };
+
+    const user = await getUser();
+    if (!user) return { data: null, error: { message: 'User not logged in' } };
+
+    const { data, error } = await supabase
+        .from('user_data')
+        .select('paymentSettings')
+        .eq('user_id', user.id)
+        .single();
+
+    return { data: data ? data.paymentSettings : null, error };
 };

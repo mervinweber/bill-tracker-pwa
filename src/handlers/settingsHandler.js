@@ -7,6 +7,7 @@ import { billStore } from '../store/BillStore.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import { billActionHandlers } from './billActionHandlers.js';
 import { safeJSONParse } from '../utils/validation.js';
+import { syncPaymentSettings, getUser } from '../services/supabase.js';
 
 /**
  * Show settings modal
@@ -565,6 +566,25 @@ function handleSettingsSave(e, modal) {
 
         // Save to localStorage
         localStorage.setItem('paymentSettings', JSON.stringify(newSettings));
+
+        // Sync to cloud if user is logged in
+        (async () => {
+            const user = await getUser();
+            if (user) {
+                try {
+                    const { error } = await syncPaymentSettings(newSettings);
+                    if (error) {
+                        console.error('Failed to sync payment settings to cloud:', error);
+                        billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
+                    } else {
+                        console.log('✅ Payment settings synced to cloud');
+                    }
+                } catch (syncErr) {
+                    console.error('Error syncing payment settings:', syncErr);
+                    billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
+                }
+            }
+        })();
 
         billActionHandlers.showSuccessNotification('Settings saved. Reloading application...');
         modal.remove();
