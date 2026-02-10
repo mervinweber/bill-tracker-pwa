@@ -30,6 +30,7 @@ import {
     isValidURL,
     safeJSONParse
 } from '../utils/validation.js';
+import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
 
 /**
  * Display error notification to user with formatted message
@@ -160,6 +161,16 @@ export function togglePaymentStatus(billId, isPaid) {
         const updated = { ...bill };
         updated.isPaid = isPaid;
         updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
+
+        // If marking as paid and bill is recurring, move to next payment cycle
+        if (isPaid && bill.recurrence && bill.recurrence !== 'One-time') {
+            const currentDueDate = createLocalDate(bill.dueDate);
+            const nextDueDate = calculateNextDueDate(currentDueDate, bill.recurrence);
+            if (nextDueDate) {
+                updated.dueDate = formatLocalDate(nextDueDate);
+                console.log(`📅 Recurring bill moved from ${bill.dueDate} to ${updated.dueDate}`);
+            }
+        }
 
         billStore.update(updated);
 
@@ -338,6 +349,7 @@ export function getRemainingBalance(bill) {
 /**
  * Record payment with validation
  * Allows zero payments for bills that are already paid or have credit balances
+ * Moves recurring bills to next payment cycle when fully paid
  */
 export function recordPayment(billId, paymentData) {
     try {
@@ -378,6 +390,16 @@ export function recordPayment(billId, paymentData) {
         const remaining = getRemainingBalance(updated);
         updated.balance = remaining;
         updated.isPaid = remaining <= 0;
+
+        // If fully paid and bill is recurring, move to next payment cycle
+        if (updated.isPaid && bill.recurrence && bill.recurrence !== 'One-time') {
+            const currentDueDate = createLocalDate(bill.dueDate);
+            const nextDueDate = calculateNextDueDate(currentDueDate, bill.recurrence);
+            if (nextDueDate) {
+                updated.dueDate = formatLocalDate(nextDueDate);
+                console.log(`📅 Recurring bill moved from ${bill.dueDate} to ${updated.dueDate}`);
+            }
+        }
 
         billStore.update(updated);
         
