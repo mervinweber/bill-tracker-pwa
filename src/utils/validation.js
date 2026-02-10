@@ -10,6 +10,8 @@
  * @module validation
  */
 
+import logger from './logger.js';
+
 /**
  * Sanitize user input to prevent XSS and injection attacks
  * 
@@ -76,13 +78,13 @@ export function safeJSONParse(jsonString, defaultValue = null) {
 
         // Check size limit (5MB)
         if (jsonString.length > 5 * 1024 * 1024) {
-            console.error('JSON data exceeds 5MB limit');
+            logger.warn('JSON data exceeds 5MB limit');
             return defaultValue;
         }
 
         return JSON.parse(jsonString);
     } catch (error) {
-        console.error('JSON parse error:', error.message);
+        logger.error('JSON parse error', error);
         return defaultValue;
     }
 }
@@ -173,7 +175,8 @@ export function validateDate(dateString, allowPast = true) {
         return { isValid: false, error: 'Date must be in YYYY-MM-DD format' };
     }
 
-    const date = new Date(dateString);
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
 
     // Check if valid date
     if (isNaN(date.getTime())) {
@@ -181,7 +184,6 @@ export function validateDate(dateString, allowPast = true) {
     }
 
     // Additional check: ensure the date components match (catches Feb 30, etc.)
-    const [year, month, day] = dateString.split('-').map(Number);
     if (date.getFullYear() !== year ||
         date.getMonth() !== month - 1 ||
         date.getDate() !== day) {

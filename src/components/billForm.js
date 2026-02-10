@@ -16,6 +16,8 @@
  *   - Mark as Paid button for quick payment status toggling
  */
 
+import logger from '../utils/logger.js';
+
 // Module-level variable to store actions for use in openBillForm
 let formActions = {};
 
@@ -198,7 +200,7 @@ export const openBillForm = (bill) => {
             newOption.value = optValue;
             newOption.textContent = optValue;
             recurrenceSelect.appendChild(newOption);
-            console.warn(`Recurrence option "${optValue}" was missing and has been added`);
+            logger.warn('Recurrence option was missing and has been added', { option: optValue });
         }
     });
     

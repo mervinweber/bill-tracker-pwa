@@ -23,12 +23,10 @@
 
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from './dates.js';
 import { billStore } from '../store/BillStore.js';
-import {
-    safeGetFromStorage,
-    safeSetToStorage,
-    ValidationError,
-    validateRequired
-} from './errorHandling.js';
+import { ValidationError, validateRequired } from './errorHandling.js';
+import StorageManager from './StorageManager.js';
+import { STORAGE_KEYS } from './constants.js';
+import logger from './logger.js';
 
 /**
  * Paycheck Manager Class
@@ -66,21 +64,21 @@ class PaycheckManager {
      */
     loadSettings() {
         try {
-            const stored = safeGetFromStorage('paymentSettings');
+            const stored = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
             if (!stored) {
-                console.warn('⚠️ No payment settings found. Using defaults.');
+                logger.warn('No payment settings found. Using defaults.');
                 return this.getDefaultSettings();
             }
 
             const validation = this.validateSettings(stored);
             if (!validation.isValid) {
-                console.warn('⚠️ Invalid payment settings:', validation.errors);
+                logger.warn('Invalid payment settings', { errors: validation.errors });
                 return this.getDefaultSettings();
             }
 
             return stored;
         } catch (error) {
-            console.error('❌ Error loading payment settings:', error.message);
+            logger.error('Error loading payment settings', error);
             return this.getDefaultSettings();
         }
     }
@@ -167,7 +165,7 @@ class PaycheckManager {
 
             return this.payCheckDates;
         } catch (error) {
-            console.error('❌ Error generating paycheck dates:', error.message);
+            logger.error('Error generating paycheck dates', error);
             throw new Error('Failed to generate paycheck dates: ' + error.message);
         }
     }
@@ -190,11 +188,11 @@ class PaycheckManager {
                 throw new Error('Invalid payment settings provided');
             }
             this.paymentSettings = newSettings;
-            localStorage.setItem('paymentSettings', JSON.stringify(newSettings));
+            StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, newSettings);
             this.generatePaycheckDates();
             return true;
         } catch (error) {
-            console.error('Error updating payment settings:', error);
+            logger.error('Error updating payment settings', error);
             throw error;
         }
     }
@@ -313,7 +311,7 @@ class PaycheckManager {
             billStore.setBills(updatedBills);
             return true;
         } catch (error) {
-            console.error('Error updating bill dates:', error);
+            logger.error('Error updating bill dates', error);
             throw error;
         }
     }
@@ -385,7 +383,7 @@ class PaycheckManager {
 
             return generatedBills;
         } catch (error) {
-            console.error('Error generating recurring bill instances:', error);
+            logger.error('Error generating recurring bill instances', error);
             throw error;
         }
     }
@@ -426,7 +424,7 @@ class PaycheckManager {
             billStore.setBills(newBills);
             return true;
         } catch (error) {
-            console.error('Error regenerating recurring bills:', error);
+            logger.error('Error regenerating recurring bills', error);
             throw error;
         }
     }

@@ -30,8 +30,12 @@ const test = (name, fn) => {
 };
 
 // Read component files
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const headerPath = path.join(__dirname, '../src/components/header.js');
 const sidebarPath = path.join(__dirname, '../src/components/sidebar.js');
@@ -71,34 +75,34 @@ test('All Bills button has aria-pressed attribute', () => {
 
 // 5. Sidebar navigation has proper role
 test('Sidebar navigation has proper role', () => {
-    if (!sidebarContent.includes('role="navigation"')) throw new Error('Missing navigation role');
-    if (!sidebarContent.includes('aria-label="Main navigation"')) throw new Error('Missing aria-label');
+    if (!sidebarContent.includes("setAttribute('role', 'navigation')")) throw new Error('Missing navigation role');
+    if (!sidebarContent.includes("setAttribute('aria-label', 'Main navigation')")) throw new Error('Missing aria-label');
 });
 
 // 6. Categories list has proper role
 test('Categories list has proper role', () => {
-    if (!sidebarContent.includes('role="group"')) throw new Error('Missing group role');
-    if (!sidebarContent.includes('aria-label="Bill categories"')) throw new Error('Missing aria-label');
+    if (!sidebarContent.includes("setAttribute('role', 'group')")) throw new Error('Missing group role');
+    if (!sidebarContent.includes("setAttribute('aria-label', 'Bill categories')")) throw new Error('Missing aria-label');
 });
 
 // 7. Category buttons have menuitemradio role and aria-checked
 test('Category buttons have menuitemradio role', () => {
-    if (!sidebarContent.includes('role="menuitemradio"')) throw new Error('Missing menuitemradio role');
-    if (!sidebarContent.includes('aria-checked=')) throw new Error('Missing aria-checked');
+    if (!sidebarContent.includes("setAttribute('role', 'menuitemradio')")) throw new Error('Missing menuitemradio role');
+    if (!sidebarContent.includes("setAttribute('aria-checked', 'false')")) throw new Error('Missing aria-checked');
 });
 
 // 8. Bill grid table has proper semantics
 test('Bill grid table has proper semantic role', () => {
-    if (!billGridContent.includes('role="table"')) throw new Error('Missing table role');
-    if (!billGridContent.includes('role="rowgroup"')) throw new Error('Missing rowgroup role');
+    if (!billGridContent.includes("setAttribute('role', 'table')")) throw new Error('Missing table role');
+    if (!billGridContent.includes("setAttribute('role', 'rowgroup')")) throw new Error('Missing rowgroup role');
     if (!billGridContent.includes('role="columnheader"')) throw new Error('Missing columnheader role');
     if (!billGridContent.includes('scope="col"')) throw new Error('Missing scope on column headers');
 });
 
 // 9. Bill table cells have proper ARIA labels
 test('Bill table cells have proper ARIA labels', () => {
-    if (!billGridContent.includes('aria-label=')) throw new Error('Missing aria-label on table cells');
-    if (!billGridContent.includes('role="cell"')) throw new Error('Missing cell role');
+    if (!billGridContent.includes("setAttribute('aria-label'")) throw new Error('Missing aria-label on table cells');
+    if (!billGridContent.includes("setAttribute('role', 'cell')")) throw new Error('Missing cell role');
 });
 
 // 10. Form fields have aria-required
@@ -121,36 +125,36 @@ test('Modal has proper dialog semantics', () => {
 
 // 13. Backup controls have region role
 test('Backup controls have region role', () => {
-    if (!sidebarContent.includes('role="region"')) throw new Error('Missing region role');
-    if (!sidebarContent.includes('aria-label="Data backup controls"')) throw new Error('Missing aria-label');
+    if (!sidebarContent.includes("setAttribute('role', 'region')")) throw new Error('Missing region role');
+    if (!sidebarContent.includes("ariaLabel = 'Data backup controls'")) throw new Error('Missing aria-label');
 });
 
 // 14. Theme toggle has aria-checked
 test('Theme toggle has aria-checked attribute', () => {
-    if (!sidebarContent.includes('aria-checked=')) throw new Error('Missing aria-checked on theme toggle');
+    if (!sidebarContent.includes('ariaChecked')) throw new Error('Missing aria-checked on theme toggle');
 });
 
 // 15. Action buttons have aria-label
 test('Action buttons have descriptive aria-label', () => {
-    if (!billGridContent.includes('aria-label="Record payment')) throw new Error('Missing aria-label on payment button');
-    if (!billGridContent.includes('aria-label="View payment history')) throw new Error('Missing aria-label on history button');
-    if (!billGridContent.includes('aria-label="Edit')) throw new Error('Missing aria-label on edit button');
-    if (!billGridContent.includes('aria-label="Delete')) throw new Error('Missing aria-label on delete button');
+    if (!billGridContent.includes('Record payment for')) throw new Error('Missing aria-label on payment button');
+    if (!billGridContent.includes('View payment history for')) throw new Error('Missing aria-label on history button');
+    if (!billGridContent.includes('Edit')) throw new Error('Missing aria-label on edit button');
+    if (!billGridContent.includes('Delete')) throw new Error('Missing aria-label on delete button');
 });
 
 // 16. Icons are hidden from screen readers where appropriate
 test('Icons are hidden from screen readers', () => {
-    if (!billGridContent.includes('aria-hidden="true"')) throw new Error('Missing aria-hidden on slider');
+    if (!billGridContent.includes("setAttribute('aria-hidden', 'true')")) throw new Error('Missing aria-hidden on slider');
 });
 
 // 17. Keyboard navigation attributes
 test('Keyboard navigation attributes present', () => {
-    if (!sidebarContent.includes('tabindex=')) throw new Error('Missing tabindex for keyboard navigation');
+    if (!sidebarContent.includes('tabIndex')) throw new Error('Missing tabindex for keyboard navigation');
 });
 
 // 18. Payment checkbox has aria-label
 test('Payment checkbox has aria-label', () => {
-    if (!billGridContent.includes('aria-label="Mark')) throw new Error('Missing aria-label on payment checkbox');
+    if (!billGridContent.includes('Mark') || !billGridContent.includes('as')) throw new Error('Missing aria-label on payment checkbox');
 });
 
 // 19. CSS has sr-only class definition

@@ -5,6 +5,7 @@
 
 import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
+import logger from '../utils/logger.js';
 
 let categoryChart = null;
 let trendChart = null;
@@ -207,7 +208,7 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                     }
                 }
             } catch (error) {
-                console.warn(`Error processing bill date: ${bill.dueDate}`, error);
+                logger.warn('Error processing bill date', { dueDate: bill.dueDate, error: error.message });
             }
         });
 
@@ -260,7 +261,7 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
             });
         }
     } catch (error) {
-        console.error('Error rendering analytics:', error);
+        logger.error('Error rendering analytics', error);
         const analyticsView = document.getElementById('analyticsView');
         if (analyticsView) {
             analyticsView.innerHTML = `<div style="padding: 20px; color: var(--danger-color);">Error rendering analytics: ${error.message}</div>`;
@@ -285,7 +286,7 @@ export function initializeAnalyticsView() {
             main.appendChild(analyticsDiv);
         }
     } catch (error) {
-        console.error('Error initializing analytics view:', error);
+        logger.error('Error initializing analytics view', error);
     }
 }
 

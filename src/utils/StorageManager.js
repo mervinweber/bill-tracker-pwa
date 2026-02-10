@@ -30,7 +30,7 @@ export const StorageManager = {
      */
     get(key, fallback = null) {
         try {
-            if (!localStorage) {
+            if (typeof localStorage === 'undefined' || !localStorage) {
                 logger.warn(`localStorage not available, returning fallback for key: ${key}`);
                 return fallback;
             }
@@ -65,7 +65,7 @@ export const StorageManager = {
      */
     set(key, value) {
         try {
-            if (!localStorage) {
+            if (typeof localStorage === 'undefined' || !localStorage) {
                 logger.warn('localStorage not available');
                 return false;
             }
@@ -95,7 +95,7 @@ export const StorageManager = {
      */
     remove(key) {
         try {
-            if (!localStorage) {
+            if (typeof localStorage === 'undefined' || !localStorage) {
                 logger.warn('localStorage not available');
                 return false;
             }
@@ -119,6 +119,9 @@ export const StorageManager = {
      */
     isAvailable() {
         try {
+            if (typeof localStorage === 'undefined' || !localStorage) {
+                return false;
+            }
             const testKey = '__storage_test__';
             localStorage.setItem(testKey, testKey);
             localStorage.removeItem(testKey);
@@ -155,7 +158,7 @@ export const StorageManager = {
      */
     clear() {
         try {
-            if (!localStorage) {
+            if (typeof localStorage === 'undefined' || !localStorage) {
                 logger.warn('localStorage not available');
                 return false;
             }
@@ -175,10 +178,19 @@ export const StorageManager = {
      */
     getAllKeys() {
         try {
-            if (!localStorage) {
+            if (typeof localStorage === 'undefined' || !localStorage) {
                 return [];
             }
-
+            if (typeof localStorage.key === 'function') {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i += 1) {
+                    const key = localStorage.key(i);
+                    if (key) {
+                        keys.push(key);
+                    }
+                }
+                return keys;
+            }
             return Object.keys(localStorage);
         } catch (error) {
             logger.error('Failed to get localStorage keys', error);

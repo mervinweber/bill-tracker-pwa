@@ -32,6 +32,8 @@ import {
 } from '../utils/validation.js';
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
 import logger from '../utils/logger.js';
+import StorageManager from '../utils/StorageManager.js';
+import { STORAGE_KEYS } from '../utils/constants.js';
 
 /**
  * Display error notification to user with formatted message
@@ -85,7 +87,7 @@ export function showErrorNotification(message, title = 'Error') {
             }
         }, 5000);
     } catch (error) {
-        console.error('❌ Failed to show error notification:', error);
+        logger.error('Failed to show error notification', error);
     }
 }
 
@@ -156,7 +158,7 @@ export function updateBillBalance(billId, newBalance) {
         billStore.update(updated);
         return true;
     } catch (error) {
-        console.error('Error updating bill balance:', error);
+        logger.error('Error updating bill balance', error);
         showErrorNotification(error.message, 'Balance Update Failed');
         return false;
     }
@@ -196,7 +198,7 @@ export function togglePaymentStatus(billId, isPaid) {
         showSuccessNotification(`Bill ${isPaid ? 'marked as paid' : 'marked as unpaid'}`);
         return true;
     } catch (error) {
-        console.error('Error toggling payment status:', error);
+        logger.error('Error toggling payment status', error);
         showErrorNotification(error.message, 'Payment Status Update Failed');
         return false;
     }
@@ -222,7 +224,7 @@ export function deleteBill(billId) {
         showSuccessNotification(`"${bill.name}" deleted successfully`);
         return true;
     } catch (error) {
-        console.error('Error deleting bill:', error);
+        logger.error('Error deleting bill', error);
         showErrorNotification(error.message, 'Delete Failed');
         return false;
     }
@@ -233,7 +235,7 @@ export function deleteBill(billId) {
  */
 export function bulkDelete(billIds) {
     try {
-        console.log('bulkDelete called with IDs:', billIds);
+        logger.debug('bulkDelete called', { billIds });
         if (!billIds || billIds.length === 0) {
             showErrorNotification('No bills selected to delete.', 'Bulk Action');
             return false;
@@ -250,7 +252,7 @@ export function bulkDelete(billIds) {
         showSuccessNotification(`Successfully deleted ${billIds.length} bills`);
         return true;
     } catch (error) {
-        console.error('Error in bulk delete:', error);
+        logger.error('Error in bulk delete', error);
         showErrorNotification(error.message, 'Bulk Delete Failed');
         return false;
     }
@@ -261,7 +263,7 @@ export function bulkDelete(billIds) {
  */
 export function bulkMarkAsPaid(billIds) {
     try {
-        console.log('bulkMarkAsPaid called with IDs:', billIds);
+        logger.debug('bulkMarkAsPaid called', { billIds });
         if (!billIds || billIds.length === 0) {
             showErrorNotification('No bills currently showing to mark as paid.', 'Bulk Action');
             return false;
@@ -302,7 +304,10 @@ export function bulkMarkAsPaid(billIds) {
             }
         });
 
-        console.log(`Diagnostic: Preparing to update ${updateCount} bills. Total bills: ${currentBills.length}`);
+        logger.debug('Bulk mark as paid summary', {
+            updateCount,
+            totalBills: currentBills.length
+        });
 
         if (updateCount > 0) {
             billStore.setBills(currentBills);
@@ -313,7 +318,7 @@ export function bulkMarkAsPaid(billIds) {
             return false;
         }
     } catch (error) {
-        console.error('Error in bulk mark as paid:', error);
+        logger.error('Error in bulk mark as paid', error);
         showErrorNotification(error.message, 'Bulk Update Failed');
         return false;
     }
@@ -332,7 +337,7 @@ export function getTotalPaid(bill) {
             return sum + amount;
         }, 0);
     } catch (error) {
-        console.error('Error calculating total paid:', error);
+        logger.error('Error calculating total paid', error);
         return 0;
     }
 }
@@ -350,7 +355,7 @@ export function getRemainingBalance(bill) {
         const totalPaid = getTotalPaid(bill);
         return Math.max(0, totalDue - totalPaid);
     } catch (error) {
-        console.error('Error calculating remaining balance:', error);
+        logger.error('Error calculating remaining balance', error);
         return bill.amountDue || 0;
     }
 }
@@ -413,7 +418,7 @@ export function recordPayment(billId, paymentData) {
         }
         return true;
     } catch (error) {
-        console.error('Error recording payment:', error);
+        logger.error('Error recording payment', error);
         showErrorNotification(error.message, 'Payment Recording Failed');
         return false;
     }
@@ -445,12 +450,12 @@ export function migrateBillsToPaymentHistory() {
 
         if (migrationCount > 0) {
             billStore.setBills(currentBills);
-            console.log(`Migrated ${migrationCount} bills to payment history format`);
+            logger.info('Migrated bills to payment history format', { count: migrationCount });
         }
 
         return migrationCount;
     } catch (error) {
-        console.error('Error migrating bills:', error);
+        logger.error('Error migrating bills', error);
         showErrorNotification('Error migrating bill data', 'Migration Failed');
         return 0;
     }
@@ -462,8 +467,8 @@ export function migrateBillsToPaymentHistory() {
 export function exportData() {
     try {
         const bills = billStore.getAll();
-        const customCategories = safeJSONParse(localStorage.getItem('customCategories'), []);
-        const paymentSettings = safeJSONParse(localStorage.getItem('paymentSettings'), {});
+        const customCategories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
+        const paymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, {});
 
         const data = {
             exportDate: new Date().toISOString(),
@@ -484,7 +489,7 @@ export function exportData() {
         showSuccessNotification('Data exported successfully');
         return true;
     } catch (error) {
-        console.error('Error exporting data:', error);
+        logger.error('Error exporting data', error);
         showErrorNotification(error.message, 'Export Failed');
         return false;
     }
@@ -558,7 +563,7 @@ export function importData(file) {
                     // Sync custom categories from imported bills if not explicitly provided
                     // Sync custom categories from imported bills
                     const defaultCategories = ['Rent', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Entertainment'];
-                    const existingCategories = safeJSONParse(localStorage.getItem('customCategories'), defaultCategories);
+                    const existingCategories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, defaultCategories);
 
                     const billCategories = [...new Set(processedBills.map(b => b.category))].filter(c => c && c.trim() !== '');
                     const importedMetadataCategories = data.customCategories || [];
@@ -569,10 +574,10 @@ export function importData(file) {
                         ...importedMetadataCategories
                     ])];
 
-                    localStorage.setItem('customCategories', JSON.stringify(allCategories));
+                    StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, allCategories);
 
                     if (data.paymentSettings && typeof data.paymentSettings === 'object') {
-                        localStorage.setItem('paymentSettings', JSON.stringify(data.paymentSettings));
+                        StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, data.paymentSettings);
                     }
 
                     showSuccessNotification(
@@ -581,7 +586,7 @@ export function importData(file) {
                     setTimeout(() => window.location.reload(), 1500);
                     resolve(true);
                 } catch (error) {
-                    console.error('Error parsing file:', error);
+                    logger.error('Error parsing file', error);
                     showErrorNotification(
                         error.message || 'Failed to parse import file',
                         'Import Failed'
@@ -592,14 +597,14 @@ export function importData(file) {
 
             reader.onerror = () => {
                 const errorMsg = 'Error reading file. Please try again.';
-                console.error(errorMsg);
+                logger.error(errorMsg);
                 showErrorNotification(errorMsg, 'Import Failed');
                 reject(new Error(errorMsg));
             };
 
             reader.readAsText(file);
         } catch (error) {
-            console.error('Error importing data:', error);
+            logger.error('Error importing data', error);
             showErrorNotification(error.message, 'Import Failed');
             reject(error);
         }
