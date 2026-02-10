@@ -8,16 +8,18 @@ import { paycheckManager } from '../utils/paycheckManager.js';
 import { billActionHandlers } from './billActionHandlers.js';
 import { safeJSONParse } from '../utils/validation.js';
 import { syncPaymentSettings, getUser } from '../services/supabase.js';
+import StorageManager from '../utils/StorageManager.js';
+import logger from '../utils/logger.js';
 
 /**
  * Show settings modal
  */
 export function showSettingsModal(categoriesList) {
     try {
-        console.log('📋 Settings modal requested. Categories:', categoriesList);
+        logger.info('Settings modal requested', { categories: categoriesList });
         
-        const settings = safeJSONParse(localStorage.getItem('paymentSettings'), {});
-        console.log('💾 Payment settings loaded:', settings);
+        const settings = StorageManager.get('paymentSettings', {});
+        logger.info('Payment settings loaded', { settings });
 
         if (!settings.startDate) {
             throw new Error('Payment settings not configured. Please run setup again.');
@@ -244,8 +246,8 @@ function handleAddNewCategory(categoriesList, settingsModal) {
         }
 
         categoriesList.push(name);
-        localStorage.setItem('customCategories', JSON.stringify(categoriesList));
-        localStorage.setItem('selectedCategory', name);
+        StorageManager.set('customCategories', categoriesList);
+        StorageManager.set('selectedCategory', name);
 
         billActionHandlers.showSuccessNotification(`Category "${name}" added successfully`);
 
@@ -325,11 +327,11 @@ function deleteCategoryClean(categoryName, categoriesList, settingsModal) {
         const index = categoriesList.indexOf(categoryName);
         if (index > -1) {
             categoriesList.splice(index, 1);
-            localStorage.setItem('customCategories', JSON.stringify(categoriesList));
+            StorageManager.set('customCategories', categoriesList);
 
             // Reset selection if needed
-            if (localStorage.getItem('selectedCategory') === categoryName) {
-                localStorage.setItem('selectedCategory', categoriesList[0] || 'All');
+            if (StorageManager.get('selectedCategory') === categoryName) {
+                StorageManager.set('selectedCategory', categoriesList[0] || 'All');
             }
 
             billActionHandlers.showSuccessNotification(`Category "${categoryName}" deleted`);
@@ -492,11 +494,11 @@ function showDeleteCategoryConflictModal(categoryName, billCount, categoriesList
             if (index > -1) {
                 categoriesList.splice(index, 1);
             }
-            localStorage.setItem('customCategories', JSON.stringify(categoriesList));
+            StorageManager.set('customCategories', categoriesList);
 
             // Reset selection
-            if (localStorage.getItem('selectedCategory') === categoryName) {
-                localStorage.setItem('selectedCategory', categoriesList[0] || 'All');
+            if (StorageManager.get('selectedCategory') === categoryName) {
+                StorageManager.set('selectedCategory', categoriesList[0] || 'All');
             }
 
             billActionHandlers.showSuccessNotification(`Category "${categoryName}" deleted`);
@@ -505,7 +507,7 @@ function showDeleteCategoryConflictModal(categoryName, billCount, categoriesList
             showSettingsModal(categoriesList);
         });
     } catch (error) {
-        console.error('Error showing delete conflict modal:', error);
+        logger.error('Error showing delete conflict modal', error);
         billActionHandlers.showErrorNotification(error.message, 'Error');
     }
 }
@@ -519,7 +521,7 @@ function updateCategoryName(oldName, newName, categoriesList) {
         const index = categoriesList.indexOf(oldName);
         if (index !== -1) {
             categoriesList[index] = newName;
-            localStorage.setItem('customCategories', JSON.stringify(categoriesList));
+            StorageManager.set('customCategories', categoriesList);
         }
 
         // Update all bills with this category
@@ -565,7 +567,7 @@ function handleSettingsSave(e, modal) {
         paycheckManager.updateSettings(newSettings);
 
         // Save to localStorage
-        localStorage.setItem('paymentSettings', JSON.stringify(newSettings));
+        StorageManager.set('paymentSettings', newSettings);
 
         // Sync to cloud if user is logged in
         (async () => {
@@ -625,7 +627,7 @@ function handleCleanupUnusedCategories(categoriesList, settingsModal) {
         // Remove unused categories
         const cleanedCategories = categoriesList.filter(cat => usedCategories.has(cat));
         
-        localStorage.setItem('customCategories', JSON.stringify(cleanedCategories));
+        StorageManager.set('customCategories', cleanedCategories);
         
         billActionHandlers.showSuccessNotification(
             `Removed ${unusedCategories.length} unused categor${unusedCategories.length === 1 ? 'y' : 'ies'}`

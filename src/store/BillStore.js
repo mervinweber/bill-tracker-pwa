@@ -24,6 +24,8 @@
 import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
 import { queueOfflineTransaction } from '../utils/indexedDBUtils.js';
 import { safeJSONParse } from '../utils/validation.js';
+import StorageManager from '../utils/StorageManager.js';
+import logger from '../utils/logger.js';
 
 /**
  * Bill Store Class
@@ -65,13 +67,14 @@ class BillStore {
      */
     load() {
         try {
-            const storedBills = localStorage.getItem('bills');
+            const storedBills = StorageManager.get('bills', null);
             if (storedBills) {
-                const parsed = safeJSONParse(storedBills, []);
+                // StorageManager already parses JSON, so we don't need safeJSONParse
+                const parsed = Array.isArray(storedBills) ? storedBills : [];
 
                 // Validate that we got an array
                 if (!Array.isArray(parsed)) {
-                    console.warn('Stored bills data is not an array, resetting to empty');
+                    logger.warn('Stored bills data is not an array, resetting to empty');
                     this.bills = [];
                     return;
                 }
@@ -79,7 +82,7 @@ class BillStore {
                 this.bills = parsed;
             }
         } catch (error) {
-            console.error('Failed to load bills from localStorage:', error);
+            logger.error('Failed to load bills from storage', error);
             this.bills = [];
         }
     }
@@ -100,12 +103,12 @@ class BillStore {
      * store.add(newBill); // Calls save() internally
      */
     save(action = 'update', data = null) {
-        localStorage.setItem('bills', JSON.stringify(this.bills));
+        StorageManager.set('bills', this.bills);
 
         // Queue for offline sync if needed (especially for Supabase)
         if (data) {
             queueOfflineTransaction({ action, data }).catch(err => {
-                console.error('Failed to queue offline transaction:', err);
+                logger.error('Failed to queue offline transaction', err);
             });
         }
 

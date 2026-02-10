@@ -11,6 +11,8 @@
  * @module errorHandling
  */
 
+import logger from './logger.js';
+
 /**
  * Retry configuration object
  * @typedef {Object} RetryConfig
@@ -50,7 +52,7 @@ export async function withRetry(fn, config = {}) {
         try {
             const result = await Promise.resolve(fn());
             if (attempt > 1) {
-                console.log(`✅ Retry successful on attempt ${attempt}`);
+                logger.info(`Retry successful on attempt ${attempt}`);
             }
             return result;
         } catch (error) {
@@ -61,9 +63,9 @@ export async function withRetry(fn, config = {}) {
             }
 
             if (attempt < finalConfig.maxAttempts) {
-                console.warn(
-                    `⚠️ Attempt ${attempt} failed. Retrying in ${delay}ms...`,
-                    error.message
+                logger.warn(
+                    `Attempt ${attempt} failed. Retrying in ${delay}ms...`,
+                    { error: error.message }
                 );
                 await new Promise(resolve => setTimeout(resolve, delay));
                 delay = Math.min(delay * finalConfig.backoffMultiplier, finalConfig.maxDelay);
@@ -91,7 +93,7 @@ export function safeParse(json, fallback = null) {
     try {
         return JSON.parse(json);
     } catch (error) {
-        console.warn('Failed to parse JSON, using fallback:', error.message);
+        logger.warn('Failed to parse JSON, using fallback', { error: error.message });
         return fallback;
     }
 }
@@ -111,7 +113,7 @@ export function safeStringify(obj, fallback = '{}') {
     try {
         return JSON.stringify(obj);
     } catch (error) {
-        console.warn('Failed to stringify object, using fallback:', error.message);
+        logger.warn('Failed to stringify object, using fallback', { error: error.message });
         return fallback;
     }
 }
@@ -136,7 +138,7 @@ export function safeGetFromStorage(key, fallback = null) {
         const item = localStorage.getItem(key);
         return item ? safeParse(item, fallback) : fallback;
     } catch (error) {
-        console.warn(`Failed to read from localStorage (${key}):`, error.message);
+        logger.warn(`Failed to read from localStorage (${key})`, { error: error.message });
         return fallback;
     }
 }
@@ -152,11 +154,11 @@ export function safeSetToStorage(key, value) {
         localStorage.setItem(key, safeStringify(value));
         return true;
     } catch (error) {
-        console.error(`Failed to write to localStorage (${key}):`, error.message);
+        logger.error(`Failed to write to localStorage (${key})`, error);
 
         // Handle quota exceeded
         if (error.name === 'QuotaExceededError') {
-            console.error('❌ localStorage quota exceeded. Please clear some data.');
+            logger.error('localStorage quota exceeded. Please clear some data.', error);
         }
 
         return false;
@@ -214,7 +216,7 @@ export async function withFallback(operation, fallback) {
     try {
         return await Promise.resolve(operation());
     } catch (error) {
-        console.warn('Primary operation failed, attempting fallback:', error.message);
+        logger.warn('Primary operation failed, attempting fallback', { error: error.message });
         try {
             return await Promise.resolve(fallback());
         } catch (fallbackError) {
