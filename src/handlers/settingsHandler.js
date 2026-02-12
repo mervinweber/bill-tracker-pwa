@@ -6,7 +6,7 @@
 import { billStore } from '../store/BillStore.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import { billActionHandlers } from './billActionHandlers.js';
-import { safeJSONParse } from '../utils/validation.js';
+import { safeJSONParse, validatePaymentSettings } from '../utils/validation.js';
 import { syncPaymentSettings, getUser } from '../services/supabase.js';
 import StorageManager from '../utils/StorageManager.js';
 import logger from '../utils/logger.js';
@@ -563,6 +563,15 @@ function handleSettingsSave(e, modal) {
             frequency,
             payPeriodsToShow: weeks
         };
+
+        // Validate payment settings before saving
+        const validation = validatePaymentSettings(newSettings);
+        if (!validation.isValid) {
+            const errorMessage = validation.errors.join('; ');
+            throw new Error(errorMessage);
+        }
+
+        logger.info('Payment settings validated', { settings: newSettings });
 
         // Update paycheck manager
         paycheckManager.updateSettings(newSettings);

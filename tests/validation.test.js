@@ -13,7 +13,8 @@ import {
     validateAmount,
     validateCategory,
     validateNotes,
-    validateRecurrence
+    validateRecurrence,
+    validatePaymentSettings
 } from '../src/utils/validation.js';
 
 let testsPassed = 0;
@@ -343,6 +344,188 @@ test('validateRecurrence: should reject invalid types', () => {
 test('validateRecurrence: should reject empty recurrence', () => {
     const result = validateRecurrence('');
     assert(!result.isValid, 'Should reject empty recurrence');
+});
+
+// ============================================================================
+// validatePaymentSettings() Tests
+// ============================================================================
+
+test('validatePaymentSettings: should accept valid settings', () => {
+    const settings = {
+        startDate: '2026-02-15',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(result.isValid, 'Should accept valid settings');
+    assert(result.errors.length === 0, 'Should have no errors');
+});
+
+test('validatePaymentSettings: should accept all frequency types', () => {
+    const frequencies = ['weekly', 'bi-weekly', 'monthly', 'Weekly', 'Bi-Weekly', 'MONTHLY'];
+    frequencies.forEach(freq => {
+        const settings = {
+            startDate: '2026-02-15',
+            frequency: freq,
+            payPeriodsToShow: 6
+        };
+        const result = validatePaymentSettings(settings);
+        assert(result.isValid, `Should accept frequency: ${freq}`);
+    });
+});
+
+test('validatePaymentSettings: should reject invalid frequency', () => {
+    const settings = {
+        startDate: '2026-02-15',
+        frequency: 'daily',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject invalid frequency');
+    assert(result.errors.some(e => e.includes('Frequency')), 'Should mention frequency error');
+});
+
+test('validatePaymentSettings: should reject missing startDate', () => {
+    const settings = {
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject missing startDate');
+    assert(result.errors.some(e => e.includes('Start date')), 'Should mention startDate error');
+});
+
+test('validatePaymentSettings: should reject invalid date format', () => {
+    const settings = {
+        startDate: '02-15-2026',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject invalid date format');
+    assert(result.errors.some(e => e.includes('YYYY-MM-DD')), 'Should mention format error');
+});
+
+test('validatePaymentSettings: should reject past dates', () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dateStr = yesterday.toISOString().split('T')[0];
+
+    const settings = {
+        startDate: dateStr,
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject past dates');
+    assert(result.errors.some(e => e.includes('past')), 'Should mention past date error');
+});
+
+test('validatePaymentSettings: should reject dates too far in future', () => {
+    const future = new Date();
+    future.setFullYear(future.getFullYear() + 3);
+    const dateStr = future.toISOString().split('T')[0];
+
+    const settings = {
+        startDate: dateStr,
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject dates too far in future');
+    assert(result.errors.some(e => e.includes('2 years')), 'Should mention 2 year limit');
+});
+
+test('validatePaymentSettings: should accept today as startDate', () => {
+    const today = new Date().toISOString().split('T')[0];
+    const settings = {
+        startDate: today,
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(result.isValid, 'Should accept today as startDate');
+});
+
+test('validatePaymentSettings: should reject invalid day (Feb 30)', () => {
+    const settings = {
+        startDate: '2026-02-30',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject invalid day');
+});
+
+test('validatePaymentSettings: should reject non-integer payPeriodsToShow', () => {
+    const settings = {
+        startDate: '2026-02-15',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6.5
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject non-integer periods');
+    assert(result.errors.some(e => e.includes('integer')), 'Should mention integer requirement');
+});
+
+test('validatePaymentSettings: should reject zero payPeriodsToShow', () => {
+    const settings = {
+        startDate: '2026-02-15',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 0
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject zero periods');
+    assert(result.errors.some(e => e.includes('positive')), 'Should mention positive requirement');
+});
+
+test('validatePaymentSettings: should reject negative payPeriodsToShow', () => {
+    const settings = {
+        startDate: '2026-02-15',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: -5
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject negative periods');
+    assert(result.errors.some(e => e.includes('positive')), 'Should mention positive requirement');
+});
+
+test('validatePaymentSettings: should reject payPeriodsToShow over 52', () => {
+    const settings = {
+        startDate: '2026-02-15',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 53
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject periods over 52');
+    assert(result.errors.some(e => e.includes('52')), 'Should mention 52 limit');
+});
+
+test('validatePaymentSettings: should accept payPeriodsToShow of 52', () => {
+    const settings = {
+        startDate: '2026-02-15',
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 52
+    };
+    const result = validatePaymentSettings(settings);
+    assert(result.isValid, 'Should accept 52 periods');
+});
+
+test('validatePaymentSettings: should reject non-object input', () => {
+    const result = validatePaymentSettings(null);
+    assert(!result.isValid, 'Should reject null');
+    assert(result.errors.length > 0, 'Should have error message');
+});
+
+test('validatePaymentSettings: should report multiple errors', () => {
+    const settings = {
+        startDate: 'invalid',
+        frequency: 'invalid',
+        payPeriodsToShow: -1
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should be invalid');
+    assert(result.errors.length >= 3, 'Should report all three errors');
 });
 
 // ============================================================================

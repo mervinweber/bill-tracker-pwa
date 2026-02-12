@@ -326,3 +326,116 @@ export function validateRecurrence(recurrence) {
 
     return { isValid: true, error: null };
 }
+
+/**
+ * Validate payment settings object
+ * 
+ * Payment settings control:
+ * - startDate: When paycheck cycle begins (YYYY-MM-DD format)
+ * - frequency: Paycheck frequency (weekly, bi-weekly, monthly)
+ * - payPeriodsToShow: Number of upcoming paychecks to display and filter
+ * 
+ * @param {Object} settings - Payment settings object to validate
+ * @param {string} settings.startDate - Start date in YYYY-MM-DD format
+ * @param {string} settings.frequency - Frequency type (weekly, bi-weekly, monthly)
+ * @param {number} settings.payPeriodsToShow - Number of periods to show (positive integer)
+ * @returns {Object} Validation result with isValid and errors array
+ * 
+ * @example
+ * validatePaymentSettings({
+ *   startDate: '2026-02-10',
+ *   frequency: 'bi-weekly',
+ *   payPeriodsToShow: 6
+ * })
+ * // Returns: { isValid: true, errors: [] }
+ * 
+ * @example
+ * validatePaymentSettings({
+ *   startDate: '2026-02-10',
+ *   frequency: 'invalid',
+ *   payPeriodsToShow: -1
+ * })
+ * // Returns: { isValid: false, errors: ['Frequency must be weekly, bi-weekly, or monthly', 'Pay periods to show must be a positive integer'] }
+ */
+export function validatePaymentSettings(settings) {
+    const errors = [];
+
+    // Validate settings object exists
+    if (!settings || typeof settings !== 'object') {
+        return {
+            isValid: false,
+            errors: ['Payment settings must be an object']
+        };
+    }
+
+    // Validate startDate
+    if (!settings.startDate || typeof settings.startDate !== 'string') {
+        errors.push('Start date is required');
+    } else {
+        // Check format YYYY-MM-DD
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(settings.startDate)) {
+            errors.push('Start date must be in YYYY-MM-DD format');
+        } else {
+            const [year, month, day] = settings.startDate.split('-').map(Number);
+            const startDate = new Date(year, month - 1, day);
+
+            // Check if valid date
+            if (isNaN(startDate.getTime())) {
+                errors.push('Start date is invalid');
+            } else {
+                // Additional check: ensure date components match (catches Feb 30, etc.)
+                if (startDate.getFullYear() !== year ||
+                    startDate.getMonth() !== month - 1 ||
+                    startDate.getDate() !== day) {
+                    errors.push('Start date is invalid');
+                } else {
+                    // Check if date is in the past
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    if (startDate < today) {
+                        errors.push('Start date cannot be in the past');
+                    }
+
+                    // Check if date is too far in the future (more than 2 years)
+                    const twoYearsFromNow = new Date();
+                    twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+                    
+                    if (startDate > twoYearsFromNow) {
+                        errors.push('Start date cannot be more than 2 years in the future');
+                    }
+                }
+            }
+        }
+    }
+
+    // Validate frequency
+    if (!settings.frequency || typeof settings.frequency !== 'string') {
+        errors.push('Frequency is required');
+    } else {
+        const validFrequencies = ['weekly', 'bi-weekly', 'monthly'];
+        const normalizedFrequency = settings.frequency.toLowerCase().trim();
+        
+        if (!validFrequencies.includes(normalizedFrequency)) {
+            errors.push('Frequency must be weekly, bi-weekly, or monthly');
+        }
+    }
+
+    // Validate payPeriodsToShow
+    if (settings.payPeriodsToShow === undefined || settings.payPeriodsToShow === null) {
+        errors.push('Pay periods to show is required');
+    } else if (typeof settings.payPeriodsToShow !== 'number') {
+        errors.push('Pay periods to show must be a number');
+    } else if (!Number.isInteger(settings.payPeriodsToShow)) {
+        errors.push('Pay periods to show must be an integer');
+    } else if (settings.payPeriodsToShow <= 0) {
+        errors.push('Pay periods to show must be a positive integer');
+    } else if (settings.payPeriodsToShow > 52) {
+        errors.push('Pay periods to show cannot exceed 52');
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors
+    };
+}
