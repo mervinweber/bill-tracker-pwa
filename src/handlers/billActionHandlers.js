@@ -553,6 +553,7 @@ export function importData(file) {
                         if (!newBill.paymentHistory) newBill.paymentHistory = [];
                         if (newBill.isPaid === undefined) newBill.isPaid = false;
                         if (newBill.balance === undefined) newBill.balance = newBill.amountDue || 0;
+                        if (newBill.reminderEnabled === undefined) newBill.reminderEnabled = true;
 
                         return newBill;
                     });

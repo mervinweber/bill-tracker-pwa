@@ -44,6 +44,7 @@ export const initializeBillGrid = () => {
 export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates }, actions) => {
     const billGrid = document.getElementById('billGrid');
     billGrid.innerHTML = '';
+    const totalColumns = viewMode === 'all' ? 12 : 11;
 
     // Use shared filtering logic
     const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward);
@@ -77,6 +78,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             <th scope="col" role="columnheader">Last Payment</th>
             <th scope="col" role="columnheader">Notes</th>
             <th scope="col" role="columnheader">Recurrence</th>
+            <th scope="col" role="columnheader">Reminders</th>
             <th scope="col" role="columnheader">Actions <span class="sr-only">(buttons)</span></th>
         </tr>
     `;
@@ -191,6 +193,22 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             recurrenceCell.textContent = bill.recurrence;
             row.appendChild(recurrenceCell);
 
+            // Reminder Toggle
+            const reminderCell = document.createElement('td');
+            reminderCell.setAttribute('role', 'cell');
+            const reminderToggle = document.createElement('input');
+            reminderToggle.type = 'checkbox';
+            reminderToggle.className = 'payment-checkbox';
+            reminderToggle.checked = bill.reminderEnabled !== false;
+            reminderToggle.ariaLabel = `${reminderToggle.checked ? 'Disable' : 'Enable'} reminders for ${bill.name}`;
+            reminderToggle.addEventListener('change', (e) => {
+                if (actions.onToggleReminder) {
+                    actions.onToggleReminder(bill.id, e.target.checked);
+                }
+            });
+            reminderCell.appendChild(reminderToggle);
+            row.appendChild(reminderCell);
+
             // Actions
             const actionsCell = document.createElement('td');
             actionsCell.setAttribute('role', 'cell');
@@ -251,7 +269,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         const emptyRow = document.createElement('tr');
         emptyRow.setAttribute('role', 'row');
         const emptyCell = document.createElement('td');
-        emptyCell.colSpan = 10;
+        emptyCell.colSpan = totalColumns;
         emptyCell.setAttribute('role', 'cell');
         emptyCell.setAttribute('aria-live', 'polite');
         emptyCell.textContent = message;

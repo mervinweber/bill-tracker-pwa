@@ -8,5 +8,7 @@ export const STORAGE_KEYS = {
     CUSTOM_CATEGORIES: 'customCategories',
     SELECTED_CATEGORY: 'selectedCategory',
     USER_EMAIL: 'userEmail',
-    THEME: 'theme'
+    THEME: 'theme',
+    NOTIFICATION_SETTINGS: 'notificationSettings',
+    NOTIFICATION_REMINDER_LOG: 'notificationReminderLog'
 };

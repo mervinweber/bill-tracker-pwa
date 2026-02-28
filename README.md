@@ -8,7 +8,7 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 **Architecture**: Modular, production-ready  
 **Test Coverage**: 24+ unit tests  
 **Accessibility**: WCAG 2.1 Level AA compliant  
-**Latest Update**: January 2026 - IndexedDB offline sync queue implemented
+**Latest Update**: February 2026 - Bill reminders MVP (global settings, per-bill preferences, inline toggles)
 
 ## 🚀 Features
 
@@ -40,6 +40,7 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 *   **Theme Engine**: Robust Dark Mode and Light Mode support
 *   **Paycheck Synchronization**: Views automatically sync to selected pay period
 *   **Website Links**: Quick access to bill payment portals
+*   **Bill Reminders (MVP)**: Browser notifications with global settings, test reminder, and reminder history
 *   **Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 *   **Accessibility**: Full keyboard navigation and screen reader support
 
@@ -76,9 +77,9 @@ bill-tracker-pwa/
 │   │   └── settingsHandler.js     # Settings & categories
 │   ├── utils/                # Utilities
 │   │   ├── paycheckManager.js     # Paycheck logic
-│   │   ├── dates.js               # Date helpers
+│   │   ├── dateHelpers.js         # Date helpers
 │   │   ├── billHelpers.js         # Bill filtering
-│   │   └── storage.js             # localStorage utilities
+│   │   └── StorageManager.js      # Storage abstraction
 │   ├── services/             # External services
 │   │   └── supabase.js       # Cloud sync integration
 │   └── index.css             # Styles with dark mode support
@@ -100,9 +101,9 @@ You can start the app using Node.js (Recommended) or Python.
 npm install
 
 # Start the server
-npm start
+npm run dev
 ```
-*The app will be available at [http://localhost:8080](http://localhost:8080)*
+*The app will be available at [http://localhost:5173](http://localhost:5173) (or the port shown by Vite)*
 
 **Option B: Using Python**
 If you don't have Node.js installed, you can use Python's built-in server:
@@ -153,12 +154,15 @@ To enable Cloud Sync, you need to provide your own free Supabase credentials.
     *   You will need to set up OAuth consent screen in Google Cloud Console to get the `Client ID` and `Client Secret`.
     *   Add `https://<YOUR_PROJECT_ID>.supabase.co/auth/v1/callback` to "Authorized redirect URIs" in Google Cloud Console.
 
-## � Documentation
+## 📚 Documentation
 
 For detailed information about the project, see:
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete architecture overview and design patterns
 - **[DEVELOPER_SETUP.md](DEVELOPER_SETUP.md)** - Development environment setup guide
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution workflow and pull request checklist
+- **[COMPONENT_API.md](COMPONENT_API.md)** - Unified component and view API reference
+- **[STATE_MANAGEMENT_GUIDE.md](STATE_MANAGEMENT_GUIDE.md)** - State patterns, data flow, and best practices
 - **[REFACTORING_COMPLETE.md](REFACTORING_COMPLETE.md)** - Phase 4 refactoring summary
 - **[IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md)** - Future enhancements and technical debt
 - **[SECURITY.md](SECURITY.md)** - Security best practices and guidelines
@@ -178,29 +182,30 @@ For detailed information about the project, see:
 - ✅ **Unit Testing**: 24+ comprehensive tests
 - ✅ **Accessibility**: WCAG 2.1 Level AA compliance
 - ✅ **IndexedDB Sync Queue**: Offline-first sync reliability
+- ✅ **Bill Reminders MVP**: Global reminders, per-bill opt-out, test reminder, reminder history, and inline grid toggles
 
 ## 🔮 Future Enhancements
 
 See [IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md) for the complete roadmap. Key priorities:
 
 ### Production Readiness
-1.  **PWA Offline Documentation** - Document offline capabilities and cache strategy
-2.  **Performance Guide** - Bundle size targets and optimization checklist
-3.  **Browser Compatibility Matrix** - Supported browsers and known issues
-4.  **Deployment Guide** - Production deployment and CI/CD setup
+1.  ✅ **PWA Offline Documentation** - Complete ([PWA_OFFLINE_GUIDE.md](PWA_OFFLINE_GUIDE.md))
+2.  ✅ **Performance Guide** - Complete ([PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md))
+3.  ✅ **Browser Compatibility Matrix** - Complete ([BROWSER_COMPATIBILITY.md](BROWSER_COMPATIBILITY.md))
+4.  ✅ **Deployment Guide** - Complete ([DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md))
 
 ### Developer Experience
-1.  **Contributing Guidelines** - Code style, Git workflow, PR checklist
-2.  **Component API Documentation** - Complete JSDoc for all components
-3.  **State Management Guide** - Patterns and best practices
+1.  ✅ **Contributing Guidelines** - Complete ([CONTRIBUTING.md](CONTRIBUTING.md))
+2.  ✅ **Component API Documentation** - Complete ([COMPONENT_API.md](COMPONENT_API.md))
+3.  ✅ **State Management Guide** - Complete ([STATE_MANAGEMENT_GUIDE.md](STATE_MANAGEMENT_GUIDE.md))
 
 ### Future Features
-1.  **Push Notifications** - Web Push API for bill reminders
+1.  **Advanced Push Notifications** - Scheduled/background reminders with richer delivery controls
 2.  **Mobile Gestures** - Swipe actions for quick pay
 3.  **Bill Splitting** - Share bills with other users
 4.  **Recurring Bill Templates** - Pre-configured bill templates
 
-## � Data Import/Export
+## 📦 Data Import/Export
 
 ### JSON Import Specification
 
@@ -299,7 +304,7 @@ This project follows a modular architecture with clear separation of concerns. B
 3. Ensure all tests pass before submitting changes
 4. Follow the existing code style and patterns
 
-For detailed contribution guidelines, see the roadmap section on "Contributing Guidelines" (planned).
+For full contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 📄 License
 
@@ -307,7 +312,6 @@ This project is licensed under the MIT License.
 
 ---
 
-**Last Updated**: January 30, 2026  
+**Last Updated**: February 26, 2026  
 **Status**: Production-ready with ongoing enhancements  
-**Maintainer**: Mervin Weber# Updated Fri Feb  6 21:47:07 EST 2026
-# Trigger redeploy with env vars
+**Maintainer**: Mervin Weber

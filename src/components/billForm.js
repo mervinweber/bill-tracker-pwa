@@ -75,6 +75,13 @@ export const initializeBillForm = (categories, actions) => {
                     </select>
                     <span id="recurrenceHelp" class="sr-only">Select how often this bill recurs</span>
                 </div>
+
+                <div class="form-group">
+                    <label style="display: inline-flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="billReminderEnabled" checked>
+                        <span>Enable reminders for this bill</span>
+                    </label>
+                </div>
                 
                 <div class="form-group grid-full">
                     <label for="billWebsite">Website / Login URL:</label>
@@ -152,6 +159,7 @@ export const initializeBillForm = (categories, actions) => {
             amountDue: amount,
             balance: parseFloat(document.getElementById('billBalance').value),
             recurrence: document.getElementById('billRecurrence').value,
+            reminderEnabled: document.getElementById('billReminderEnabled').checked,
             notes: document.getElementById('billNotes').value,
             website: document.getElementById('billWebsite').value
         };
@@ -177,6 +185,7 @@ export const openBillForm = (bill) => {
         amountDue: 0,
         balance: 0,
         recurrence: 'One-time',
+        reminderEnabled: true,
         notes: '',
         website: ''
     };
@@ -205,6 +214,7 @@ export const openBillForm = (bill) => {
     });
     
     recurrenceSelect.value = billData.recurrence;
+    document.getElementById('billReminderEnabled').checked = billData.reminderEnabled !== false;
     document.getElementById('billNotes').value = billData.notes || '';
     document.getElementById('billWebsite').value = billData.website || '';
     
@@ -247,6 +257,7 @@ export const resetBillForm = () => {
     document.getElementById('billId').value = '';
     document.getElementById('billCategory').value = '';
     document.getElementById('billFormElement').reset();
+    document.getElementById('billReminderEnabled').checked = true;
     document.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
 };
 
