@@ -48,6 +48,7 @@ import {
 } from './services/supabase.js';
 
 import { safeJSONParse } from './utils/validation.js';
+import { checkAndSendDueBillReminders } from './utils/notifications.js';
 
 class AppOrchestrator {
     constructor() {
@@ -213,6 +214,7 @@ class AppOrchestrator {
             billStore.subscribe((bills) => {
                 this.rerender();
                 this.handleCloudSync(bills);
+                this.handleDueBillReminders();
             });
 
             // Auto-select current pay period if none selected
@@ -223,12 +225,24 @@ class AppOrchestrator {
 
             // Initial render
             this.rerender();
+            this.handleDueBillReminders();
 
             this.initialized = true;
             logger.info('App initialized successfully');
         } catch (error) {
             logger.error('Error initializing app', error);
             billActionHandlers.showErrorNotification(error.message, 'Initialization Error');
+        }
+    }
+
+    handleDueBillReminders() {
+        try {
+            const result = checkAndSendDueBillReminders(billStore.getAll());
+            if (result.sentCount > 0) {
+                logger.info('Bill due reminders processed', result);
+            }
+        } catch (error) {
+            logger.error('Failed running due bill reminders', error);
         }
     }
 
@@ -354,7 +368,8 @@ class AppOrchestrator {
                         onRecordPayment: (billId) => this.handleRecordPayment(billId),
                         onViewHistory: (billId) => this.handleViewHistory(billId),
                         onDeleteBill: (billId) => this.handleDeleteBill(billId),
-                        onEditBill: (billId) => this.handleEditBill(billId)
+                        onEditBill: (billId) => this.handleEditBill(billId),
+                        onToggleReminder: (billId, enabled) => this.handleToggleReminder(billId, enabled)
                     }
                 );
             }
@@ -411,6 +426,7 @@ class AppOrchestrator {
             amountDue: '',
             balance: '',
             recurrence: '',
+            reminderEnabled: true,
             notes: '',
             website: ''
         });
@@ -442,6 +458,7 @@ class AppOrchestrator {
                     ? parseFloat(document.getElementById('billBalance').value)
                     : parseFloat(document.getElementById('billAmountDue').value),
                 recurrence: document.getElementById('billRecurrence').value,
+                reminderEnabled: document.getElementById('billReminderEnabled').checked,
                 notes: document.getElementById('billNotes').value,
                 website: document.getElementById('billWebsite').value,
                 isPaid: existingBill ? existingBill.isPaid || false : false,
@@ -502,6 +519,22 @@ class AppOrchestrator {
 
     handleTogglePayment(billId, isPaid) {
         billActionHandlers.togglePaymentStatus(billId, isPaid);
+    }
+
+    handleToggleReminder(billId, enabled) {
+        try {
+            const bills = billStore.getAll();
+            const bill = bills.find(b => b.id === billId);
+            if (!bill) return;
+
+            billStore.update({
+                ...bill,
+                reminderEnabled: enabled
+            });
+        } catch (error) {
+            logger.error('Error toggling reminder setting', error);
+            billActionHandlers.showErrorNotification(error.message, 'Reminder Update Failed');
+        }
     }
 
     handleDeleteBill(billId) {

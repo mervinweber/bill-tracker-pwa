@@ -19,6 +19,7 @@
  */
 
 import { appOrchestrator } from './app.js';
+import './serviceWorker.js';
 
 /**
  * Initialize application when DOM is ready

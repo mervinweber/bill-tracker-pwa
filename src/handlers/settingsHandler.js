@@ -11,6 +11,13 @@ import { syncPaymentSettings, getUser } from '../services/supabase.js';
 import StorageManager from '../utils/StorageManager.js';
 import logger from '../utils/logger.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
+import {
+    getNotificationSettings,
+    getReminderHistory,
+    isNotificationSupported,
+    requestNotificationPermission,
+    sendTestReminder
+} from '../utils/notifications.js';
 
 /**
  * Show settings modal
@@ -20,6 +27,7 @@ export function showSettingsModal(categoriesList) {
         logger.info('Settings modal requested', { categories: categoriesList });
         
         const settings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, {});
+        const notificationSettings = getNotificationSettings();
         logger.info('Payment settings loaded', { settings });
 
         if (!settings.startDate) {
@@ -67,6 +75,39 @@ export function showSettingsModal(categoriesList) {
                     <option value="8" ${settings.payPeriodsToShow === 8 ? 'selected' : ''}>8 Pay Periods</option>
                     <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
                 </select>
+            </div>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+            <h3>Reminders</h3>
+            <div class="form-group">
+                <label style="display: inline-flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="settingsNotificationsEnabled" ${notificationSettings.enabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
+                    <strong>Enable bill due reminders</strong>
+                </label>
+                <div style="margin-top: 6px; color: #666; font-size: 13px;">
+                    ${isNotificationSupported()
+                        ? 'Shows browser reminders when unpaid bills are due soon.'
+                        : 'This browser does not support notifications.'}
+                </div>
+            </div>
+            <div class="form-group">
+                <label><strong>Remind me this many days before due date:</strong></label>
+                <select id="settingsReminderDays" ${isNotificationSupported() ? '' : 'disabled'}>
+                    <option value="0" ${notificationSettings.daysBefore === 0 ? 'selected' : ''}>Due date only</option>
+                    <option value="1" ${notificationSettings.daysBefore === 1 ? 'selected' : ''}>1 day before</option>
+                    <option value="2" ${notificationSettings.daysBefore === 2 ? 'selected' : ''}>2 days before</option>
+                    <option value="3" ${notificationSettings.daysBefore === 3 ? 'selected' : ''}>3 days before</option>
+                    <option value="7" ${notificationSettings.daysBefore === 7 ? 'selected' : ''}>7 days before</option>
+                </select>
+            </div>
+            <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" id="sendTestReminderBtn" class="view-btn" ${isNotificationSupported() ? '' : 'disabled'}>
+                    🔔 Send Test Reminder
+                </button>
+                <span style="color: #666; font-size: 13px;">Use this to verify browser notifications are working.</span>
+            </div>
+            <div class="form-group">
+                <label><strong>Reminder History (most recent first):</strong></label>
+                <div id="reminderHistoryList" style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;"></div>
             </div>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
             <h3>Manage Categories</h3>
@@ -173,6 +214,8 @@ export function showSettingsModal(categoriesList) {
         document.body.appendChild(modal);
         logger.info('Settings modal created and appended to DOM');
 
+        renderReminderHistoryList();
+
         // Close button handler
         cancelBtn.addEventListener('click', () => {
             modal.remove();
@@ -189,6 +232,13 @@ export function showSettingsModal(categoriesList) {
         document.getElementById('addNewCategoryBtn').addEventListener('click', () => {
             handleAddNewCategory(categoriesList, modal);
         });
+
+        const sendTestReminderBtn = document.getElementById('sendTestReminderBtn');
+        if (sendTestReminderBtn) {
+            sendTestReminderBtn.addEventListener('click', async () => {
+                await handleSendTestReminder();
+            });
+        }
 
         // Clean up unused categories handler
         document.getElementById('cleanupCategoriesBtn').addEventListener('click', () => {
@@ -258,6 +308,64 @@ function handleAddNewCategory(categoriesList, settingsModal) {
     } catch (error) {
         logger.error('Error adding category', error);
         billActionHandlers.showErrorNotification(error.message, 'Add Category Failed');
+    }
+}
+
+function renderReminderHistoryList() {
+    const container = document.getElementById('reminderHistoryList');
+    if (!container) {
+        return;
+    }
+
+    const history = getReminderHistory(billStore.getAll()).slice(0, 25);
+    container.innerHTML = '';
+
+    if (history.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.color = '#666';
+        empty.style.fontSize = '13px';
+        empty.textContent = 'No reminder notifications have been sent yet.';
+        container.appendChild(empty);
+        return;
+    }
+
+    history.forEach(entry => {
+        const row = document.createElement('div');
+        row.style.padding = '6px 0';
+        row.style.borderBottom = '1px solid var(--border-color)';
+
+        const sentDate = new Date(entry.sentAt);
+        const sentText = Number.isNaN(sentDate.getTime())
+            ? 'Unknown time'
+            : sentDate.toLocaleString();
+
+        row.textContent = `${entry.billName} (due ${entry.dueDate}) — sent ${sentText}`;
+        container.appendChild(row);
+    });
+}
+
+async function handleSendTestReminder() {
+    try {
+        if (!isNotificationSupported()) {
+            billActionHandlers.showErrorNotification('This browser does not support notifications.', 'Unsupported');
+            return;
+        }
+
+        const permission = await requestNotificationPermission();
+        if (permission !== 'granted') {
+            billActionHandlers.showErrorNotification('Notification permission is required for test reminders.', 'Permission Required');
+            return;
+        }
+
+        const result = sendTestReminder();
+        if (result.sent) {
+            billActionHandlers.showSuccessNotification('Test reminder sent successfully.');
+        } else {
+            billActionHandlers.showErrorNotification('Could not send test reminder.', 'Reminder Error');
+        }
+    } catch (error) {
+        logger.error('Error sending test reminder', error);
+        billActionHandlers.showErrorNotification(error.message, 'Reminder Error');
     }
 }
 
@@ -546,13 +654,18 @@ function updateCategoryName(oldName, newName, categoriesList) {
 /**
  * Handle settings form submission
  */
-function handleSettingsSave(e, modal) {
+async function handleSettingsSave(e, modal) {
     e.preventDefault();
 
     try {
         const startDate = document.getElementById('settingsStartDate').value;
         const frequency = document.getElementById('settingsFrequency').value;
         const weeks = parseInt(document.getElementById('settingsWeeks').value);
+        const notificationsEnabledInput = document.getElementById('settingsNotificationsEnabled');
+        const reminderDaysInput = document.getElementById('settingsReminderDays');
+
+        let notificationsEnabled = !!notificationsEnabledInput?.checked;
+        const reminderDays = parseInt(reminderDaysInput?.value ?? '1', 10);
 
         if (!startDate) {
             throw new Error('Start date is required');
@@ -572,6 +685,22 @@ function handleSettingsSave(e, modal) {
         }
 
         logger.info('Payment settings validated', { settings: newSettings });
+
+        if (notificationsEnabled && isNotificationSupported()) {
+            const permission = await requestNotificationPermission();
+            if (permission !== 'granted') {
+                notificationsEnabled = false;
+                billActionHandlers.showErrorNotification(
+                    'Notification permission was not granted. Reminders were saved as disabled.',
+                    'Notifications Disabled'
+                );
+            }
+        }
+
+        StorageManager.set(STORAGE_KEYS.NOTIFICATION_SETTINGS, {
+            enabled: notificationsEnabled,
+            daysBefore: Number.isNaN(reminderDays) ? 1 : reminderDays
+        });
 
         // Update paycheck manager
         paycheckManager.updateSettings(newSettings);
