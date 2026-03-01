@@ -1,6 +1,45 @@
 # Changelog
 
-## 2026-02-28
+## 2026-03-01
+
+### Added
+- **Analytics Forecasting**:
+  - Spending forecast for next month based on recurring bills
+  - 3-month trend analysis (up/down/flat with percentage)
+  - Intelligent spending alerts (high amounts, overdue, due soon)
+  - Real-time metrics dashboard in analytics view
+  - Category-wise forecast breakdown
+  
+- **Mobile Optimizations**:
+  - Swipe-to-delete gesture for bill rows on touch devices
+  - Mobile-friendly form UX with larger touch targets
+  - Offline operations queue system (max 250 operations)
+  - Responsive viewport detection with mobile class
+  - Improved form accessibility and touch targets
+  
+- **Improved Error Handling**:
+  - Input validation in offline queue (operationType, data, id)
+  - Operation size limits (10KB per operation)
+  - Logging for invalid bills in forecasting calculations
+  - Graceful error handling in all new utilities
+
+- **New Utilities**:
+  - `src/utils/forecastingHelpers.js` - Spending prediction and analysis engine
+  - `src/utils/mobileGestures.js` - Touch gesture support
+  - `src/utils/offlineQueue.js` - Enhanced offline operations queue
+
+### Changed
+- Offline queue now enforces max size (250 operations)
+- Forecasting functions now log data quality issues
+- Analytics view displays spending alerts prominently
+- Bill form improved for mobile screens
+
+### Notes
+- Swipe-to-delete works alongside delete button (not replacement)
+- Analytics features only show on unpaid bills
+- Queue capacity defaults to 250 operations
+
+---
 
 ### Added
 - Bill reminders MVP with notification settings and due-soon reminder checks.

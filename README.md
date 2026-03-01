@@ -8,7 +8,7 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 **Architecture**: Modular, production-ready  
 **Test Coverage**: 24+ unit tests  
 **Accessibility**: WCAG 2.1 Level AA compliant  
-**Latest Update**: February 2026 - Bill reminders MVP (global settings, per-bill preferences, inline toggles)
+**Latest Update**: March 2026 - Analytics forecasts, mobile optimizations, improved offline queue
 
 ## 🚀 Features
 
@@ -43,6 +43,21 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 *   **Bill Reminders (MVP)**: Browser notifications with global settings, test reminder, and reminder history
 *   **Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 *   **Accessibility**: Full keyboard navigation and screen reader support
+
+### Advanced Analytics (NEW)
+*   **Spending Forecasts**: Predicts next month's bills based on recurring bill patterns
+*   **Trend Analysis**: 3-month spending direction with percentage change indicators
+*   **Intelligent Alerts**: 
+    *   High-spend alerts for bills above average
+    *   Overdue bill warnings with days past due
+    *   Due-soon notifications within 7 days
+*   **Real-time Metrics**: Avg monthly spending, spend trends, forecast categories
+
+### Mobile Optimizations (NEW)
+*   **Touch Gestures**: Swipe-to-delete on bill rows (with button fallback)
+*   **Mobile-Friendly Form**: Optimized inputs, keyboard hints, responsive modals
+*   **Offline Operations Queue**: Queue bulk edits when offline (max 250 operations)
+*   **Responsive Design**: Auto-detects viewport and applies mobile viewport class
 
 ## 🏗️ Architecture
 
