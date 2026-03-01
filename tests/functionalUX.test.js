@@ -138,6 +138,19 @@ test('Bill Grid: Delete button listeners are attached', () => {
     if (!billGridContent.includes("actions.onDeleteBill")) throw new Error('Missing delete handler');
 });
 
+test('Bill Grid: Keyboard delete alternative is attached', () => {
+    if (!billGridContent.includes("row.addEventListener('keydown'")) throw new Error('Missing row keydown listener');
+    if (!billGridContent.includes("e.key === 'Delete'")) throw new Error('Missing Delete key handling');
+    if (!billGridContent.includes("e.key === 'Backspace'")) throw new Error('Missing Backspace key handling');
+    if (!billGridContent.includes("e.key === 'd'")) throw new Error('Missing Ctrl/Cmd+D key handling');
+});
+
+test('Bill Grid: Gesture and keyboard cleanup functions are tracked', () => {
+    if (!billGridContent.includes('runBillGridCleanup')) throw new Error('Missing bill grid cleanup runner');
+    if (!billGridContent.includes('registerBillGridCleanup')) throw new Error('Missing bill grid cleanup registrar');
+    if (!billGridContent.includes('cleanupSwipeDelete')) throw new Error('Missing swipe cleanup registration');
+});
+
 test('Bill Grid: Edit button listeners are attached', () => {
     if (!billGridContent.includes("editBtn.addEventListener('click'")) throw new Error('Missing edit button listener');
 });

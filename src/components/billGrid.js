@@ -3,6 +3,29 @@ import { paycheckManager } from '../utils/paycheckManager.js';
 import { filterBillsByPeriod } from '../utils/billHelpers.js';
 import { initializeSwipeDelete, isTouchDevice, isMobileViewport } from '../utils/mobileGestures.js';
 
+let billGridCleanupFns = [];
+
+const registerBillGridCleanup = (cleanupFn) => {
+    if (typeof cleanupFn === 'function') {
+        billGridCleanupFns.push(cleanupFn);
+    }
+};
+
+const runBillGridCleanup = () => {
+    billGridCleanupFns.forEach((cleanupFn) => {
+        try {
+            cleanupFn();
+        } catch (error) {
+            // no-op cleanup guard
+        }
+    });
+    billGridCleanupFns = [];
+};
+
+export const cleanupBillGrid = () => {
+    runBillGridCleanup();
+};
+
 
 /**
  * Initializes the bill grid with empty state message
@@ -43,6 +66,8 @@ export const initializeBillGrid = () => {
  *   - Proper error handling and empty state messages
  */
 export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates }, actions) => {
+    runBillGridCleanup();
+
     const billGrid = document.getElementById('billGrid');
     billGrid.innerHTML = '';
     const totalColumns = viewMode === 'all' ? 12 : 11;
@@ -59,6 +84,13 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     container.className = 'bill-grid-container';
     container.setAttribute('role', 'region');
     container.setAttribute('aria-label', 'Bills table');
+
+    const keyboardHelpId = 'bill-grid-keyboard-help';
+    const keyboardHelp = document.createElement('p');
+    keyboardHelp.id = keyboardHelpId;
+    keyboardHelp.className = 'sr-only';
+    keyboardHelp.textContent = 'Tip: focus a bill row and press Delete, Backspace, or Control+D to delete the bill. On touch devices, you can also swipe left.';
+    container.appendChild(keyboardHelp);
 
     const table = document.createElement('table');
     table.className = 'bill-table';
@@ -106,6 +138,9 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             const row = document.createElement('tr');
             row.className = `${isPaid ? 'paid-bill' : ''} ${isOverdue ? 'overdue-bill' : ''}`;
             row.setAttribute('role', 'row');
+            row.tabIndex = 0;
+            row.setAttribute('aria-keyshortcuts', 'Delete Backspace Ctrl+D');
+            row.setAttribute('aria-describedby', keyboardHelpId);
             row.setAttribute('aria-label', `${bill.name}, due ${bill.dueDate}, $${(bill.amountDue || 0).toFixed(2)}, ${isPaid ? 'paid' : 'unpaid'}${isOverdue ? ', overdue' : ''}`);
 
             // Bill Name
@@ -255,9 +290,32 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'icon-btn delete-btn';
             deleteBtn.title = 'Delete';
-            deleteBtn.ariaLabel = `Delete ${bill.name}`;
+            deleteBtn.ariaLabel = `Delete ${bill.name}. Keyboard: focus row and press Delete, Backspace, or Control+D. Touch: swipe left.`;
             deleteBtn.textContent = '🗑️';
-            deleteBtn.addEventListener('click', () => actions.onDeleteBill(bill.id));
+
+            const deleteBill = () => actions.onDeleteBill(bill.id);
+            const handleDeleteClick = () => deleteBill();
+            deleteBtn.addEventListener('click', handleDeleteClick);
+
+            const handleRowKeyDown = (e) => {
+                const targetTag = e.target?.tagName;
+                if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || targetTag === 'BUTTON') {
+                    return;
+                }
+
+                const isDeleteKey = e.key === 'Delete' || e.key === 'Backspace';
+                const isCtrlDeleteShortcut = (e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D');
+
+                if (isDeleteKey || isCtrlDeleteShortcut) {
+                    e.preventDefault();
+                    deleteBill();
+                }
+            };
+
+            row.addEventListener('keydown', handleRowKeyDown);
+            registerBillGridCleanup(() => row.removeEventListener('keydown', handleRowKeyDown));
+            registerBillGridCleanup(() => deleteBtn.removeEventListener('click', handleDeleteClick));
+
             btnGroup.appendChild(deleteBtn);
 
             actionsCell.appendChild(btnGroup);
@@ -267,9 +325,10 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
             // Add swipe-to-delete gesture on mobile
             if (isTouchDevice() && isMobileViewport()) {
-                initializeSwipeDelete(row, () => {
+                const cleanupSwipeDelete = initializeSwipeDelete(row, () => {
                     actions.onDeleteBill(bill.id);
                 }, 80);
+                registerBillGridCleanup(cleanupSwipeDelete);
             }
         });
     } else {

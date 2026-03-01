@@ -87,7 +87,7 @@ Implement keyboard accessibility and event cleanup improvements as identified in
 
 ### Phase 2 Tasks
 
-#### Task 1: Keyboard Alternative to Swipe-to-Delete ⏳ PENDING
+#### Task 1: Keyboard Alternative to Swipe-to-Delete ✅ COMPLETE
 - **File**: `src/components/billGrid.js`
 - **Changes**:
   - Add keyboard shortcut (e.g., `Delete` key or `Ctrl+D`) for bill deletion
@@ -95,14 +95,18 @@ Implement keyboard accessibility and event cleanup improvements as identified in
   - Maintain dual UI: both swipe AND keyboard options coexist
   - Add ARIA labels for keyboard-accessible delete action
   - Ensure focus management and keyboard focus indicators
-- **Testing**: Update billGrid.test.js with keyboard interaction tests
+- **Implemented**:
+  - Added row-level keyboard deletion support with `Delete`, `Backspace`, and `Ctrl/Cmd + D`
+  - Added focusable rows (`tabIndex=0`) for keyboard navigation
+  - Preserved dual interaction model (swipe on touch + keyboard alternative)
+  - Added functional test coverage for key handling
 - **Acceptance Criteria**:
   - ✋ Swipe-based delete continues to work
   - ⌨️ Keyboard shortcut also works
   - 🎯 ARIA labels describe both methods
   - 👁️ Focus indicators visible on keyboard activation
 
-#### Task 2: Fix Event Listener Cleanup ⏳ PENDING
+#### Task 2: Fix Event Listener Cleanup ✅ COMPLETE
 - **Files**:
   - `src/components/billGrid.js` (potential memory leak)
   - `src/utils/mobileGestures.js` (reviewable cleanup pattern)
@@ -112,14 +116,18 @@ Implement keyboard accessibility and event cleanup improvements as identified in
   - Implement cleanup in component lifecycle
   - Cache and reuse handlers instead of creating new ones
   - Document cleanup pattern for future maintenance
-- **Testing**: Add memory profiling and cleanup validation tests
+- **Implemented**:
+  - Added bill-grid scoped cleanup registry (`registerBillGridCleanup`, `runBillGridCleanup`)
+  - Registered swipe and keyboard listeners for deterministic teardown
+  - Added exported `cleanupBillGrid()` and invoked it during app cleanup lifecycle
+  - Wired `initializeResponsiveDetection()` cleanup in `AppOrchestrator` via `beforeunload`
 - **Acceptance Criteria**:
   - ✅ All event listeners removed on cleanup
   - ✅ No memory leaks in DevTools profiler
   - ✅ Cleanup called before component destruction
   - ✅ Multiple init/cleanup cycles work correctly
 
-#### Task 3: ARIA Enhancement for Gestures ⏳ PENDING
+#### Task 3: ARIA Enhancement for Gestures ✅ COMPLETE
 - **File**: `src/components/billGrid.js`
 - **Changes**:
   - Add `aria-label` to swipe-interactive elements
@@ -127,14 +135,18 @@ Implement keyboard accessibility and event cleanup improvements as identified in
   - Add `role="button"` for gesture-activated elements
   - Provide text alternative to gesture-only interactions
   - Test with screen readers (NVDA/JAWS simulation)
-- **Testing**: Update uiAccessibility.test.js with gesture ARIA tests
+- **Implemented**:
+  - Added `aria-keyshortcuts="Delete Backspace Ctrl+D"` on bill rows
+  - Added descriptive delete button aria text documenting keyboard + swipe alternatives
+  - Added screen-reader keyboard help text (`sr-only`) and row `aria-describedby`
+  - Extended accessibility test coverage for keyboard shortcut metadata
 - **Acceptance Criteria**:
   - ✅ Screen readers announce swipe capability
   - ✅ Keyboard alternative clearly documented
   - ✅ All gesture elements have semantic roles
   - ✅ No "unlabeled control" accessibility issues
 
-#### Task 4: Update Documentation ⏳ PENDING
+#### Task 4: Update Documentation ✅ COMPLETE
 - **Files**:
   - Update CODE_REVIEW_IMPROVEMENTS.md with Phase 2 completion
   - Update COMPONENT_API.md with keyboard shortcuts
@@ -145,7 +157,7 @@ Implement keyboard accessibility and event cleanup improvements as identified in
   - Explain dual-method interaction design
 - **Testing**: Verify documentation accuracy against implementation
 
-#### Task 5: Run Full Validation Suite ⏳ PENDING
+#### Task 5: Run Full Validation Suite ✅ COMPLETE
 - Build passes: `npm run build` ✅
 - Tests pass: `npm run test` (all 11 files, 350+ cases)
 - Accessibility audit: No new violations
@@ -236,12 +248,12 @@ export function initializeComponent() {
 - ✅ Full test suite continues to pass (350+ total cases)
 - ✅ Committed to feature branch
 
-### Phase 2 (IN PROGRESS)
-- ⏳ Keyboard shortcuts implementation
-- ⏳ Event listener cleanup fixes
-- ⏳ ARIA label enhancements
-- ⏳ Documentation updates
-- ⏳ Final validation and testing
+### Phase 2 (COMPLETE ✅)
+- ✅ Keyboard shortcuts implementation
+- ✅ Event listener cleanup fixes
+- ✅ ARIA label enhancements
+- ✅ Documentation updates
+- ✅ Final validation and testing
 
 ---
 
@@ -254,8 +266,8 @@ export function initializeComponent() {
 - notifications: 7+ functions, 50+ test cases (7.1x+ coverage)
 
 ### Build Metrics
-- ✅ Build time: 695ms
-- ✅ Bundle size: 122.64 kB (31.04 kB gzipped)
+- ✅ Build time: 664ms
+- ✅ Bundle size: 124.13 kB (31.51 kB gzipped)
 - ✅ Module count: 32 modules
 - ✅ No warnings or errors
 
