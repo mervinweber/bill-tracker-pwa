@@ -6,6 +6,13 @@
 import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
 import logger from '../utils/logger.js';
+import {
+    calculateAverageMonthlySpending,
+    forecastNextMonth,
+    getSpendingAlerts,
+    calculateTrend,
+    calculateBudgetMetrics
+} from '../utils/forecastingHelpers.js';
 
 let categoryChart = null;
 let trendChart = null;
@@ -62,10 +69,36 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
         }, 0);
         const remaining = totalDue - totalPaid;
 
+        // Calculate advanced metrics
+        const forecast = forecastNextMonth(currentBills);
+        const trend = calculateTrend(currentBills, 3);
+        const avgMonthly = calculateAverageMonthlySpending(currentBills, 3);
+        const alerts = getSpendingAlerts(currentBills, 25);
+
         analyticsView.innerHTML = `
             <div class="header-top" style="margin-bottom: 20px;">
                 <h2 style="color: var(--primary-color);">📊 ${viewTitle}</h2>
             </div>
+            
+            <!-- Spending Alerts Section -->
+            ${alerts.length > 0 ? `
+                <div class="alerts-section" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; background: rgba(255,107,107,0.1); border-left: 4px solid var(--danger-color);">
+                    <h3 style="margin-top: 0; color: var(--danger-color);">⚠️ Spending Alerts (${alerts.length})</h3>
+                    ${alerts.map(alert => `
+                        <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-primary);">${alert.message}</div>
+                                <small style="color: var(--text-secondary);">${new Date().toLocaleString()}</small>
+                            </div>
+                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; ${
+                                alert.severity === 'critical' ? 'background: var(--danger-color); color: white' :
+                                alert.severity === 'warning' ? 'background: #f5a623; color: white' :
+                                'background: #5eb3d6; color: white'
+                            };">${alert.severity.toUpperCase()}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
             
             <div class="dashboard" style="margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                 <div class="dashboard-card">
@@ -89,7 +122,45 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                         <div class="card-value">$${remaining.toFixed(2)}</div>
                     </div>
                 </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">📈</div>
+                    <div class="card-content">
+                        <div class="card-label">Monthly Avg</div>
+                        <div class="card-value">$${avgMonthly.toFixed(2)}</div>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">${trend.direction === 'up' ? '📊' : trend.direction === 'down' ? '📉' : '➡️'}</div>
+                    <div class="card-content">
+                        <div class="card-label">3-Month Trend</div>
+                        <div class="card-value" style="color: ${trend.direction === 'up' ? '#d97f7f' : trend.direction === 'down' ? '#27ae60' : '#f5a623'};">${trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'} ${Math.abs(trend.percentChange)}%</div>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">🔮</div>
+                    <div class="card-content">
+                        <div class="card-label">Next Month Forecast</div>
+                        <div class="card-value">$${forecast.total.toFixed(2)}</div>
+                        <small style="color: var(--text-secondary);">${forecast.recurringCount} recurring</small>
+                    </div>
+                </div>
             </div>
+
+            <!-- Forecast Details -->
+            ${forecast.total > 0 ? `
+                <div style="margin-bottom: 30px; padding: 15px; background: rgba(94,179,214,0.1); border-radius: 8px;">
+                    <h3 style="margin-top: 0; color: var(--primary-color);">📅 Next Month Forecast</h3>
+                    <p style="color: var(--text-secondary); margin: 10px 0;">Projected recurring bills: <strong style="color: var(--primary-color);">$${forecast.total.toFixed(2)}</strong></p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                        ${Object.entries(forecast.byCategory).map(([cat, amount]) => `
+                            <div style="padding: 10px; background: white; border-radius: 4px; border-left: 3px solid var(--primary-color);">
+                                <div style="font-size: 12px; color: var(--text-secondary);">${cat}</div>
+                                <div style="font-weight: bold; color: var(--primary-color);">$${amount.toFixed(2)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
 
             <div class="charts-grid">
                 <div class="chart-card">
