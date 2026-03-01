@@ -658,6 +658,7 @@ async function handleSettingsSave(e, modal) {
     e.preventDefault();
 
     try {
+        const existingSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, {});
         const startDate = document.getElementById('settingsStartDate').value;
         const frequency = document.getElementById('settingsFrequency').value;
         const weeks = parseInt(document.getElementById('settingsWeeks').value);
@@ -677,14 +678,24 @@ async function handleSettingsSave(e, modal) {
             payPeriodsToShow: weeks
         };
 
-        // Validate payment settings before saving
-        const validation = validatePaymentSettings(newSettings);
-        if (!validation.isValid) {
-            const errorMessage = validation.errors.join('; ');
-            throw new Error(errorMessage);
-        }
+        const paymentSettingsChanged =
+            existingSettings.startDate !== newSettings.startDate ||
+            existingSettings.frequency !== newSettings.frequency ||
+            existingSettings.payPeriodsToShow !== newSettings.payPeriodsToShow;
 
-        logger.info('Payment settings validated', { settings: newSettings });
+        // Validate payment settings only when schedule fields are changed.
+        // This allows category/reminder-only saves even if legacy startDate is now in the past.
+        if (paymentSettingsChanged) {
+            const validation = validatePaymentSettings(newSettings);
+            if (!validation.isValid) {
+                const errorMessage = validation.errors.join('; ');
+                throw new Error(errorMessage);
+            }
+
+            logger.info('Payment settings validated', { settings: newSettings });
+        } else {
+            logger.info('Payment settings unchanged; skipping schedule validation');
+        }
 
         if (notificationsEnabled && isNotificationSupported()) {
             const permission = await requestNotificationPermission();
