@@ -45,6 +45,19 @@ function test(description, testFn) {
 
 console.log('🔒 Running Validation Security Tests...\n');
 
+function toLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getFutureDateString(daysAhead = 14) {
+    const date = new Date();
+    date.setDate(date.getDate() + daysAhead);
+    return toLocalDateString(date);
+}
+
 // ============================================================================
 // sanitizeInput() Tests
 // ============================================================================
@@ -352,7 +365,7 @@ test('validateRecurrence: should reject empty recurrence', () => {
 
 test('validatePaymentSettings: should accept valid settings', () => {
     const settings = {
-        startDate: '2026-02-15',
+        startDate: getFutureDateString(14),
         frequency: 'bi-weekly',
         payPeriodsToShow: 6
     };
@@ -365,7 +378,7 @@ test('validatePaymentSettings: should accept all frequency types', () => {
     const frequencies = ['weekly', 'bi-weekly', 'monthly', 'Weekly', 'Bi-Weekly', 'MONTHLY'];
     frequencies.forEach(freq => {
         const settings = {
-            startDate: '2026-02-15',
+            startDate: getFutureDateString(14),
             frequency: freq,
             payPeriodsToShow: 6
         };
@@ -376,7 +389,7 @@ test('validatePaymentSettings: should accept all frequency types', () => {
 
 test('validatePaymentSettings: should reject invalid frequency', () => {
     const settings = {
-        startDate: '2026-02-15',
+        startDate: getFutureDateString(14),
         frequency: 'daily',
         payPeriodsToShow: 6
     };
@@ -409,7 +422,7 @@ test('validatePaymentSettings: should reject invalid date format', () => {
 test('validatePaymentSettings: should reject past dates', () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const dateStr = yesterday.toISOString().split('T')[0];
+    const dateStr = toLocalDateString(yesterday);
 
     const settings = {
         startDate: dateStr,
@@ -424,7 +437,7 @@ test('validatePaymentSettings: should reject past dates', () => {
 test('validatePaymentSettings: should reject dates too far in future', () => {
     const future = new Date();
     future.setFullYear(future.getFullYear() + 3);
-    const dateStr = future.toISOString().split('T')[0];
+    const dateStr = toLocalDateString(future);
 
     const settings = {
         startDate: dateStr,
@@ -437,7 +450,7 @@ test('validatePaymentSettings: should reject dates too far in future', () => {
 });
 
 test('validatePaymentSettings: should accept today as startDate', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateString(new Date());
     const settings = {
         startDate: today,
         frequency: 'bi-weekly',
@@ -459,7 +472,7 @@ test('validatePaymentSettings: should reject invalid day (Feb 30)', () => {
 
 test('validatePaymentSettings: should reject non-integer payPeriodsToShow', () => {
     const settings = {
-        startDate: '2026-02-15',
+        startDate: getFutureDateString(14),
         frequency: 'bi-weekly',
         payPeriodsToShow: 6.5
     };
@@ -470,7 +483,7 @@ test('validatePaymentSettings: should reject non-integer payPeriodsToShow', () =
 
 test('validatePaymentSettings: should reject zero payPeriodsToShow', () => {
     const settings = {
-        startDate: '2026-02-15',
+        startDate: getFutureDateString(14),
         frequency: 'bi-weekly',
         payPeriodsToShow: 0
     };
@@ -481,7 +494,7 @@ test('validatePaymentSettings: should reject zero payPeriodsToShow', () => {
 
 test('validatePaymentSettings: should reject negative payPeriodsToShow', () => {
     const settings = {
-        startDate: '2026-02-15',
+        startDate: getFutureDateString(14),
         frequency: 'bi-weekly',
         payPeriodsToShow: -5
     };
@@ -492,7 +505,7 @@ test('validatePaymentSettings: should reject negative payPeriodsToShow', () => {
 
 test('validatePaymentSettings: should reject payPeriodsToShow over 52', () => {
     const settings = {
-        startDate: '2026-02-15',
+        startDate: getFutureDateString(14),
         frequency: 'bi-weekly',
         payPeriodsToShow: 53
     };
@@ -503,7 +516,7 @@ test('validatePaymentSettings: should reject payPeriodsToShow over 52', () => {
 
 test('validatePaymentSettings: should accept payPeriodsToShow of 52', () => {
     const settings = {
-        startDate: '2026-02-15',
+        startDate: getFutureDateString(14),
         frequency: 'bi-weekly',
         payPeriodsToShow: 52
     };
