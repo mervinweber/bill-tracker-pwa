@@ -30,7 +30,13 @@ import {
     isValidURL,
     safeJSONParse
 } from '../utils/validation.js';
-import { createLocalDate, formatLocalDate, calculateNextDueDate } from '../utils/dates.js';
+import {
+    createLocalDate,
+    formatLocalDate,
+    calculateNextDueDate,
+    getMissedMonthlyCycles,
+    getNextNonOverdueMonthlyDate
+} from '../utils/dates.js';
 import logger from '../utils/logger.js';
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
@@ -123,19 +129,48 @@ export function showSuccessNotification(message) {
     }, 3000);
 }
 
-function advanceRecurringBillIfNeeded(bill, updated) {
+function advanceRecurringBillIfNeeded(bill, updated, options = {}) {
     if (updated.isPaid && bill.recurrence && bill.recurrence !== 'One-time') {
         const currentDueDate = createLocalDate(bill.dueDate);
-        const nextDueDate = calculateNextDueDate(currentDueDate, bill.recurrence);
+        const catchUpToCurrent =
+            bill.recurrence === 'Monthly' && options.strategy === 'catch-up-to-current';
+
+        const nextDueDate = catchUpToCurrent
+            ? getNextNonOverdueMonthlyDate(currentDueDate, options.referenceDate || new Date())
+            : calculateNextDueDate(currentDueDate, bill.recurrence);
+
         if (nextDueDate) {
             updated.dueDate = formatLocalDate(nextDueDate);
             logger.info('Recurring bill moved to next cycle', {
                 from: bill.dueDate,
                 to: updated.dueDate,
-                billId: bill.id
+                billId: bill.id,
+                strategy: catchUpToCurrent ? 'catch-up-to-current' : 'single-cycle'
             });
         }
     }
+}
+
+function getRecurringPaymentStrategy(bill, updated, paymentDate) {
+    if (!updated.isPaid || bill.recurrence !== 'Monthly') {
+        return 'single-cycle';
+    }
+
+    const currentDueDate = createLocalDate(bill.dueDate);
+    const referenceDate = createLocalDate(paymentDate);
+    const missedCycles = getMissedMonthlyCycles(currentDueDate, referenceDate);
+
+    if (missedCycles < 2 || typeof window === 'undefined' || typeof window.confirm !== 'function') {
+        return 'single-cycle';
+    }
+
+    const shouldCatchUp = window.confirm(
+        `${bill.name} is ${missedCycles} months past due.\n\n` +
+        'Choose OK to move this recurring bill to current status (next non-overdue month).\n' +
+        'Choose Cancel to clear only one month and keep prior cycles.'
+    );
+
+    return shouldCatchUp ? 'catch-up-to-current' : 'single-cycle';
 }
 
 /**
@@ -406,7 +441,11 @@ export function recordPayment(billId, paymentData) {
         updated.isPaid = remaining <= 0;
 
         // If fully paid and bill is recurring, move to next payment cycle
-        advanceRecurringBillIfNeeded(bill, updated);
+        const recurrenceStrategy = getRecurringPaymentStrategy(bill, updated, payment.date);
+        advanceRecurringBillIfNeeded(bill, updated, {
+            strategy: recurrenceStrategy,
+            referenceDate: createLocalDate(payment.date)
+        });
 
         billStore.update(updated);
         

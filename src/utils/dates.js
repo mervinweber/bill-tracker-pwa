@@ -103,3 +103,68 @@ export function calculateNextDueDate(currentDate, recurrence) {
     }
     return nextDate;
 }
+
+/**
+ * Count how many monthly cycles are missed relative to a reference date.
+ *
+ * @param {Date} dueDate - Original due date for the bill
+ * @param {Date} [referenceDate=new Date()] - Date used to determine overdue cycles
+ * @returns {number} Number of missed monthly cycles (0 if current)
+ */
+export function getMissedMonthlyCycles(dueDate, referenceDate = new Date()) {
+    const due = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+    const reference = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        referenceDate.getDate()
+    );
+
+    if (due >= reference) {
+        return 0;
+    }
+
+    let cycles = 0;
+    let cursor = new Date(due);
+    const maxCycles = 240;
+
+    while (cursor < reference && cycles < maxCycles) {
+        const next = calculateNextDueDate(cursor, 'Monthly');
+        if (!next) {
+            break;
+        }
+        cursor = next;
+        cycles += 1;
+    }
+
+    return cycles;
+}
+
+/**
+ * Calculate the next monthly due date that is not overdue.
+ *
+ * @param {Date} dueDate - Original due date for the bill
+ * @param {Date} [referenceDate=new Date()] - Date used as "today"
+ * @returns {Date|null} Next non-overdue monthly due date
+ */
+export function getNextNonOverdueMonthlyDate(dueDate, referenceDate = new Date()) {
+    const reference = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        referenceDate.getDate()
+    );
+
+    let next = calculateNextDueDate(dueDate, 'Monthly');
+    if (!next) {
+        return null;
+    }
+
+    const maxCycles = 240;
+    let cycles = 0;
+
+    while (next < reference && cycles < maxCycles) {
+        next = calculateNextDueDate(next, 'Monthly');
+        cycles += 1;
+    }
+
+    return next;
+}
