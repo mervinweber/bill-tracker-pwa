@@ -24,16 +24,16 @@ let formActions = {};
 export const initializeBillForm = (categories, actions) => {
     formActions = actions;
     const form = document.getElementById('billForm');
-    form.innerHTML = `<div class="modal" role="dialog" aria-labelledby="billFormTitle" aria-modal="true">
-        <div class="modal-content">
+    form.innerHTML = `<div class="modal" role="dialog" aria-labelledby="billFormTitle" aria-modal="true" style="max-height: 100vh; overflow-y: auto;">
+        <div class="modal-content" style="max-width: min(500px, 100vw); margin: 10px;">
             <button class="close" aria-label="Close dialog">&times;</button>
-            <h2 id="billFormTitle">Add/Edit Bill</h2>
-            <form id="billFormElement" novalidate>
+            <h2 id="billFormTitle" style="font-size: clamp(1.25rem, 5vw, 1.5rem);">Add/Edit Bill</h2>
+            <form id="billFormElement" novalidate style="display: flex; flex-direction: column; gap: 16px;">
                 <input type="hidden" id="billId">
                 
                 <div class="form-group">
-                    <label for="billCategory">Category: <span aria-label="required">*</span></label>
-                    <select id="billCategory" required aria-required="true" aria-describedby="categoryHelp">
+                    <label for="billCategory" style="display: block; font-weight: 500; margin-bottom: 6px;">Category: <span aria-label="required">*</span></label>
+                    <select id="billCategory" required aria-required="true" aria-describedby="categoryHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
                         <option value="">Select Category</option>
                         ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
                     </select>
@@ -41,32 +41,34 @@ export const initializeBillForm = (categories, actions) => {
                 </div>
                 
                 <div class="form-group">
-                    <label for="billName">Bill Name: <span aria-label="required">*</span></label>
-                    <input type="text" id="billName" required aria-required="true" placeholder="e.g., Electric Bill" aria-describedby="billNameHelp">
+                    <label for="billName" style="display: block; font-weight: 500; margin-bottom: 6px;">Bill Name: <span aria-label="required">*</span></label>
+                    <input type="text" id="billName" required aria-required="true" placeholder="e.g., Electric Bill" aria-describedby="billNameHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
                     <span id="billNameHelp" class="sr-only">Enter the name of the bill</span>
                 </div>
                 
                 <div class="form-group">
-                    <label for="billDueDate">Due Date: <span aria-label="required">*</span></label>
-                    <input type="date" id="billDueDate" required aria-required="true" aria-describedby="dueDateHelp">
+                    <label for="billDueDate" style="display: block; font-weight: 500; margin-bottom: 6px;">Due Date: <span aria-label="required">*</span></label>
+                    <input type="date" id="billDueDate" required aria-required="true" aria-describedby="dueDateHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
                     <span id="dueDateHelp" class="sr-only">Select the date when this bill is due</span>
                 </div>
                 
-                <div class="form-group">
-                    <label for="billAmountDue">Amount Due: <span aria-label="required">*</span></label>
-                    <input type="number" id="billAmountDue" step="0.01" required aria-required="true" placeholder="0.00" aria-describedby="amountHelp">
-                    <span id="amountHelp" class="sr-only">Enter the amount due in dollars</span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label for="billAmountDue" style="display: block; font-weight: 500; margin-bottom: 6px;">Amount Due: <span aria-label="required">*</span></label>
+                        <input type="number" id="billAmountDue" step="0.01" required aria-required="true" placeholder="0.00" aria-describedby="amountHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;" inputmode="decimal">
+                        <span id="amountHelp" class="sr-only">Enter the amount due in dollars</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="billBalance" style="display: block; font-weight: 500; margin-bottom: 6px;">Balance: <span aria-label="required">*</span></label>
+                        <input type="number" id="billBalance" step="0.01" required aria-required="true" placeholder="0.00" aria-describedby="balanceHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;" inputmode="decimal">
+                        <span id="balanceHelp" class="sr-only">Enter the current balance remaining on this bill</span>
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="billBalance">Balance: <span aria-label="required">*</span></label>
-                    <input type="number" id="billBalance" step="0.01" required aria-required="true" placeholder="0.00" aria-describedby="balanceHelp">
-                    <span id="balanceHelp" class="sr-only">Enter the current balance remaining on this bill</span>
-                </div>
-                
-                <div class="form-group">
-                    <label for="billRecurrence">Recurrence:</label>
-                    <select id="billRecurrence" aria-describedby="recurrenceHelp">
+                    <label for="billRecurrence" style="display: block; font-weight: 500; margin-bottom: 6px;">Recurrence:</label>
+                    <select id="billRecurrence" aria-describedby="recurrenceHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
                         <option value="One-time">One-time</option>
                         <option value="Weekly">Weekly</option>
                         <option value="Bi-weekly">Bi-weekly</option>
@@ -76,29 +78,27 @@ export const initializeBillForm = (categories, actions) => {
                     <span id="recurrenceHelp" class="sr-only">Select how often this bill recurs</span>
                 </div>
 
-                <div class="form-group">
-                    <label style="display: inline-flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="billReminderEnabled" checked>
-                        <span>Enable reminders for this bill</span>
-                    </label>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="billReminderEnabled" checked style="width: auto; cursor: pointer;">
+                    <label for="billReminderEnabled" style="margin: 0; cursor: pointer;">Enable reminders for this bill</label>
                 </div>
                 
-                <div class="form-group grid-full">
-                    <label for="billWebsite">Website / Login URL:</label>
-                    <input type="url" id="billWebsite" placeholder="https://..." aria-describedby="websiteHelp">
+                <div class="form-group">
+                    <label for="billWebsite" style="display: block; font-weight: 500; margin-bottom: 6px;">Website / Login URL:</label>
+                    <input type="url" id="billWebsite" placeholder="https://..." aria-describedby="websiteHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
                     <span id="websiteHelp" class="sr-only">Enter the website where you pay this bill</span>
                 </div>
 
                 <div class="form-group">
-                    <label for="billNotes">Notes:</label>
-                    <textarea id="billNotes" rows="3" placeholder="Add any notes or comments..." aria-describedby="notesHelp"></textarea>
+                    <label for="billNotes" style="display: block; font-weight: 500; margin-bottom: 6px;">Notes:</label>
+                    <textarea id="billNotes" rows="3" placeholder="Add any notes or comments..." aria-describedby="notesHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px; resize: vertical;"></textarea>
                     <span id="notesHelp" class="sr-only">Add any additional notes about this bill</span>
                 </div>
                 
-                <div class="form-actions">
-                    <button type="submit" class="submit-btn">Save Bill</button>
-                    <button type="button" id="markPaidBtn" class="action-btn" style="display: none;"></button>
-                    <button type="button" id="cancelBillBtn" class="cancel-btn">Cancel</button>
+                <div class="form-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+                    <button type="submit" class="submit-btn" style="flex: 1; min-width: 100px; padding: 12px; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; background: var(--primary-color); color: white; font-weight: 500;">Save Bill</button>
+                    <button type="button" id="markPaidBtn" class="action-btn" style="display: none; flex: 1; min-width: 100px; padding: 12px; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; background: var(--success-color); color: white; font-weight: 500;"></button>
+                    <button type="button" id="cancelBillBtn" class="cancel-btn" style="flex: 1; min-width: 100px; padding: 12px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; background: transparent; font-weight: 500;">Cancel</button>
                 </div>
             </form>
         </div>

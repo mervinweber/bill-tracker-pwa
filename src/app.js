@@ -33,6 +33,8 @@ import { filterBillsByPeriod } from './utils/billHelpers.js';
 
 import { settingsHandlers } from './handlers/settingsHandler.js';
 
+import { initializeResponsiveDetection, isMobileViewport } from './utils/mobileGestures.js';
+
 import {
     initializeSupabase,
     getUser,
@@ -62,6 +64,9 @@ class AppOrchestrator {
      */
     async initialize() {
         try {
+            // Initialize mobile/responsive detection
+            initializeResponsiveDetection();
+
             // Check if user has payment settings
             const hasSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS);
             if (!hasSettings) {

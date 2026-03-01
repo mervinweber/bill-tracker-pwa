@@ -1,6 +1,7 @@
 import { createLocalDate } from '../utils/dates.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import { filterBillsByPeriod } from '../utils/billHelpers.js';
+import { initializeSwipeDelete, isTouchDevice, isMobileViewport } from '../utils/mobileGestures.js';
 
 
 /**
@@ -263,6 +264,13 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             row.appendChild(actionsCell);
 
             tbody.appendChild(row);
+
+            // Add swipe-to-delete gesture on mobile
+            if (isTouchDevice() && isMobileViewport()) {
+                initializeSwipeDelete(row, () => {
+                    actions.onDeleteBill(bill.id);
+                }, 80);
+            }
         });
     } else {
         const message = viewMode === 'all' ? 'No bills found' : 'No bills in this category due before the next paycheck';
