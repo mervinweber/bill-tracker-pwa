@@ -8,34 +8,70 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
 let supabase = null;
 
-export const initializeSupabase = () => {
+const isConfiguredUrl = (url) => {
+    return url &&
+        url !== 'YOUR_SUPABASE_URL' &&
+        url.startsWith('http');
+};
+
+const isConfiguredKey = (key) => {
+    return key && key !== 'YOUR_SUPABASE_ANON_KEY';
+};
+
+const isSupabaseEndpointReachable = async (url, timeoutMs = 2500) => {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        await fetch(`${url}/auth/v1/health`, {
+            method: 'GET',
+            mode: 'no-cors',
+            cache: 'no-store',
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
+
+export const initializeSupabase = async () => {
     if (window.supabase) {
         // Validate URL before attempting init to prevent crash
-        if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL' || !SUPABASE_URL.startsWith('http')) {
+        if (!isConfiguredUrl(SUPABASE_URL) || !isConfiguredKey(SUPABASE_KEY)) {
             logger.warn('Supabase URL not configured in .env. Skipping initialization.');
-            return;
+            return false;
+        }
+
+        const reachable = await isSupabaseEndpointReachable(SUPABASE_URL);
+        if (!reachable) {
+            logger.warn('Supabase endpoint is unreachable. Cloud auth is disabled for this session.', {
+                url: SUPABASE_URL
+            });
+            return false;
         }
 
         try {
             // @ts-ignore
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             logger.info('Supabase initialized');
+            return true;
         } catch (error) {
             logger.error('Failed to initialize Supabase', error);
+            return false;
         }
     } else {
         logger.error('Supabase client not loaded');
+        return false;
     }
 };
 
 export const getSupabase = () => supabase;
 
 export const isSupabaseConfigured = () => {
-    return SUPABASE_URL && 
-           SUPABASE_URL !== 'YOUR_SUPABASE_URL' && 
-           SUPABASE_URL.startsWith('http') &&
-           SUPABASE_KEY &&
-           SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+    return isConfiguredUrl(SUPABASE_URL) && isConfiguredKey(SUPABASE_KEY);
 };
 
 // Auth Functions
@@ -94,8 +130,15 @@ export const resetPassword = async (email) => {
 
 export const getUser = async () => {
     if (!supabase) return null;
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        return user;
+    } catch (error) {
+        logger.warn('Supabase user lookup failed. Falling back to logged-out state.', {
+            message: error?.message
+        });
+        return null;
+    }
 };
 
 // Data Sync Functions

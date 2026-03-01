@@ -86,7 +86,7 @@ class AppOrchestrator {
             this.initializeTheme();
 
             // Initialize Supabase
-            initializeSupabase();
+            await initializeSupabase();
 
             // Check for logged-in user FIRST to set localStorage for Sidebar
             const user = await getUser();
