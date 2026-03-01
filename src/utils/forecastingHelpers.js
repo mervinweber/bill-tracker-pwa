@@ -3,6 +3,8 @@
  * Provides spending forecasts, trends, and alerts
  */
 
+import logger from './logger.js';
+
 /**
  * Calculate average monthly spending
  * @param {Array} bills - Array of bill objects
@@ -14,11 +16,15 @@ export function calculateAverageMonthlySpending(bills, months = 3) {
 
     const monthlyTotals = {};
     const now = new Date();
+    let skippedCount = 0;
 
     bills.forEach(bill => {
         try {
             const dueDate = new Date(bill.dueDate);
-            if (isNaN(dueDate.getTime())) return;
+            if (isNaN(dueDate.getTime())) {
+                skippedCount++;
+                return;
+            }
 
             // Get year-month key
             const year = dueDate.getFullYear();
@@ -30,9 +36,18 @@ export function calculateAverageMonthlySpending(bills, months = 3) {
                 monthlyTotals[key] = (monthlyTotals[key] || 0) + (bill.amountDue || 0);
             }
         } catch (error) {
-            // Skip invalid bills
+            skippedCount++;
+            logger.warn('Error processing bill in calculateAverageMonthlySpending', {
+                billId: bill?.id,
+                dueDate: bill?.dueDate,
+                errorMessage: error.message
+            });
         }
     });
+
+    if (skippedCount > 0) {
+        logger.info('Skipped invalid bills in spending calculation', { count: skippedCount });
+    }
 
     const totals = Object.values(monthlyTotals);
     if (totals.length === 0) return 0;
@@ -87,23 +102,33 @@ export function getSpendingAlerts(bills, threshold = 25) {
 
     // Calculate average bill amount
     const amounts = bills.map(b => b.amountDue || 0).filter(a => a > 0);
-    if (amounts.length === 0) return alerts;
+    if (amounts.length === 0) {
+        logger.info('No valid bills with amounts for alert calculation');
+        return alerts;
+    }
 
     const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
 
     // Find unusually high bills
     bills.forEach(bill => {
-        const amountDue = bill.amountDue || 0;
-        const percentAboveAvg = ((amountDue - avgAmount) / avgAmount) * 100;
+        try {
+            const amountDue = bill.amountDue || 0;
+            const percentAboveAvg = ((amountDue - avgAmount) / avgAmount) * 100;
 
-        if (percentAboveAvg > threshold && amountDue > avgAmount) {
-            alerts.push({
-                type: 'high_amount',
-                severity: percentAboveAvg > threshold * 2 ? 'critical' : 'warning',
-                billId: bill.id,
-                message: `"${bill.name}" is ${percentAboveAvg.toFixed(0)}% above average ($${amountDue.toFixed(2)})`,
-                amount: amountDue,
-                average: avgAmount
+            if (percentAboveAvg > threshold && amountDue > avgAmount) {
+                alerts.push({
+                    type: 'high_amount',
+                    severity: percentAboveAvg > threshold * 2 ? 'critical' : 'warning',
+                    billId: bill.id,
+                    message: `"${bill.name}" is ${percentAboveAvg.toFixed(0)}% above average ($${amountDue.toFixed(2)})`,
+                    amount: amountDue,
+                    average: avgAmount
+                });
+            }
+        } catch (error) {
+            logger.warn('Error processing bill in high amount alert', {
+                billId: bill?.id,
+                errorMessage: error.message
             });
         }
     });
@@ -111,15 +136,23 @@ export function getSpendingAlerts(bills, threshold = 25) {
     // Check for overdue bills
     const now = new Date();
     bills.forEach(bill => {
-        const dueDate = new Date(bill.dueDate);
-        if (dueDate < now && !bill.isPaid) {
-            const dayOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
-            alerts.push({
-                type: 'overdue',
-                severity: dayOverdue > 7 ? 'critical' : 'warning',
-                billId: bill.id,
-                message: `"${bill.name}" is overdue by ${dayOverdue} days`,
-                daysOverdue: dayOverdue
+        try {
+            const dueDate = new Date(bill.dueDate);
+            if (dueDate < now && !bill.isPaid) {
+                const dayOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
+                alerts.push({
+                    type: 'overdue',
+                    severity: dayOverdue > 7 ? 'critical' : 'warning',
+                    billId: bill.id,
+                    message: `"${bill.name}" is overdue by ${dayOverdue} days`,
+                    daysOverdue: dayOverdue
+                });
+            }
+        } catch (error) {
+            logger.warn('Error processing bill in overdue alert', {
+                billId: bill?.id,
+                dueDate: bill?.dueDate,
+                errorMessage: error.message
             });
         }
     });
@@ -127,16 +160,24 @@ export function getSpendingAlerts(bills, threshold = 25) {
     // Check for bills due soon
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     bills.forEach(bill => {
-        const dueDate = new Date(bill.dueDate);
-        if (dueDate >= now && dueDate <= sevenDaysFromNow && !bill.isPaid) {
-            const daysToDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
-            alerts.push({
-                type: 'due_soon',
-                severity: daysToDue <= 3 ? 'warning' : 'info',
-                billId: bill.id,
-                message: `"${bill.name}" is due in ${daysToDue} days (${dueDate.toLocaleDateString()})`,
-                daysToDue: daysToDue,
-                dueDate: dueDate
+        try {
+            const dueDate = new Date(bill.dueDate);
+            if (dueDate >= now && dueDate <= sevenDaysFromNow && !bill.isPaid) {
+                const daysToDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                alerts.push({
+                    type: 'due_soon',
+                    severity: daysToDue <= 3 ? 'warning' : 'info',
+                    billId: bill.id,
+                    message: `"${bill.name}" is due in ${daysToDue} days (${dueDate.toLocaleDateString()})`,
+                    daysToDue: daysToDue,
+                    dueDate: dueDate
+                });
+            }
+        } catch (error) {
+            logger.warn('Error processing bill in due soon alert', {
+                billId: bill?.id,
+                dueDate: bill?.dueDate,
+                errorMessage: error.message
             });
         }
     });
@@ -166,11 +207,15 @@ export function calculateTrend(bills, months = 3) {
 
     const monthlyTotals = {};
     const now = new Date();
+    let skippedCount = 0;
 
     bills.forEach(bill => {
         try {
             const dueDate = new Date(bill.dueDate);
-            if (isNaN(dueDate.getTime())) return;
+            if (isNaN(dueDate.getTime())) {
+                skippedCount++;
+                return;
+            }
 
             const year = dueDate.getFullYear();
             const month = dueDate.getMonth();
@@ -181,9 +226,18 @@ export function calculateTrend(bills, months = 3) {
                 monthlyTotals[key] = (monthlyTotals[key] || 0) + (bill.amountDue || 0);
             }
         } catch (error) {
-            // Skip invalid bills
+            skippedCount++;
+            logger.warn('Error processing bill in calculateTrend', {
+                billId: bill?.id,
+                dueDate: bill?.dueDate,
+                errorMessage: error.message
+            });
         }
     });
+
+    if (skippedCount > 0) {
+        logger.info('Skipped invalid bills in trend calculation', { count: skippedCount });
+    }
 
     const dataPoints = Object.values(monthlyTotals).sort((a, b) => a - b);
     if (dataPoints.length < 2) return { direction: 'flat', percentChange: 0, dataPoints };

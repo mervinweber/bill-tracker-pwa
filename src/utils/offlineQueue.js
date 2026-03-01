@@ -8,6 +8,8 @@ import logger from './logger.js';
 
 const QUEUE_STORAGE_KEY = 'offline_operations_queue';
 const QUEUE_STATUS_KEY = 'offline_queue_status';
+const MAX_QUEUE_SIZE = 250;
+const MAX_OPERATION_SIZE = 10 * 1024; // 10KB per operation
 
 /**
  * Operation types
@@ -25,12 +27,53 @@ export const OPERATION_TYPES = {
  * @param {string} operationType - Type of operation (see OPERATION_TYPES)
  * @param {Object} data - Operation data
  * @param {string} id - Operation ID (billId, etc.)
- * @returns {Object} Queued operation with timestamp
+ * @returns {Object|null} Queued operation with timestamp, or null if rejected
  */
 export function queueOperation(operationType, data, id) {
     try {
+        // Validate inputs
+        if (!operationType || typeof operationType !== 'string') {
+            logger.error('Invalid operationType', { operationType });
+            return null;
+        }
+
+        if (!Object.values(OPERATION_TYPES).includes(operationType)) {
+            logger.warn('Unknown operation type', { operationType });
+        }
+
+        if (!id || typeof id !== 'string') {
+            logger.error('Invalid operation id', { id });
+            return null;
+        }
+
+        if (!data || typeof data !== 'object') {
+            logger.error('Invalid operation data', { data });
+            return null;
+        }
+
+        // Check operation size
+        const operationJson = JSON.stringify(data);
+        if (operationJson.length > MAX_OPERATION_SIZE) {
+            logger.error('Operation data exceeds max size', {
+                operationType,
+                size: operationJson.length,
+                maxSize: MAX_OPERATION_SIZE
+            });
+            return null;
+        }
+
         const queue = StorageManager.get(QUEUE_STORAGE_KEY) || [];
-        
+
+        // Enforce max queue size - reject if at capacity
+        if (queue.length >= MAX_QUEUE_SIZE) {
+            logger.warn('Queue at max capacity', {
+                maxSize: MAX_QUEUE_SIZE,
+                currentSize: queue.length,
+                operation: operationType
+            });
+            return null;
+        }
+
         const operation = {
             id: `${operationType}-${id}-${Date.now()}`,
             type: operationType,
@@ -48,11 +91,11 @@ export function queueOperation(operationType, data, id) {
         // Update status
         updateQueueStatus();
 
-        logger.info('Operation queued', { operationType, billId: id });
+        logger.info('Operation queued', { operationType, billId: id, queueSize: queue.length });
         return operation;
     } catch (error) {
         logger.error('Error queuing operation', error);
-        throw error;
+        return null;
     }
 }
 
@@ -106,6 +149,47 @@ export function clearCompletedOperations(olderThanMs = 24 * 60 * 60 * 1000) {
         return removed;
     } catch (error) {
         logger.error('Error clearing completed operations', error);
+        return 0;
+    }
+}
+
+/**
+ * Enforce queue size limit by removing oldest completed operations if necessary
+ * @returns {number} Number of operations trimmed
+ */
+export function enforceQueueSizeLimit() {
+    try {
+        const queue = getPendingOperations();
+
+        if (queue.length <= MAX_QUEUE_SIZE) {
+            return 0;
+        }
+
+        // Remove excess, prioritizing completed/failed operations
+        const pending = queue.filter(op => op.status === 'pending');
+        const completed = queue.filter(op => op.status === 'completed' || op.status === 'failed');
+
+        // Sort completed by timestamp (oldest first) and remove
+        completed.sort((a, b) => a.timestamp - b.timestamp);
+
+        const toRemove = queue.length - MAX_QUEUE_SIZE;
+        const trimmed = completed.slice(0, toRemove);
+        const remaining = [...pending, ...completed.slice(toRemove)];
+
+        StorageManager.set(QUEUE_STORAGE_KEY, remaining);
+        updateQueueStatus();
+
+        if (trimmed.length > 0) {
+            logger.warn('Trimmed queue to enforce size limit', {
+                removed: trimmed.length,
+                queueSize: remaining.length,
+                maxSize: MAX_QUEUE_SIZE
+            });
+        }
+
+        return trimmed.length;
+    } catch (error) {
+        logger.error('Error enforcing queue size limit', error);
         return 0;
     }
 }
