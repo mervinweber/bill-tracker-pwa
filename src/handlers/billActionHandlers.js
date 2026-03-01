@@ -159,15 +159,24 @@ function getRecurringPaymentStrategy(bill, updated, paymentDate) {
     const currentDueDate = createLocalDate(bill.dueDate);
     const referenceDate = createLocalDate(paymentDate);
     const missedCycles = getMissedMonthlyCycles(currentDueDate, referenceDate);
+    const singleCycleDate = calculateNextDueDate(currentDueDate, 'Monthly');
+    const catchUpDate = getNextNonOverdueMonthlyDate(currentDueDate, referenceDate);
 
     if (missedCycles < 2 || typeof window === 'undefined' || typeof window.confirm !== 'function') {
         return 'single-cycle';
     }
 
+    if (!singleCycleDate || !catchUpDate) {
+        return 'single-cycle';
+    }
+
+    const singleCycleDateText = formatLocalDate(singleCycleDate);
+    const catchUpDateText = formatLocalDate(catchUpDate);
+
     const shouldCatchUp = window.confirm(
         `${bill.name} is ${missedCycles} months past due.\n\n` +
-        'Choose OK to move this recurring bill to current status (next non-overdue month).\n' +
-        'Choose Cancel to clear only one month and keep prior cycles.'
+        `OK = move bill to current status (new due date: ${catchUpDateText}).\n` +
+        `Cancel = clear one month only (new due date: ${singleCycleDateText}).`
     );
 
     return shouldCatchUp ? 'catch-up-to-current' : 'single-cycle';
