@@ -142,6 +142,11 @@ test('Action buttons have descriptive aria-label', () => {
     if (!billGridContent.includes('Delete')) throw new Error('Missing aria-label on delete button');
 });
 
+test('Bill grid supports keyboard shortcuts for delete', () => {
+    if (!billGridContent.includes("setAttribute('aria-keyshortcuts', 'Delete Backspace Ctrl+D')")) throw new Error('Missing aria-keyshortcuts attribute');
+    if (!billGridContent.includes('Keyboard: focus row and press Delete')) throw new Error('Missing keyboard hint in delete aria-label');
+});
+
 // 16. Icons are hidden from screen readers where appropriate
 test('Icons are hidden from screen readers', () => {
     if (!billGridContent.includes("setAttribute('aria-hidden', 'true')")) throw new Error('Missing aria-hidden on slider');

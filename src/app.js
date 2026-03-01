@@ -14,7 +14,7 @@ import { STORAGE_KEYS } from './utils/constants.js';
 
 import { initializeHeader, updateHeaderUI } from './components/header.js';
 import { initializeSidebar } from './components/sidebar.js';
-import { initializeBillGrid, renderBillGrid } from './components/billGrid.js';
+import { initializeBillGrid, renderBillGrid, cleanupBillGrid } from './components/billGrid.js';
 import { initializeDashboard, renderDashboard } from './components/dashboard.js';
 import { initializeBillForm, openBillForm, resetBillForm, closeBillForm } from './components/billForm.js';
 import { initializeAuthModal, openAuthModal, closeAuthModal, setAuthMessage } from './components/authModal.js';
@@ -57,6 +57,7 @@ class AppOrchestrator {
         this.categories = [];
         this.initialized = false;
         this.isSyncing = false;
+        this.cleanupResponsiveDetection = null;
     }
 
     /**
@@ -65,7 +66,11 @@ class AppOrchestrator {
     async initialize() {
         try {
             // Initialize mobile/responsive detection
-            initializeResponsiveDetection();
+            this.cleanupResponsiveDetection = initializeResponsiveDetection();
+
+            window.addEventListener('beforeunload', () => {
+                this.cleanup();
+            });
 
             // Check if user has payment settings
             const hasSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS);
@@ -238,6 +243,16 @@ class AppOrchestrator {
             logger.error('Error initializing app', error);
             billActionHandlers.showErrorNotification(error.message, 'Initialization Error');
         }
+    }
+
+    cleanup() {
+        if (typeof this.cleanupResponsiveDetection === 'function') {
+            this.cleanupResponsiveDetection();
+            this.cleanupResponsiveDetection = null;
+        }
+
+        cleanupBillGrid();
+        cleanupCharts();
     }
 
     handleDueBillReminders() {
