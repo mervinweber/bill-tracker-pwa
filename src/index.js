@@ -21,6 +21,45 @@
 import { appOrchestrator } from './app.js';
 import './serviceWorker.js';
 
+const SW_RECOVERY_FLAG = 'swRecoveryAttempted';
+
+async function tryRecoverFromStaleServiceWorker(reason = 'unknown') {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+        return;
+    }
+
+    if (!('serviceWorker' in navigator) || !('caches' in window)) {
+        return;
+    }
+
+    if (sessionStorage.getItem(SW_RECOVERY_FLAG) === '1') {
+        return;
+    }
+
+    try {
+        sessionStorage.setItem(SW_RECOVERY_FLAG, '1');
+
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+
+        console.warn('Recovered from potential stale service worker/cache issue', { reason });
+        window.location.reload();
+    } catch (error) {
+        console.error('Service worker recovery attempt failed', error);
+    }
+}
+
+window.addEventListener('error', () => {
+    tryRecoverFromStaleServiceWorker('window-error');
+});
+
+window.addEventListener('unhandledrejection', () => {
+    tryRecoverFromStaleServiceWorker('unhandled-rejection');
+});
+
 /**
  * Initialize application when DOM is ready
  * 
