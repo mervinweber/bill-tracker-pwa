@@ -103,17 +103,17 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     // Headers are static and safe
     thead.innerHTML = `
         <tr role="row">
-            <th scope="col" role="columnheader">Bill Name</th>
-            <th scope="col" role="columnheader">Due Date</th>
-            ${viewMode === 'all' ? '<th scope="col" role="columnheader">Category</th>' : ''}
-            <th scope="col" role="columnheader">Amount Due</th>
-            <th scope="col" role="columnheader">Balance</th>
-            <th scope="col" role="columnheader">Paid <span class="sr-only">(checkbox)</span></th>
-            <th scope="col" role="columnheader">Last Payment</th>
-            <th scope="col" role="columnheader">Notes</th>
-            <th scope="col" role="columnheader">Recurrence</th>
-            <th scope="col" role="columnheader">Reminders</th>
-            <th scope="col" role="columnheader">Actions <span class="sr-only">(buttons)</span></th>
+            <th scope="col" role="columnheader" class="col-name">Bill Name</th>
+            <th scope="col" role="columnheader" class="col-due-date">Due Date</th>
+            ${viewMode === 'all' ? '<th scope="col" role="columnheader" class="col-category">Category</th>' : ''}
+            <th scope="col" role="columnheader" class="col-amount-due">Amount Due</th>
+            <th scope="col" role="columnheader" class="col-balance">Balance</th>
+            <th scope="col" role="columnheader" class="col-paid">Paid <span class="sr-only">(checkbox)</span></th>
+            <th scope="col" role="columnheader" class="col-last-payment">Last Payment</th>
+            <th scope="col" role="columnheader" class="col-notes">Notes</th>
+            <th scope="col" role="columnheader" class="col-recurrence">Recurrence</th>
+            <th scope="col" role="columnheader" class="col-reminders">Reminders</th>
+            <th scope="col" role="columnheader" class="col-actions">Actions <span class="sr-only">(buttons)</span></th>
         </tr>
     `;
     table.appendChild(thead);
@@ -147,13 +147,15 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             // Bill Name
             const nameCell = document.createElement('td');
             nameCell.setAttribute('role', 'cell');
+            nameCell.className = 'col-name';
             nameCell.textContent = bill.name;
             row.appendChild(nameCell);
 
             // Due Date
             const dateCell = document.createElement('td');
             dateCell.setAttribute('role', 'cell');
-            if (isOverdue) dateCell.className = 'overdue-date';
+            dateCell.classList.add('col-due-date');
+            if (isOverdue) dateCell.classList.add('overdue-date');
             dateCell.setAttribute('aria-label', `Due date: ${bill.dueDate}${isOverdue ? ' (overdue)' : ''}`);
             dateCell.textContent = bill.dueDate + (isOverdue ? ' ⚠️' : '');
             row.appendChild(dateCell);
@@ -162,6 +164,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             if (viewMode === 'all') {
                 const catCell = document.createElement('td');
                 catCell.setAttribute('role', 'cell');
+                catCell.className = 'col-category';
                 catCell.textContent = bill.category;
                 row.appendChild(catCell);
             }
@@ -169,12 +172,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             // Amount Due
             const amountCell = document.createElement('td');
             amountCell.setAttribute('role', 'cell');
+            amountCell.className = 'col-amount-due';
             amountCell.textContent = `$${(bill.amountDue || 0).toFixed(2)}`;
             row.appendChild(amountCell);
 
             // Balance Input
             const balanceCell = document.createElement('td');
             balanceCell.setAttribute('role', 'cell');
+            balanceCell.className = 'col-balance';
             const balanceInput = document.createElement('input');
             balanceInput.type = 'number';
             balanceInput.className = 'balance-input';
@@ -189,6 +194,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             // Paid Checkbox
             const paidCell = document.createElement('td');
             paidCell.setAttribute('role', 'cell');
+            paidCell.className = 'col-paid';
             const toggleLabel = document.createElement('label');
             toggleLabel.className = 'payment-toggle';
 
@@ -211,14 +217,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
             // Last Payment
             const lastPaymentCell = document.createElement('td');
-            lastPaymentCell.className = 'payment-date';
+            lastPaymentCell.className = 'payment-date col-last-payment';
             lastPaymentCell.setAttribute('role', 'cell');
             lastPaymentCell.textContent = lastPayment;
             row.appendChild(lastPaymentCell);
 
             // Notes
             const notesCell = document.createElement('td');
-            notesCell.className = 'notes-cell';
+            notesCell.className = 'notes-cell col-notes';
             notesCell.setAttribute('role', 'cell');
             notesCell.title = notesTitle; // Tooltips are safe text
             notesCell.textContent = notesDisplay;
@@ -227,12 +233,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             // Recurrence
             const recurrenceCell = document.createElement('td');
             recurrenceCell.setAttribute('role', 'cell');
+            recurrenceCell.className = 'col-recurrence';
             recurrenceCell.textContent = bill.recurrence;
             row.appendChild(recurrenceCell);
 
             // Reminder Toggle
             const reminderCell = document.createElement('td');
             reminderCell.setAttribute('role', 'cell');
+            reminderCell.className = 'col-reminders';
             const reminderToggle = document.createElement('input');
             reminderToggle.type = 'checkbox';
             reminderToggle.className = 'payment-checkbox';
@@ -249,6 +257,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             // Actions
             const actionsCell = document.createElement('td');
             actionsCell.setAttribute('role', 'cell');
+            actionsCell.className = 'col-actions';
             const btnGroup = document.createElement('div');
             btnGroup.className = 'action-buttons';
             btnGroup.setAttribute('role', 'group');

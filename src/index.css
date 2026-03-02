@@ -1149,6 +1149,31 @@ input:checked+.slider:before {
         height: 42px;
     }
 
+    .bill-table {
+        font-size: 13px;
+    }
+
+    .bill-table th,
+    .bill-table td {
+        padding: 8px;
+    }
+
+    .bill-table .col-category,
+    .bill-table .col-last-payment,
+    .bill-table .col-notes,
+    .bill-table .col-recurrence,
+    .bill-table .col-reminders {
+        display: none;
+    }
+
+    .bill-table .col-name {
+        min-width: 140px;
+    }
+
+    .bill-table .col-actions {
+        min-width: 112px;
+    }
+
     .payment-modal-actions {
         flex-direction: column;
     }

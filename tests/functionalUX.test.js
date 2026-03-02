@@ -192,6 +192,14 @@ test('Bill Grid: All bills view is rendered correctly', () => {
     if (!billGridContent.includes("viewMode === 'all' ? '<th")) throw new Error('Missing category column in all mode');
 });
 
+test('Bill Grid: Responsive column classes are present for mobile prioritization', () => {
+    if (!billGridContent.includes('col-name')) throw new Error('Missing name column class');
+    if (!billGridContent.includes('col-due-date')) throw new Error('Missing due-date column class');
+    if (!billGridContent.includes('col-amount-due')) throw new Error('Missing amount-due column class');
+    if (!billGridContent.includes('col-actions')) throw new Error('Missing actions column class');
+    if (!billGridContent.includes('col-last-payment')) throw new Error('Missing last payment column class');
+});
+
 // ============ BILL FORM TESTS ============
 
 test('Bill Form: Form fields are present', () => {
