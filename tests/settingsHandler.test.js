@@ -53,5 +53,42 @@ test('should skip payment schedule validation when schedule fields are unchanged
     );
 });
 
+test('should compare all payment schedule fields when deciding if validation is required', () => {
+    assert(
+        settingsHandlerContent.includes('existingSettings.startDate !== newSettings.startDate'),
+        'missing startDate comparison in paymentSettingsChanged logic'
+    );
+    assert(
+        settingsHandlerContent.includes('existingSettings.frequency !== newSettings.frequency'),
+        'missing frequency comparison in paymentSettingsChanged logic'
+    );
+    assert(
+        settingsHandlerContent.includes('existingSettings.payPeriodsToShow !== newSettings.payPeriodsToShow'),
+        'missing payPeriodsToShow comparison in paymentSettingsChanged logic'
+    );
+});
+
+test('should only validate payment settings inside the changed-settings branch', () => {
+    const handleSettingsSaveMatch = settingsHandlerContent.match(
+        /async function handleSettingsSave\(e, modal\) \{[\s\S]*?\n\}/
+    );
+    assert(handleSettingsSaveMatch, 'could not locate handleSettingsSave function');
+
+    const handleSettingsSaveContent = handleSettingsSaveMatch[0];
+    const changedBranchMatch = handleSettingsSaveContent.match(
+        /if \(paymentSettingsChanged\) \{([\s\S]*?)\}\s*else \{/
+    );
+    assert(changedBranchMatch, 'could not locate paymentSettingsChanged branch');
+
+    const changedBranchContent = changedBranchMatch[1];
+    assert(
+        changedBranchContent.includes('validatePaymentSettings(newSettings)'),
+        'validatePaymentSettings call must be inside paymentSettingsChanged branch'
+    );
+
+    const validateCallCount = (handleSettingsSaveContent.match(/validatePaymentSettings\(newSettings\)/g) || []).length;
+    assert(validateCallCount === 1, 'validatePaymentSettings should be called exactly once in handleSettingsSave');
+});
+
 console.log(`\n📊 Settings Handler Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
 export { testsPassed, testsFailed };
