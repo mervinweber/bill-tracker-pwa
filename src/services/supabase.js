@@ -7,6 +7,16 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
 let supabase = null;
+let cachedUser = null;
+let cachedUserAt = 0;
+let inFlightUserRequest = null;
+const USER_CACHE_TTL_MS = 15000;
+
+const resetUserCache = () => {
+    cachedUser = null;
+    cachedUserAt = 0;
+    inFlightUserRequest = null;
+};
 
 const isConfiguredUrl = (url) => {
     return url &&
@@ -90,6 +100,12 @@ export const signIn = async (email, password) => {
         email,
         password,
     });
+
+    if (!error && data?.user) {
+        cachedUser = data.user;
+        cachedUserAt = Date.now();
+    }
+
     return { data, error };
 };
 
@@ -107,6 +123,7 @@ export const signInWithGoogle = async () => {
 export const signOut = async () => {
     if (!supabase) return { error: { message: 'Supabase not initialized' } };
     const { error } = await supabase.auth.signOut();
+    resetUserCache();
     return { error };
 };
 
@@ -130,13 +147,34 @@ export const resetPassword = async (email) => {
 
 export const getUser = async () => {
     if (!supabase) return null;
+
+    const now = Date.now();
+    if (cachedUser && now - cachedUserAt < USER_CACHE_TTL_MS) {
+        return cachedUser;
+    }
+
+    if (inFlightUserRequest) {
+        return inFlightUserRequest;
+    }
+
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        return user;
+        inFlightUserRequest = supabase.auth
+            .getUser()
+            .then(({ data: { user } }) => {
+                cachedUser = user;
+                cachedUserAt = Date.now();
+                return user;
+            })
+            .finally(() => {
+                inFlightUserRequest = null;
+            });
+
+        return await inFlightUserRequest;
     } catch (error) {
         logger.warn('Supabase user lookup failed. Falling back to logged-out state.', {
             message: error?.message
         });
+        resetUserCache();
         return null;
     }
 };
@@ -166,8 +204,7 @@ export const syncUserData = async (localBills, localPaymentSettings = null) => {
 
     const { data, error } = await supabase
         .from('user_data')
-        .upsert(updateData)
-        .select();
+        .upsert(updateData);
 
     return { data, error };
 };
@@ -194,8 +231,7 @@ export const syncPaymentSettings = async (paymentSettings) => {
         .upsert({
             user_id: user.id,
             paymentSettings: paymentSettings
-        })
-        .select();
+        });
 
     return { data, error };
 };
