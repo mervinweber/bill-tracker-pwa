@@ -28,9 +28,9 @@ import {
     validateNotes,
     validateRecurrence,
     isValidURL,
-    safeJSONParse,
-    validatePaymentSettings
+    safeJSONParse
 } from '../utils/validation.js';
+import { normalizeImportPayload } from '../utils/importHelpers.js';
 import {
     createLocalDate,
     formatLocalDate,
@@ -550,8 +550,6 @@ export function exportData() {
 export function importData(file) {
     return new Promise((resolve, reject) => {
         try {
-            const MAX_IMPORT_BILLS = 2000;
-
             if (!file) {
                 throw new Error('No file selected.');
             }
@@ -569,162 +567,24 @@ export function importData(file) {
                     if (!data) {
                         throw new Error('Invalid JSON format in file');
                     }
-
-                    // Validate structure
-                    if (!Array.isArray(data.bills)) {
-                        throw new Error('Invalid file format: bills must be an array.');
-                    }
-
-                    if (data.bills.length === 0) {
-                        throw new Error('File contains no bills to import.');
-                    }
-
-                    if (data.bills.length > MAX_IMPORT_BILLS) {
-                        throw new Error(`Import file exceeds ${MAX_IMPORT_BILLS} bills. Please split into smaller files.`);
-                    }
-
-                    // Process bills: Generate IDs and ensure structure
-                    const importErrors = [];
-                    const processedBills = data.bills.map((bill, index) => {
-                        if (!bill || typeof bill !== 'object') {
-                            importErrors.push(`Bill ${index + 1}: Entry must be an object`);
-                            return null;
-                        }
-
-                        // Generate a unique ID if missing or seems like a placeholder
-                        // We use Date.now() + a random string for uniqueness
-                        const newBill = { ...bill };
-
-                        newBill.name = sanitizeInput(String(newBill.name || ''), 100);
-                        newBill.category = sanitizeInput(String(newBill.category || ''), 50);
-                        newBill.notes = sanitizeInput(String(newBill.notes || ''), 500);
-                        newBill.website = typeof newBill.website === 'string'
-                            ? newBill.website.trim()
-                            : '';
-
-                        if (!newBill.id) {
-                            newBill.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                        }
-
-                        // Normalize recurrence to proper capitalization
-                        // Handles lowercase imports like 'monthly' → 'Monthly'
-                        if (newBill.recurrence) {
-                            const recurrenceLower = newBill.recurrence.toLowerCase();
-                            if (recurrenceLower === 'one-time') newBill.recurrence = 'One-time';
-                            else if (recurrenceLower === 'weekly') newBill.recurrence = 'Weekly';
-                            else if (recurrenceLower === 'bi-weekly') newBill.recurrence = 'Bi-weekly';
-                            else if (recurrenceLower === 'monthly') newBill.recurrence = 'Monthly';
-                            else if (recurrenceLower === 'yearly') newBill.recurrence = 'Yearly';
-                        }
-
-                        if (!newBill.recurrence) {
-                            newBill.recurrence = 'One-time';
-                        }
-
-                        newBill.amountDue = Number.parseFloat(newBill.amountDue);
-                        if (!Number.isFinite(newBill.amountDue) || newBill.amountDue < 0) {
-                            importErrors.push(`Bill ${index + 1}: Amount due must be a valid non-negative number`);
-                            return null;
-                        }
-
-                        // Ensure required fields have at least empty values/defaults
-                        if (!Array.isArray(newBill.paymentHistory)) {
-                            newBill.paymentHistory = [];
-                        } else {
-                            newBill.paymentHistory = newBill.paymentHistory
-                                .map((payment) => {
-                                    const amount = Number.parseFloat(payment?.amount);
-                                    const date = typeof payment?.date === 'string' ? payment.date : '';
-
-                                    if (!Number.isFinite(amount) || amount < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-                                        return null;
-                                    }
-
-                                    return {
-                                        id: payment?.id || `pmt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                                        date,
-                                        amount,
-                                        method: sanitizeInput(String(payment?.method || 'Imported'), 50),
-                                        confirmationNumber: sanitizeInput(String(payment?.confirmationNumber || ''), 100),
-                                        notes: sanitizeInput(String(payment?.notes || ''), 500)
-                                    };
-                                })
-                                .filter(Boolean);
-                        }
-
-                        if (newBill.isPaid === undefined) newBill.isPaid = false;
-                        newBill.isPaid = Boolean(newBill.isPaid);
-                        if (newBill.balance === undefined) {
-                            newBill.balance = newBill.amountDue || 0;
-                        } else {
-                            const parsedBalance = Number.parseFloat(newBill.balance);
-                            if (!Number.isFinite(parsedBalance) || parsedBalance < 0) {
-                                importErrors.push(`Bill ${index + 1}: Balance must be a valid non-negative number`);
-                                return null;
-                            }
-                            newBill.balance = parsedBalance;
-                        }
-
-                        if (newBill.reminderEnabled === undefined) newBill.reminderEnabled = true;
-                        newBill.reminderEnabled = Boolean(newBill.reminderEnabled);
-
-                        const billValidation = validateBill(newBill);
-                        if (!billValidation.isValid) {
-                            importErrors.push(`Bill ${index + 1}: ${billValidation.errors.join(', ')}`);
-                            return null;
-                        }
-
-                        return newBill;
-                    }).filter(Boolean);
-
-                    if (importErrors.length > 0) {
-                        const preview = importErrors.slice(0, 5).join('; ');
-                        throw new Error(
-                            `Import contains invalid bill entries. ${preview}${importErrors.length > 5 ? `; and ${importErrors.length - 5} more` : ''}`
-                        );
-                    }
-
-                    if (processedBills.length === 0) {
-                        throw new Error('No valid bills found to import.');
-                    }
+                    const defaultCategories = ['Rent', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Entertainment'];
+                    const existingCategories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, defaultCategories);
+                    const {
+                        processedBills,
+                        allCategories,
+                        paymentSettingsToStore
+                    } = normalizeImportPayload(data, {
+                        defaultCategories,
+                        existingCategories
+                    });
 
                     // Import data
                     billStore.setBills(processedBills);
 
-                    // Sync custom categories from imported bills if not explicitly provided
-                    // Sync custom categories from imported bills
-                    const defaultCategories = ['Rent', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Entertainment'];
-                    const existingCategories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, defaultCategories);
-
-                    const billCategories = [...new Set(processedBills.map(b => b.category))].filter(c => c && c.trim() !== '');
-                    const importedMetadataCategories = Array.isArray(data.customCategories)
-                        ? data.customCategories
-                            .map(c => sanitizeInput(String(c || ''), 50))
-                            .filter(c => c && c.trim() !== '')
-                        : [];
-
-                    const allCategories = [...new Set([
-                        ...existingCategories,
-                        ...billCategories,
-                        ...importedMetadataCategories
-                    ])];
-
                     StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, allCategories);
 
-                    if (data.paymentSettings && typeof data.paymentSettings === 'object') {
-                        const normalizedPaymentSettings = {
-                            ...data.paymentSettings,
-                            payPeriodsToShow: Number.parseInt(data.paymentSettings.payPeriodsToShow, 10)
-                        };
-
-                        const paymentSettingsValidation = validatePaymentSettings(normalizedPaymentSettings);
-                        if (paymentSettingsValidation.isValid) {
-                            StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, normalizedPaymentSettings);
-                        } else {
-                            logger.warn('Skipped importing invalid payment settings', {
-                                errors: paymentSettingsValidation.errors
-                            });
-                        }
+                    if (paymentSettingsToStore) {
+                        StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, paymentSettingsToStore);
                     }
 
                     showSuccessNotification(

@@ -18,6 +18,7 @@ import {
     requestNotificationPermission,
     sendTestReminder
 } from '../utils/notifications.js';
+import { hasPaymentScheduleChanged } from '../utils/settingsHelpers.js';
 
 /**
  * Show settings modal
@@ -678,10 +679,7 @@ async function handleSettingsSave(e, modal) {
             payPeriodsToShow: weeks
         };
 
-        const paymentSettingsChanged =
-            existingSettings.startDate !== newSettings.startDate ||
-            existingSettings.frequency !== newSettings.frequency ||
-            existingSettings.payPeriodsToShow !== newSettings.payPeriodsToShow;
+        const paymentSettingsChanged = hasPaymentScheduleChanged(existingSettings, newSettings);
 
         // Validate payment settings only when schedule fields are changed.
         // This allows category/reminder-only saves even if legacy startDate is now in the past.
