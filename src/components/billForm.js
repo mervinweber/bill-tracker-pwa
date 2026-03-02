@@ -116,14 +116,13 @@ export const initializeBillForm = (categories, actions) => {
         form.style.display = 'none';
     });
 
-    // Mark as Paid/Unpaid button handler
+    // Record payment button handler
     const markPaidBtn = document.getElementById('markPaidBtn');
     markPaidBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const billId = document.getElementById('billId').value;
-        const billIsPaid = markPaidBtn.dataset.isPaid === 'true';
         if (formActions.onMarkPaid) {
-            formActions.onMarkPaid(billId, !billIsPaid);
+            formActions.onMarkPaid(billId, true);
         }
     });
 
@@ -228,12 +227,10 @@ export const openBillForm = (bill) => {
         titleElement.innerHTML = '➕ Add Bill';
     }
     
-    // Show/hide Mark as Paid button based on whether we're editing
+    // Show/hide Record Payment button based on whether we're editing
     const markPaidBtn = document.getElementById('markPaidBtn');
     if (isEdit) {
-        const isPaid = billData.isPaid || false;
-        markPaidBtn.textContent = isPaid ? '↩️ Mark as Unpaid' : '✅ Mark as Paid';
-        markPaidBtn.dataset.isPaid = isPaid;
+        markPaidBtn.textContent = '💳 Record Payment';
         markPaidBtn.style.display = 'block';
     } else {
         markPaidBtn.style.display = 'none';

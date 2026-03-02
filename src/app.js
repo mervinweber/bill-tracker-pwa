@@ -538,7 +538,22 @@ class AppOrchestrator {
     }
 
     handleTogglePayment(billId, isPaid) {
-        billActionHandlers.togglePaymentStatus(billId, isPaid);
+        const bills = billStore.getAll();
+        const bill = bills.find(b => b.id === billId);
+        if (!bill) return;
+
+        if (isPaid) {
+            this.handleRecordPayment(billId);
+            this.rerender();
+            return;
+        }
+
+        if (!confirm(`Mark "${bill.name}" as unpaid?`)) {
+            this.rerender();
+            return;
+        }
+
+        billActionHandlers.togglePaymentStatus(billId, false);
     }
 
     handleToggleReminder(billId, enabled) {
@@ -572,9 +587,13 @@ class AppOrchestrator {
     }
 
     handleMarkPaidFromModal(billId, isPaid) {
-        // Toggle payment status using existing handler
-        billActionHandlers.togglePaymentStatus(billId, isPaid);
-        // Close the modal and refresh the view
+        if (isPaid) {
+            closeBillForm();
+            this.handleRecordPayment(billId);
+            return;
+        }
+
+        billActionHandlers.togglePaymentStatus(billId, false);
         closeBillForm();
         this.rerender();
     }

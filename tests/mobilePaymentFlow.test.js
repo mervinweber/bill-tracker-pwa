@@ -63,6 +63,20 @@ test('Selected recurrence strategy is sent with payment submissions', () => {
     }
 });
 
+test('Grid paid toggle routes through payment modal flow', () => {
+    if (!appContent.includes('if (isPaid) {')) throw new Error('Missing paid toggle branch');
+    if (!appContent.includes('this.handleRecordPayment(billId);')) {
+        throw new Error('Paid toggle does not route to record payment modal');
+    }
+});
+
+test('Edit form payment action routes through payment modal flow', () => {
+    if (!appContent.includes('handleMarkPaidFromModal')) throw new Error('Missing edit form payment handler');
+    if (!appContent.includes('closeBillForm();\n            this.handleRecordPayment(billId);')) {
+        throw new Error('Edit form payment action does not open payment modal');
+    }
+});
+
 console.log('\n' + '='.repeat(50));
 console.log(`Tests Passed: ${passed}`);
 console.log(`Tests Failed: ${failed}`);
