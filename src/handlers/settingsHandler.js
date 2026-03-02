@@ -19,6 +19,7 @@ import {
     sendTestReminder
 } from '../utils/notifications.js';
 import { hasPaymentScheduleChanged } from '../utils/settingsHelpers.js';
+import { recordAuditEvent } from '../utils/auditTracker.js';
 
 /**
  * Show settings modal
@@ -716,6 +717,18 @@ async function handleSettingsSave(e, modal) {
 
         // Save to localStorage
         StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, newSettings);
+
+        recordAuditEvent('settings.saved', {
+            entityType: 'settings',
+            summary: 'Payment settings updated',
+            metadata: {
+                paymentSettingsChanged,
+                frequency: newSettings.frequency,
+                payPeriodsToShow: newSettings.payPeriodsToShow,
+                notificationsEnabled,
+                reminderDays: Number.isNaN(reminderDays) ? 1 : reminderDays
+            }
+        });
 
         // Sync to cloud if user is logged in
         (async () => {
