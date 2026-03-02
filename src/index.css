@@ -762,6 +762,39 @@ main {
     margin-top: 6px;
 }
 
+.payment-strategy-section {
+    background-color: var(--table-stripe);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+.payment-strategy-hint {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.payment-strategy-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.payment-strategy-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.payment-strategy-options input[type="radio"] {
+    width: auto;
+}
+
 .payment-modal-actions {
     display: flex;
     gap: 10px;
@@ -1047,6 +1080,10 @@ input:checked+.slider:before {
 
     .payment-modal-actions {
         flex-direction: column;
+    }
+
+    .payment-strategy-options label {
+        align-items: flex-start;
     }
 }
 

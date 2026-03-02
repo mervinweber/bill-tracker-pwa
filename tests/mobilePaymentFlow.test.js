@@ -21,6 +21,8 @@ const test = (name, fn) => {
 
 const appPath = path.join(__dirname, '../src/app.js');
 const appContent = fs.readFileSync(appPath, 'utf8');
+const handlersPath = path.join(__dirname, '../src/handlers/billActionHandlers.js');
+const handlersContent = fs.readFileSync(handlersPath, 'utf8');
 
 console.log('Mobile Payment Flow Tests\n');
 
@@ -45,6 +47,19 @@ test('Optional payment metadata is collapsible', () => {
     if (!appContent.includes('paymentOptionalDetails')) throw new Error('Missing optional details container');
     if (!appContent.includes('<details id="paymentOptionalDetails"')) {
         throw new Error('Optional metadata is not using details disclosure');
+    }
+});
+
+test('Overdue monthly strategy choices are available in modal', () => {
+    if (!appContent.includes('monthlyStrategySection')) throw new Error('Missing monthly strategy section');
+    if (!appContent.includes('paymentRecurrenceStrategy')) throw new Error('Missing recurrence strategy input group');
+    if (!appContent.includes('catch-up-to-current')) throw new Error('Missing catch-up strategy option');
+});
+
+test('Selected recurrence strategy is sent with payment submissions', () => {
+    if (!appContent.includes('recurrenceStrategy')) throw new Error('Missing recurrence strategy payload field');
+    if (!handlersContent.includes('paymentData.recurrenceStrategy')) {
+        throw new Error('Recurring strategy is not read in payment logic');
     }
 });
 

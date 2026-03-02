@@ -7,7 +7,7 @@
 import { appState } from './store/appState.js';
 import { billStore } from './store/BillStore.js';
 import { paycheckManager } from './utils/paycheckManager.js';
-import { createLocalDate } from './utils/dates.js';
+import { createLocalDate, getMissedMonthlyCycles } from './utils/dates.js';
 import StorageManager from './utils/StorageManager.js';
 import logger from './utils/logger.js';
 import { STORAGE_KEYS } from './utils/constants.js';
@@ -584,6 +584,23 @@ class AppOrchestrator {
         const bill = bills.find(b => b.id === billId);
         if (!bill) return;
 
+        const strategySection = document.getElementById('monthlyStrategySection');
+        const strategyHint = document.getElementById('monthlyStrategyHint');
+        const singleCycleOption = document.getElementById('paymentStrategySingleCycle');
+
+        const missedCycles = bill.recurrence === 'Monthly'
+            ? getMissedMonthlyCycles(createLocalDate(bill.dueDate), new Date())
+            : 0;
+
+        if (bill.recurrence === 'Monthly' && missedCycles >= 2) {
+            strategySection.style.display = 'block';
+            strategyHint.textContent = `${missedCycles} months past due. Choose how to advance this recurring bill.`;
+        } else {
+            strategySection.style.display = 'none';
+            strategyHint.textContent = '';
+        }
+
+        singleCycleOption.checked = true;
         document.getElementById('paymentBillName').textContent = bill.name;
         document.getElementById('paymentRemainingAmount').textContent =
             `$${billActionHandlers.getRemainingBalance(bill).toFixed(2)}`;
@@ -915,6 +932,19 @@ class AppOrchestrator {
                             <p class="payment-summary-bill">Bill: <strong id="paymentBillName">-</strong></p>
                             <p class="payment-summary-remaining">Remaining: <strong id="paymentRemainingAmount">$0.00</strong></p>
                         </div>
+                        <div id="monthlyStrategySection" class="payment-strategy-section" style="display:none;">
+                            <p id="monthlyStrategyHint" class="payment-strategy-hint"></p>
+                            <div class="payment-strategy-options" role="radiogroup" aria-label="Overdue monthly payment strategy">
+                                <label>
+                                    <input type="radio" id="paymentStrategySingleCycle" name="paymentRecurrenceStrategy" value="single-cycle" checked>
+                                    Clear one month only
+                                </label>
+                                <label>
+                                    <input type="radio" id="paymentStrategyCatchUp" name="paymentRecurrenceStrategy" value="catch-up-to-current">
+                                    Catch up to current month
+                                </label>
+                            </div>
+                        </div>
                         <div class="form-group"><label>Amount Paid:</label><input type="number" id="paymentAmount" step="0.01" required></div>
                         <div class="form-group"><label>Payment Date:</label><input type="date" id="paymentDate" required></div>
                         <div class="payment-modal-actions">
@@ -963,8 +993,17 @@ class AppOrchestrator {
             const date = document.getElementById('paymentDate').value;
             const method = document.getElementById('paymentMethod').value;
             const confirmationNumber = document.getElementById('paymentConfirmation').value;
+            const recurrenceStrategy =
+                document.querySelector('input[name="paymentRecurrenceStrategy"]:checked')?.value ||
+                'single-cycle';
 
-            submitPayment(billId, { amount, date, method, confirmationNumber });
+            submitPayment(billId, {
+                amount,
+                date,
+                method,
+                confirmationNumber,
+                recurrenceStrategy
+            });
         });
 
         document.getElementById('recordPaymentForm').addEventListener('submit', e => {
@@ -974,7 +1013,10 @@ class AppOrchestrator {
                 amount: document.getElementById('paymentAmount').value,
                 date: document.getElementById('paymentDate').value,
                 method: document.getElementById('paymentMethod').value,
-                confirmationNumber: document.getElementById('paymentConfirmation').value
+                confirmationNumber: document.getElementById('paymentConfirmation').value,
+                recurrenceStrategy:
+                    document.querySelector('input[name="paymentRecurrenceStrategy"]:checked')?.value ||
+                    'single-cycle'
             };
 
             submitPayment(billId, paymentData);

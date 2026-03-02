@@ -152,7 +152,7 @@ function advanceRecurringBillIfNeeded(bill, updated, options = {}) {
     }
 }
 
-function getRecurringPaymentStrategy(bill, updated, paymentDate) {
+function getRecurringPaymentStrategy(bill, updated, paymentDate, preferredStrategy = 'single-cycle') {
     if (!updated.isPaid || bill.recurrence !== 'Monthly') {
         return 'single-cycle';
     }
@@ -160,27 +160,15 @@ function getRecurringPaymentStrategy(bill, updated, paymentDate) {
     const currentDueDate = createLocalDate(bill.dueDate);
     const referenceDate = createLocalDate(paymentDate);
     const missedCycles = getMissedMonthlyCycles(currentDueDate, referenceDate);
-    const singleCycleDate = calculateNextDueDate(currentDueDate, 'Monthly');
-    const catchUpDate = getNextNonOverdueMonthlyDate(currentDueDate, referenceDate);
-
-    if (missedCycles < 2 || typeof window === 'undefined' || typeof window.confirm !== 'function') {
+    if (missedCycles < 2) {
         return 'single-cycle';
     }
 
-    if (!singleCycleDate || !catchUpDate) {
-        return 'single-cycle';
+    if (preferredStrategy === 'catch-up-to-current') {
+        return 'catch-up-to-current';
     }
 
-    const singleCycleDateText = formatLocalDate(singleCycleDate);
-    const catchUpDateText = formatLocalDate(catchUpDate);
-
-    const shouldCatchUp = window.confirm(
-        `${bill.name} is ${missedCycles} months past due.\n\n` +
-        `OK = move bill to current status (new due date: ${catchUpDateText}).\n` +
-        `Cancel = clear one month only (new due date: ${singleCycleDateText}).`
-    );
-
-    return shouldCatchUp ? 'catch-up-to-current' : 'single-cycle';
+    return 'single-cycle';
 }
 
 /**
@@ -451,7 +439,12 @@ export function recordPayment(billId, paymentData) {
         updated.isPaid = remaining <= 0;
 
         // If fully paid and bill is recurring, move to next payment cycle
-        const recurrenceStrategy = getRecurringPaymentStrategy(bill, updated, payment.date);
+        const recurrenceStrategy = getRecurringPaymentStrategy(
+            bill,
+            updated,
+            payment.date,
+            paymentData.recurrenceStrategy
+        );
         advanceRecurringBillIfNeeded(bill, updated, {
             strategy: recurrenceStrategy,
             referenceDate: createLocalDate(payment.date)
