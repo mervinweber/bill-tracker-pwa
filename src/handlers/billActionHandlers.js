@@ -172,6 +172,21 @@ function getRecurringPaymentStrategy(bill, updated, paymentDate, preferredStrate
     return 'single-cycle';
 }
 
+function getMostRecentPaymentDate(bill) {
+    const historyDates = Array.isArray(bill.paymentHistory)
+        ? bill.paymentHistory
+            .map(payment => payment?.date)
+            .filter(date => typeof date === 'string' && date.trim() !== '')
+        : [];
+
+    if (historyDates.length === 0) {
+        return bill.lastPaymentDate || null;
+    }
+
+    const sortedDates = [...historyDates].sort((a, b) => new Date(b) - new Date(a));
+    return sortedDates[0] || bill.lastPaymentDate || null;
+}
+
 /**
  * Update bill balance with validation
  */
@@ -217,6 +232,7 @@ export function togglePaymentStatus(billId, isPaid) {
         }
 
         const updated = { ...bill };
+    const mostRecentPaymentDate = getMostRecentPaymentDate(bill);
         updated.isPaid = isPaid;
         updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
 
@@ -227,8 +243,13 @@ export function togglePaymentStatus(billId, isPaid) {
         recordAuditEvent('bill.payment_status.toggled', {
             entityType: 'bill',
             entityId: billId,
-            summary: `Payment status set to ${isPaid ? 'paid' : 'unpaid'} for ${bill.name}`,
-            metadata: { isPaid }
+            summary: isPaid
+                ? `Payment status set to paid for ${bill.name}`
+                : `Payment status set to unpaid for ${bill.name}. Most recent payment date: ${mostRecentPaymentDate || 'none recorded'}`,
+            metadata: {
+                isPaid,
+                lastMarkedPaymentDate: isPaid ? null : mostRecentPaymentDate
+            }
         });
 
         // If marking as paid, record payment automatically
