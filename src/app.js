@@ -584,6 +584,9 @@ class AppOrchestrator {
         const bill = bills.find(b => b.id === billId);
         if (!bill) return;
 
+        document.getElementById('paymentBillName').textContent = bill.name;
+        document.getElementById('paymentRemainingAmount').textContent =
+            `$${billActionHandlers.getRemainingBalance(bill).toFixed(2)}`;
         document.getElementById('paymentBillId').value = billId;
         document.getElementById('paymentAmount').value = billActionHandlers
             .getRemainingBalance(bill)
@@ -591,6 +594,7 @@ class AppOrchestrator {
         document.getElementById('paymentDate').value = new Date()
             .toISOString()
             .split('T')[0];
+        document.getElementById('paymentOptionalDetails').open = false;
         document.getElementById('recordPaymentModal').style.display = 'block';
     }
 
@@ -907,19 +911,29 @@ class AppOrchestrator {
                     <h2>Record Payment</h2>
                     <form id="recordPaymentForm">
                         <input type="hidden" id="paymentBillId">
+                        <div class="payment-summary-card" aria-live="polite">
+                            <p class="payment-summary-bill">Bill: <strong id="paymentBillName">-</strong></p>
+                            <p class="payment-summary-remaining">Remaining: <strong id="paymentRemainingAmount">$0.00</strong></p>
+                        </div>
                         <div class="form-group"><label>Amount Paid:</label><input type="number" id="paymentAmount" step="0.01" required></div>
                         <div class="form-group"><label>Payment Date:</label><input type="date" id="paymentDate" required></div>
-                        <div class="form-group"><label>Payment Method:</label><select id="paymentMethod">
-                            <option value="Credit Card">💳 Credit Card</option>
-                            <option value="Debit Card">💳 Debit Card</option>
-                            <option value="Bank Transfer">🏦 Bank Transfer</option>
-                            <option value="Cash">💵 Cash</option>
-                            <option value="Check">📝 Check</option>
-                            <option value="PayPal">💰 PayPal</option>
-                            <option value="Venmo">💸 Venmo</option>
-                        </select></div>
-                        <div class="form-group"><label>Confirmation # (Optional):</label><input type="text" id="paymentConfirmation"></div>
-                        <button type="submit" class="submit-btn">💾 Record Payment</button>
+                        <div class="payment-modal-actions">
+                            <button type="button" id="quickPayFullBtn" class="submit-btn">⚡ Pay Full Today</button>
+                            <button type="submit" class="action-btn">💾 Save Payment</button>
+                        </div>
+                        <details id="paymentOptionalDetails" class="payment-optional-details">
+                            <summary>Optional details</summary>
+                            <div class="form-group"><label>Payment Method:</label><select id="paymentMethod">
+                                <option value="Credit Card">💳 Credit Card</option>
+                                <option value="Debit Card">💳 Debit Card</option>
+                                <option value="Bank Transfer">🏦 Bank Transfer</option>
+                                <option value="Cash">💵 Cash</option>
+                                <option value="Check">📝 Check</option>
+                                <option value="PayPal">💰 PayPal</option>
+                                <option value="Venmo">💸 Venmo</option>
+                            </select></div>
+                            <div class="form-group"><label>Confirmation # (Optional):</label><input type="text" id="paymentConfirmation"></div>
+                        </details>
                     </form>
                 </div>
             </div>
@@ -935,6 +949,24 @@ class AppOrchestrator {
             document.getElementById('viewHistoryModal').style.display = 'none';
         });
 
+        const submitPayment = (billId, paymentData) => {
+            if (billActionHandlers.recordPayment(billId, paymentData)) {
+                document.getElementById('recordPaymentModal').style.display = 'none';
+                document.getElementById('recordPaymentForm').reset();
+                this.rerender();
+            }
+        };
+
+        document.getElementById('quickPayFullBtn').addEventListener('click', () => {
+            const billId = document.getElementById('paymentBillId').value;
+            const amount = document.getElementById('paymentAmount').value;
+            const date = document.getElementById('paymentDate').value;
+            const method = document.getElementById('paymentMethod').value;
+            const confirmationNumber = document.getElementById('paymentConfirmation').value;
+
+            submitPayment(billId, { amount, date, method, confirmationNumber });
+        });
+
         document.getElementById('recordPaymentForm').addEventListener('submit', e => {
             e.preventDefault();
             const billId = document.getElementById('paymentBillId').value;
@@ -945,11 +977,7 @@ class AppOrchestrator {
                 confirmationNumber: document.getElementById('paymentConfirmation').value
             };
 
-            if (billActionHandlers.recordPayment(billId, paymentData)) {
-                document.getElementById('recordPaymentModal').style.display = 'none';
-                document.getElementById('recordPaymentForm').reset();
-                this.rerender();
-            }
+            submitPayment(billId, paymentData);
         });
     }
 

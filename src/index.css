@@ -744,6 +744,57 @@ main {
     box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
 }
 
+.payment-summary-card {
+    background-color: var(--table-stripe);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 14px;
+}
+
+.payment-summary-card p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.payment-summary-card p + p {
+    margin-top: 6px;
+}
+
+.payment-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+
+.payment-modal-actions button {
+    flex: 1;
+}
+
+.payment-modal-actions .action-btn {
+    margin-bottom: 0;
+}
+
+.payment-optional-details {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-top: 8px;
+}
+
+.payment-optional-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.payment-optional-details[open] summary {
+    margin-bottom: 12px;
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -992,6 +1043,10 @@ input:checked+.slider:before {
 
     .pay-period-select {
         width: 100%;
+    }
+
+    .payment-modal-actions {
+        flex-direction: column;
     }
 }
 
