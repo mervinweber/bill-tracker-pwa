@@ -34,6 +34,8 @@ console.log('📋 Running Settings Handler Tests...\n');
 
 const settingsHandlerPath = path.join(__dirname, '../src/handlers/settingsHandler.js');
 const settingsHandlerContent = fs.readFileSync(settingsHandlerPath, 'utf8');
+const settingsHelpersPath = path.join(__dirname, '../src/utils/settingsHelpers.js');
+const settingsHelpersContent = fs.readFileSync(settingsHelpersPath, 'utf8');
 
 test('should detect when payment schedule fields are unchanged', () => {
     assert(
@@ -55,16 +57,20 @@ test('should skip payment schedule validation when schedule fields are unchanged
 
 test('should compare all payment schedule fields when deciding if validation is required', () => {
     assert(
-        settingsHandlerContent.includes('existingSettings.startDate !== newSettings.startDate'),
-        'missing startDate comparison in paymentSettingsChanged logic'
+        settingsHandlerContent.includes('hasPaymentScheduleChanged(existingSettings, newSettings)'),
+        'missing helper call for payment schedule comparison'
     );
     assert(
-        settingsHandlerContent.includes('existingSettings.frequency !== newSettings.frequency'),
-        'missing frequency comparison in paymentSettingsChanged logic'
+        settingsHelpersContent.includes('existingStartDate !== newStartDate'),
+        'missing startDate comparison in helper logic'
     );
     assert(
-        settingsHandlerContent.includes('existingSettings.payPeriodsToShow !== newSettings.payPeriodsToShow'),
-        'missing payPeriodsToShow comparison in paymentSettingsChanged logic'
+        settingsHelpersContent.includes('existingFrequency !== newFrequency'),
+        'missing frequency comparison in helper logic'
+    );
+    assert(
+        settingsHelpersContent.includes('existingPayPeriods !== newPayPeriods'),
+        'missing payPeriodsToShow comparison in helper logic'
     );
 });
 

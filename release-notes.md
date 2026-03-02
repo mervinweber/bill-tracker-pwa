@@ -1,6 +1,40 @@
 # Release Notes
 
 ## Release Date
+- 2026-03-02
+
+## Scope
+This release adds a mobile-first UX pass across payment flows and list interactions, plus closes a lingering settings-handler regression test mismatch.
+
+## Customer-Facing Summary
+BillTracker is now faster and cleaner on mobile: payment actions are streamlined, overdue monthly catch-up behavior uses explicit in-app choices, header controls are simplified with progressive disclosure, and bill-row actions/columns are optimized for small screens.
+
+## Included PRs
+
+### PR #17 — Mobile-First Payment Flow + UX Improvements
+- URL: https://github.com/mervinweber/bill-tracker-pwa/pull/17
+- Key changes:
+  - Added payment modal quick-pay flow with contextual bill summary
+  - Replaced native monthly-overdue confirm flow with explicit strategy controls
+  - Consolidated duplicate payment entry paths into payment modal flow
+  - Added mobile progressive disclosure for advanced header controls
+  - Added compact row-action disclosure and larger touch targets
+  - Prioritized core table columns on small screens
+  - Added `MOBILE_UX_FLOW_REVIEW_README.md` planning reference
+
+### Maintenance — Settings Handler Regression Test Alignment
+- Key changes:
+  - Updated `tests/settingsHandler.test.js` to validate helper-based schedule comparison logic via `hasPaymentScheduleChanged()`
+
+## Validation Summary
+- Full test suite passes
+- Production build passes
+- Service worker cache manifest validation passes
+- Runtime dependency audit (`npm audit --omit=dev`) reports 0 vulnerabilities
+
+---
+
+## Release Date
 - 2026-03-01
 
 ## Scope

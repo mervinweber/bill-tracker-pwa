@@ -1,13 +1,15 @@
 # Release & Security Checklist
 
-## Current Automated Status (already completed)
+## Current Automated Status (2026-03-02)
 - [x] Full test suite passes
 - [x] Production build passes (`npm run build`)
 - [x] Service worker cache manifest validates (`node scripts/validate_service_worker_cache.mjs`)
 - [x] Runtime dependency audit clean (`npm audit --omit=dev`)
 - [x] Branch is clean and synced on `main`
+- [x] Settings handler regression test mismatch resolved
 
 ## Manual Smoke Tests (do before deploy)
+- [x] App loads in local browser session (`http://localhost:5173`) for smoke sanity
 - [ ] Settings: Clean Up Unused -> Save with old paycheck start date (should save without forcing schedule change)
 - [ ] Settings: change schedule fields (start date/frequency/pay periods) and confirm validation still applies correctly
 - [ ] Import a valid JSON backup (should import and refresh successfully)
