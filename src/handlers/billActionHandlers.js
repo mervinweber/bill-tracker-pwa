@@ -41,6 +41,7 @@ import {
 import logger from '../utils/logger.js';
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
+import { recordAuditEvent } from '../utils/auditTracker.js';
 
 /**
  * Display error notification to user with formatted message
@@ -189,6 +190,12 @@ export function updateBillBalance(billId, newBalance) {
 
         const updated = { ...bill, balance: newBalance };
         billStore.update(updated);
+        recordAuditEvent('bill.balance.updated', {
+            entityType: 'bill',
+            entityId: billId,
+            summary: `Balance updated for ${bill.name}`,
+            metadata: { balance: newBalance }
+        });
         return true;
     } catch (error) {
         logger.error('Error updating bill balance', error);
@@ -217,6 +224,12 @@ export function togglePaymentStatus(billId, isPaid) {
         advanceRecurringBillIfNeeded(bill, updated);
 
         billStore.update(updated);
+        recordAuditEvent('bill.payment_status.toggled', {
+            entityType: 'bill',
+            entityId: billId,
+            summary: `Payment status set to ${isPaid ? 'paid' : 'unpaid'} for ${bill.name}`,
+            metadata: { isPaid }
+        });
 
         // If marking as paid, record payment automatically
         if (isPaid) {
@@ -254,6 +267,11 @@ export function deleteBill(billId) {
         }
 
         billStore.delete(billId);
+        recordAuditEvent('bill.deleted', {
+            entityType: 'bill',
+            entityId: billId,
+            summary: `Bill deleted: ${bill.name}`
+        });
         showSuccessNotification(`"${bill.name}" deleted successfully`);
         return true;
     } catch (error) {
@@ -282,6 +300,11 @@ export function bulkDelete(billIds) {
         const updatedBills = currentBills.filter(b => !billIds.includes(b.id));
 
         billStore.setBills(updatedBills);
+        recordAuditEvent('bill.bulk_deleted', {
+            entityType: 'bill',
+            summary: `Bulk deleted ${billIds.length} bills`,
+            metadata: { count: billIds.length }
+        });
         showSuccessNotification(`Successfully deleted ${billIds.length} bills`);
         return true;
     } catch (error) {
@@ -344,6 +367,11 @@ export function bulkMarkAsPaid(billIds) {
 
         if (updateCount > 0) {
             billStore.setBills(currentBills);
+            recordAuditEvent('bill.bulk_marked_paid', {
+                entityType: 'bill',
+                summary: `Bulk marked ${updateCount} bills as paid`,
+                metadata: { count: updateCount }
+            });
             showSuccessNotification(`Marked ${updateCount} bills as paid`);
             return true;
         } else {
@@ -451,6 +479,16 @@ export function recordPayment(billId, paymentData) {
         });
 
         billStore.update(updated);
+        recordAuditEvent('bill.payment.recorded', {
+            entityType: 'bill',
+            entityId: billId,
+            summary: `Payment recorded for ${bill.name}`,
+            metadata: {
+                amount,
+                paymentDate: payment.date,
+                recurrenceStrategy
+            }
+        });
         
         // Show appropriate message based on payment amount
         if (amount === 0) {
@@ -528,6 +566,12 @@ export function exportData() {
         a.click();
         URL.revokeObjectURL(url);
 
+        recordAuditEvent('data.exported', {
+            entityType: 'data',
+            summary: `Exported ${bills.length} bills`,
+            metadata: { billCount: bills.length }
+        });
+
         showSuccessNotification('Data exported successfully');
         return true;
     } catch (error) {
@@ -579,6 +623,16 @@ export function importData(file) {
                     if (paymentSettingsToStore) {
                         StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, paymentSettingsToStore);
                     }
+
+                    recordAuditEvent('data.imported', {
+                        entityType: 'data',
+                        summary: `Imported ${processedBills.length} bills`,
+                        metadata: {
+                            billCount: processedBills.length,
+                            categoryCount: allCategories.length,
+                            hasPaymentSettings: !!paymentSettingsToStore
+                        }
+                    });
 
                     showSuccessNotification(
                         `Successfully imported ${processedBills.length} bill(s). Refreshing...`

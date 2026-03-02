@@ -51,6 +51,7 @@ import {
 
 import { safeJSONParse } from './utils/validation.js';
 import { checkAndSendDueBillReminders } from './utils/notifications.js';
+import { recordAuditEvent } from './utils/auditTracker.js';
 
 class AppOrchestrator {
     constructor() {
@@ -777,11 +778,24 @@ class AppOrchestrator {
         const { data, error } = await signIn(email, password);
         if (error) {
             setAuthMessage(error.message, true);
+            recordAuditEvent('auth.login.failed', {
+                entityType: 'auth',
+                summary: 'Login attempt failed',
+                metadata: { message: error.message }
+            });
         } else {
             // Save user email to localStorage so Sidebar can read it on reload
             if (data.user && data.user.email) {
                 StorageManager.set(STORAGE_KEYS.USER_EMAIL, data.user.email);
             }
+
+            recordAuditEvent('auth.login.succeeded', {
+                entityType: 'auth',
+                summary: 'User logged in',
+                metadata: {
+                    email: data.user?.email || null
+                }
+            });
 
             closeAuthModal();
             billActionHandlers.showSuccessNotification('Logged in successfully');
@@ -847,13 +861,29 @@ class AppOrchestrator {
         const { data, error } = await signUp(email, password);
         if (error) {
             setAuthMessage(error.message, true);
+            recordAuditEvent('auth.signup.failed', {
+                entityType: 'auth',
+                summary: 'Signup attempt failed',
+                metadata: { message: error.message }
+            });
         } else {
             setAuthMessage('Account created! Please check your email.', false);
+            recordAuditEvent('auth.signup.succeeded', {
+                entityType: 'auth',
+                summary: 'Signup completed',
+                metadata: { email: data?.user?.email || email }
+            });
         }
     }
 
     async handleLogout() {
+        const userEmail = StorageManager.get(STORAGE_KEYS.USER_EMAIL, null);
         await signOut();
+        recordAuditEvent('auth.logout', {
+            entityType: 'auth',
+            summary: 'User logged out',
+            metadata: { email: userEmail }
+        });
         StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
         window.location.reload();
     }
