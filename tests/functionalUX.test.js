@@ -157,6 +157,12 @@ test('Bill Grid: Gesture and keyboard cleanup functions are tracked', () => {
     if (!billGridContent.includes('cleanupSwipeDelete')) throw new Error('Missing swipe cleanup registration');
 });
 
+test('Bill Grid: Mobile compact action disclosure is present', () => {
+    if (!billGridContent.includes('useCompactMobileActions')) throw new Error('Missing compact mobile action detection');
+    if (!billGridContent.includes('mobile-secondary-actions')) throw new Error('Missing secondary action container');
+    if (!billGridContent.includes('moreBtn')) throw new Error('Missing More actions toggle button');
+});
+
 test('Bill Grid: Edit button listeners are attached', () => {
     if (!billGridContent.includes("editBtn.addEventListener('click'")) throw new Error('Missing edit button listener');
 });

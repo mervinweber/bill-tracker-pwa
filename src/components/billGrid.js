@@ -67,6 +67,7 @@ export const initializeBillGrid = () => {
  */
 export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates }, actions) => {
     runBillGridCleanup();
+    const useCompactMobileActions = isTouchDevice() && isMobileViewport();
 
     const billGrid = document.getElementById('billGrid');
     billGrid.innerHTML = '';
@@ -253,6 +254,16 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             btnGroup.setAttribute('role', 'group');
             btnGroup.ariaLabel = `Actions for ${bill.name}`;
 
+            const mobileSecondaryActions = [];
+
+            const addActionButton = (button, isPrimary = false) => {
+                if (useCompactMobileActions && !isPrimary) {
+                    mobileSecondaryActions.push(button);
+                } else {
+                    btnGroup.appendChild(button);
+                }
+            };
+
             if (bill.website) {
                 const linkBtn = document.createElement('button');
                 linkBtn.className = 'icon-btn link-btn';
@@ -260,7 +271,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
                 linkBtn.ariaLabel = `Pay ${bill.name} online`;
                 linkBtn.textContent = '🔗';
                 linkBtn.addEventListener('click', () => window.open(bill.website, '_blank'));
-                btnGroup.appendChild(linkBtn);
+                addActionButton(linkBtn);
             }
 
             const payBtn = document.createElement('button');
@@ -269,7 +280,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             payBtn.ariaLabel = `Record payment for ${bill.name}`;
             payBtn.textContent = '💳';
             payBtn.addEventListener('click', () => actions.onRecordPayment(bill.id));
-            btnGroup.appendChild(payBtn);
+            addActionButton(payBtn, true);
 
             const historyBtn = document.createElement('button');
             historyBtn.className = 'icon-btn history-btn';
@@ -277,7 +288,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             historyBtn.ariaLabel = `View payment history for ${bill.name}`;
             historyBtn.textContent = '📜';
             historyBtn.addEventListener('click', () => actions.onViewHistory(bill.id));
-            btnGroup.appendChild(historyBtn);
+            addActionButton(historyBtn);
 
             const editBtn = document.createElement('button');
             editBtn.className = 'icon-btn edit-btn';
@@ -285,7 +296,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             editBtn.ariaLabel = `Edit ${bill.name}`;
             editBtn.textContent = '✏️';
             editBtn.addEventListener('click', () => actions.onEditBill(bill.id));
-            btnGroup.appendChild(editBtn);
+            addActionButton(editBtn);
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'icon-btn delete-btn';
@@ -316,15 +327,51 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             registerBillGridCleanup(() => row.removeEventListener('keydown', handleRowKeyDown));
             registerBillGridCleanup(() => deleteBtn.removeEventListener('click', handleDeleteClick));
 
-            btnGroup.appendChild(deleteBtn);
+            addActionButton(deleteBtn, true);
 
-            actionsCell.appendChild(btnGroup);
+            if (useCompactMobileActions && mobileSecondaryActions.length > 0) {
+                const moreBtn = document.createElement('button');
+                moreBtn.className = 'icon-btn more-btn';
+                moreBtn.title = 'More actions';
+                moreBtn.ariaLabel = `Show more actions for ${bill.name}`;
+                moreBtn.textContent = '⋯';
+                moreBtn.setAttribute('aria-expanded', 'false');
+
+                const secondaryActionGroup = document.createElement('div');
+                secondaryActionGroup.className = 'mobile-secondary-actions';
+                secondaryActionGroup.setAttribute('role', 'group');
+                secondaryActionGroup.ariaLabel = `More actions for ${bill.name}`;
+                secondaryActionGroup.hidden = true;
+
+                mobileSecondaryActions.forEach((button) => {
+                    secondaryActionGroup.appendChild(button);
+                });
+
+                const handleMoreClick = () => {
+                    const expanded = secondaryActionGroup.hidden;
+                    secondaryActionGroup.hidden = !expanded;
+                    moreBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                    moreBtn.ariaLabel = expanded
+                        ? `Hide more actions for ${bill.name}`
+                        : `Show more actions for ${bill.name}`;
+                };
+
+                moreBtn.addEventListener('click', handleMoreClick);
+                registerBillGridCleanup(() => moreBtn.removeEventListener('click', handleMoreClick));
+
+                btnGroup.appendChild(moreBtn);
+                actionsCell.appendChild(btnGroup);
+                actionsCell.appendChild(secondaryActionGroup);
+            } else {
+                actionsCell.appendChild(btnGroup);
+            }
+
             row.appendChild(actionsCell);
 
             tbody.appendChild(row);
 
             // Add swipe-to-delete gesture on mobile
-            if (isTouchDevice() && isMobileViewport()) {
+            if (useCompactMobileActions) {
                 const cleanupSwipeDelete = initializeSwipeDelete(row, () => {
                     actions.onDeleteBill(bill.id);
                 }, 80);
