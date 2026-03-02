@@ -54,6 +54,12 @@ test('Header: Payment filter dropdown event listener is attached', () => {
     if (!headerContent.includes("actions.onFilterChange")) throw new Error('Missing action handler');
 });
 
+test('Header: Mobile controls toggle is wired for progressive disclosure', () => {
+    if (!headerContent.includes('mobileControlsToggle')) throw new Error('Missing mobile controls toggle');
+    if (!headerContent.includes("mobileControlsToggle.addEventListener('click'")) throw new Error('Missing mobile toggle listener');
+    if (!headerContent.includes('headerAdvancedControls')) throw new Error('Missing advanced controls container');
+});
+
 test('Header: updateHeaderUI function exists and handles modes', () => {
     if (!headerContent.includes("export const updateHeaderUI")) throw new Error('Missing updateHeaderUI export');
     if (!headerContent.includes("viewMode === 'all'")) throw new Error('Missing view mode check');
