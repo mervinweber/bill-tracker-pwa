@@ -7,7 +7,7 @@
 import { appState } from './store/appState.js';
 import { billStore } from './store/BillStore.js';
 import { paycheckManager } from './utils/paycheckManager.js';
-import { createLocalDate } from './utils/dates.js';
+import { createLocalDate, getMissedMonthlyCycles } from './utils/dates.js';
 import StorageManager from './utils/StorageManager.js';
 import logger from './utils/logger.js';
 import { STORAGE_KEYS } from './utils/constants.js';
@@ -538,7 +538,22 @@ class AppOrchestrator {
     }
 
     handleTogglePayment(billId, isPaid) {
-        billActionHandlers.togglePaymentStatus(billId, isPaid);
+        const bills = billStore.getAll();
+        const bill = bills.find(b => b.id === billId);
+        if (!bill) return;
+
+        if (isPaid) {
+            this.handleRecordPayment(billId);
+            this.rerender();
+            return;
+        }
+
+        if (!confirm(`Mark "${bill.name}" as unpaid?`)) {
+            this.rerender();
+            return;
+        }
+
+        billActionHandlers.togglePaymentStatus(billId, false);
     }
 
     handleToggleReminder(billId, enabled) {
@@ -572,9 +587,13 @@ class AppOrchestrator {
     }
 
     handleMarkPaidFromModal(billId, isPaid) {
-        // Toggle payment status using existing handler
-        billActionHandlers.togglePaymentStatus(billId, isPaid);
-        // Close the modal and refresh the view
+        if (isPaid) {
+            closeBillForm();
+            this.handleRecordPayment(billId);
+            return;
+        }
+
+        billActionHandlers.togglePaymentStatus(billId, false);
         closeBillForm();
         this.rerender();
     }
@@ -584,6 +603,26 @@ class AppOrchestrator {
         const bill = bills.find(b => b.id === billId);
         if (!bill) return;
 
+        const strategySection = document.getElementById('monthlyStrategySection');
+        const strategyHint = document.getElementById('monthlyStrategyHint');
+        const singleCycleOption = document.getElementById('paymentStrategySingleCycle');
+
+        const missedCycles = bill.recurrence === 'Monthly'
+            ? getMissedMonthlyCycles(createLocalDate(bill.dueDate), new Date())
+            : 0;
+
+        if (bill.recurrence === 'Monthly' && missedCycles >= 2) {
+            strategySection.style.display = 'block';
+            strategyHint.textContent = `${missedCycles} months past due. Choose how to advance this recurring bill.`;
+        } else {
+            strategySection.style.display = 'none';
+            strategyHint.textContent = '';
+        }
+
+        singleCycleOption.checked = true;
+        document.getElementById('paymentBillName').textContent = bill.name;
+        document.getElementById('paymentRemainingAmount').textContent =
+            `$${billActionHandlers.getRemainingBalance(bill).toFixed(2)}`;
         document.getElementById('paymentBillId').value = billId;
         document.getElementById('paymentAmount').value = billActionHandlers
             .getRemainingBalance(bill)
@@ -591,6 +630,7 @@ class AppOrchestrator {
         document.getElementById('paymentDate').value = new Date()
             .toISOString()
             .split('T')[0];
+        document.getElementById('paymentOptionalDetails').open = false;
         document.getElementById('recordPaymentModal').style.display = 'block';
     }
 
@@ -907,19 +947,42 @@ class AppOrchestrator {
                     <h2>Record Payment</h2>
                     <form id="recordPaymentForm">
                         <input type="hidden" id="paymentBillId">
+                        <div class="payment-summary-card" aria-live="polite">
+                            <p class="payment-summary-bill">Bill: <strong id="paymentBillName">-</strong></p>
+                            <p class="payment-summary-remaining">Remaining: <strong id="paymentRemainingAmount">$0.00</strong></p>
+                        </div>
+                        <div id="monthlyStrategySection" class="payment-strategy-section" style="display:none;">
+                            <p id="monthlyStrategyHint" class="payment-strategy-hint"></p>
+                            <div class="payment-strategy-options" role="radiogroup" aria-label="Overdue monthly payment strategy">
+                                <label>
+                                    <input type="radio" id="paymentStrategySingleCycle" name="paymentRecurrenceStrategy" value="single-cycle" checked>
+                                    Clear one month only
+                                </label>
+                                <label>
+                                    <input type="radio" id="paymentStrategyCatchUp" name="paymentRecurrenceStrategy" value="catch-up-to-current">
+                                    Catch up to current month
+                                </label>
+                            </div>
+                        </div>
                         <div class="form-group"><label>Amount Paid:</label><input type="number" id="paymentAmount" step="0.01" required></div>
                         <div class="form-group"><label>Payment Date:</label><input type="date" id="paymentDate" required></div>
-                        <div class="form-group"><label>Payment Method:</label><select id="paymentMethod">
-                            <option value="Credit Card">💳 Credit Card</option>
-                            <option value="Debit Card">💳 Debit Card</option>
-                            <option value="Bank Transfer">🏦 Bank Transfer</option>
-                            <option value="Cash">💵 Cash</option>
-                            <option value="Check">📝 Check</option>
-                            <option value="PayPal">💰 PayPal</option>
-                            <option value="Venmo">💸 Venmo</option>
-                        </select></div>
-                        <div class="form-group"><label>Confirmation # (Optional):</label><input type="text" id="paymentConfirmation"></div>
-                        <button type="submit" class="submit-btn">💾 Record Payment</button>
+                        <div class="payment-modal-actions">
+                            <button type="button" id="quickPayFullBtn" class="submit-btn">⚡ Pay Full Today</button>
+                            <button type="submit" class="action-btn">💾 Save Payment</button>
+                        </div>
+                        <details id="paymentOptionalDetails" class="payment-optional-details">
+                            <summary>Optional details</summary>
+                            <div class="form-group"><label>Payment Method:</label><select id="paymentMethod">
+                                <option value="Credit Card">💳 Credit Card</option>
+                                <option value="Debit Card">💳 Debit Card</option>
+                                <option value="Bank Transfer">🏦 Bank Transfer</option>
+                                <option value="Cash">💵 Cash</option>
+                                <option value="Check">📝 Check</option>
+                                <option value="PayPal">💰 PayPal</option>
+                                <option value="Venmo">💸 Venmo</option>
+                            </select></div>
+                            <div class="form-group"><label>Confirmation # (Optional):</label><input type="text" id="paymentConfirmation"></div>
+                        </details>
                     </form>
                 </div>
             </div>
@@ -935,6 +998,33 @@ class AppOrchestrator {
             document.getElementById('viewHistoryModal').style.display = 'none';
         });
 
+        const submitPayment = (billId, paymentData) => {
+            if (billActionHandlers.recordPayment(billId, paymentData)) {
+                document.getElementById('recordPaymentModal').style.display = 'none';
+                document.getElementById('recordPaymentForm').reset();
+                this.rerender();
+            }
+        };
+
+        document.getElementById('quickPayFullBtn').addEventListener('click', () => {
+            const billId = document.getElementById('paymentBillId').value;
+            const amount = document.getElementById('paymentAmount').value;
+            const date = document.getElementById('paymentDate').value;
+            const method = document.getElementById('paymentMethod').value;
+            const confirmationNumber = document.getElementById('paymentConfirmation').value;
+            const recurrenceStrategy =
+                document.querySelector('input[name="paymentRecurrenceStrategy"]:checked')?.value ||
+                'single-cycle';
+
+            submitPayment(billId, {
+                amount,
+                date,
+                method,
+                confirmationNumber,
+                recurrenceStrategy
+            });
+        });
+
         document.getElementById('recordPaymentForm').addEventListener('submit', e => {
             e.preventDefault();
             const billId = document.getElementById('paymentBillId').value;
@@ -942,14 +1032,13 @@ class AppOrchestrator {
                 amount: document.getElementById('paymentAmount').value,
                 date: document.getElementById('paymentDate').value,
                 method: document.getElementById('paymentMethod').value,
-                confirmationNumber: document.getElementById('paymentConfirmation').value
+                confirmationNumber: document.getElementById('paymentConfirmation').value,
+                recurrenceStrategy:
+                    document.querySelector('input[name="paymentRecurrenceStrategy"]:checked')?.value ||
+                    'single-cycle'
             };
 
-            if (billActionHandlers.recordPayment(billId, paymentData)) {
-                document.getElementById('recordPaymentModal').style.display = 'none';
-                document.getElementById('recordPaymentForm').reset();
-                this.rerender();
-            }
+            submitPayment(billId, paymentData);
         });
     }
 

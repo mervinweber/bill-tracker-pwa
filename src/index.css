@@ -177,6 +177,17 @@ h1 {
     flex-wrap: wrap;
 }
 
+.header-advanced-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.mobile-controls-toggle {
+    display: none;
+}
+
 .pay-period-group {
     display: flex;
     align-items: center;
@@ -655,6 +666,22 @@ main {
     filter: brightness(1.2);
 }
 
+.more-btn {
+    font-size: 22px;
+    color: var(--text-secondary);
+}
+
+.mobile-secondary-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.mobile-secondary-actions[hidden] {
+    display: none;
+}
+
 #billForm,
 .modal-overlay {
     display: none;
@@ -742,6 +769,90 @@ main {
     border-color: var(--primary-color);
     outline: none;
     box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+.payment-summary-card {
+    background-color: var(--table-stripe);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 14px;
+}
+
+.payment-summary-card p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.payment-summary-card p + p {
+    margin-top: 6px;
+}
+
+.payment-strategy-section {
+    background-color: var(--table-stripe);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+.payment-strategy-hint {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.payment-strategy-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.payment-strategy-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.payment-strategy-options input[type="radio"] {
+    width: auto;
+}
+
+.payment-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+
+.payment-modal-actions button {
+    flex: 1;
+}
+
+.payment-modal-actions .action-btn {
+    margin-bottom: 0;
+}
+
+.payment-optional-details {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-top: 8px;
+}
+
+.payment-optional-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.payment-optional-details[open] summary {
+    margin-bottom: 12px;
 }
 
 .form-grid {
@@ -985,6 +1096,34 @@ input:checked+.slider:before {
         align-items: stretch;
     }
 
+    .header-controls {
+        width: 100%;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .mobile-controls-toggle {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .header-advanced-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .header-advanced-controls .display-mode-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .header-advanced-controls .display-mode-controls .view-btn {
+        flex: 1;
+    }
+
     .view-controls {
         flex-direction: column;
         align-items: stretch;
@@ -992,6 +1131,55 @@ input:checked+.slider:before {
 
     .pay-period-select {
         width: 100%;
+    }
+
+    .action-buttons {
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .icon-btn {
+        min-width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+
+    .mobile-secondary-actions .icon-btn {
+        min-width: 42px;
+        height: 42px;
+    }
+
+    .bill-table {
+        font-size: 13px;
+    }
+
+    .bill-table th,
+    .bill-table td {
+        padding: 8px;
+    }
+
+    .bill-table .col-category,
+    .bill-table .col-last-payment,
+    .bill-table .col-notes,
+    .bill-table .col-recurrence,
+    .bill-table .col-reminders {
+        display: none;
+    }
+
+    .bill-table .col-name {
+        min-width: 140px;
+    }
+
+    .bill-table .col-actions {
+        min-width: 112px;
+    }
+
+    .payment-modal-actions {
+        flex-direction: column;
+    }
+
+    .payment-strategy-options label {
+        align-items: flex-start;
     }
 }
 

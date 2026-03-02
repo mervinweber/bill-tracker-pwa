@@ -54,6 +54,12 @@ test('Header: Payment filter dropdown event listener is attached', () => {
     if (!headerContent.includes("actions.onFilterChange")) throw new Error('Missing action handler');
 });
 
+test('Header: Mobile controls toggle is wired for progressive disclosure', () => {
+    if (!headerContent.includes('mobileControlsToggle')) throw new Error('Missing mobile controls toggle');
+    if (!headerContent.includes("mobileControlsToggle.addEventListener('click'")) throw new Error('Missing mobile toggle listener');
+    if (!headerContent.includes('headerAdvancedControls')) throw new Error('Missing advanced controls container');
+});
+
 test('Header: updateHeaderUI function exists and handles modes', () => {
     if (!headerContent.includes("export const updateHeaderUI")) throw new Error('Missing updateHeaderUI export');
     if (!headerContent.includes("viewMode === 'all'")) throw new Error('Missing view mode check');
@@ -151,6 +157,12 @@ test('Bill Grid: Gesture and keyboard cleanup functions are tracked', () => {
     if (!billGridContent.includes('cleanupSwipeDelete')) throw new Error('Missing swipe cleanup registration');
 });
 
+test('Bill Grid: Mobile compact action disclosure is present', () => {
+    if (!billGridContent.includes('useCompactMobileActions')) throw new Error('Missing compact mobile action detection');
+    if (!billGridContent.includes('mobile-secondary-actions')) throw new Error('Missing secondary action container');
+    if (!billGridContent.includes('moreBtn')) throw new Error('Missing More actions toggle button');
+});
+
 test('Bill Grid: Edit button listeners are attached', () => {
     if (!billGridContent.includes("editBtn.addEventListener('click'")) throw new Error('Missing edit button listener');
 });
@@ -178,6 +190,14 @@ test('Bill Grid: Payment status filtering works', () => {
 test('Bill Grid: All bills view is rendered correctly', () => {
     if (!billGridContent.includes("viewMode === 'all'")) throw new Error('Missing all mode check');
     if (!billGridContent.includes("viewMode === 'all' ? '<th")) throw new Error('Missing category column in all mode');
+});
+
+test('Bill Grid: Responsive column classes are present for mobile prioritization', () => {
+    if (!billGridContent.includes('col-name')) throw new Error('Missing name column class');
+    if (!billGridContent.includes('col-due-date')) throw new Error('Missing due-date column class');
+    if (!billGridContent.includes('col-amount-due')) throw new Error('Missing amount-due column class');
+    if (!billGridContent.includes('col-actions')) throw new Error('Missing actions column class');
+    if (!billGridContent.includes('col-last-payment')) throw new Error('Missing last payment column class');
 });
 
 // ============ BILL FORM TESTS ============

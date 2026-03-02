@@ -73,6 +73,12 @@ test('All Bills button has aria-pressed attribute', () => {
     if (!headerContent.includes('aria-pressed=')) throw new Error('Missing aria-pressed attribute');
 });
 
+test('Mobile controls toggle has ARIA disclosure attributes', () => {
+    if (!headerContent.includes('id="mobileControlsToggle"')) throw new Error('Missing mobile controls toggle');
+    if (!headerContent.includes('aria-expanded="false"')) throw new Error('Missing aria-expanded on mobile toggle');
+    if (!headerContent.includes('aria-controls="headerAdvancedControls"')) throw new Error('Missing aria-controls on mobile toggle');
+});
+
 // 5. Sidebar navigation has proper role
 test('Sidebar navigation has proper role', () => {
     if (!sidebarContent.includes("setAttribute('role', 'navigation')")) throw new Error('Missing navigation role');

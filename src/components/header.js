@@ -33,30 +33,42 @@ export const initializeHeader = (paychecks, actions) => {
                     <span id="payPeriodHelp" class="sr-only">Choose when to view bills due between this paycheck and the next</span>
                 </div>
                 
-                <div class="display-mode-controls" style="display: flex; gap: 5px; background: rgba(0,0,0,0.1); padding: 4px; border-radius: 8px;">
-                    <button id="listViewBtn" class="view-btn active" title="List View">📋 List</button>
-                    <button id="calendarViewBtn" class="view-btn" title="Calendar View">📅 Calendar</button>
-                    <button id="analyticsViewBtn" class="view-btn" title="Analytics View">📊 Analytics</button>
-                </div>
-
                 <div class="view-controls">
                     <button id="allBillsBtn" class="view-btn" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="paymentFilter" class="control-label">Filter:</label>
-                    <select id="paymentFilter" class="payment-filter-dropdown" aria-label="Filter bills by payment status">
-                        <option value="all">All</option>
-                        <option value="unpaid">Unpaid</option>
-                        <option value="paid">Paid</option>
-                    </select>
-                </div>
 
-                <div class="toggle-group" style="display: flex; align-items: center; gap: 8px;">
-                    <label class="switch-container" style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 500;">
-                        <input type="checkbox" id="carriedForwardToggle" checked style="margin-right: 5px;">
-                        <span>Show Overdue</span>
-                    </label>
+                <button
+                    id="mobileControlsToggle"
+                    class="view-btn mobile-controls-toggle"
+                    aria-label="Show advanced filters"
+                    aria-expanded="false"
+                    aria-controls="headerAdvancedControls"
+                >
+                    ⚙️ More
+                </button>
+
+                <div id="headerAdvancedControls" class="header-advanced-controls">
+                    <div class="display-mode-controls mobile-advanced-control" style="display: flex; gap: 5px; background: rgba(0,0,0,0.1); padding: 4px; border-radius: 8px;">
+                        <button id="listViewBtn" class="view-btn active" title="List View">📋 List</button>
+                        <button id="calendarViewBtn" class="view-btn" title="Calendar View">📅 Calendar</button>
+                        <button id="analyticsViewBtn" class="view-btn" title="Analytics View">📊 Analytics</button>
+                    </div>
+
+                    <div class="filter-group mobile-advanced-control">
+                        <label for="paymentFilter" class="control-label">Filter:</label>
+                        <select id="paymentFilter" class="payment-filter-dropdown" aria-label="Filter bills by payment status">
+                            <option value="all">All</option>
+                            <option value="unpaid">Unpaid</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+
+                    <div class="toggle-group mobile-advanced-control" style="display: flex; align-items: center; gap: 8px;">
+                        <label class="switch-container" style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 500;">
+                            <input type="checkbox" id="carriedForwardToggle" checked style="margin-right: 5px;">
+                            <span>Show Overdue</span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -68,6 +80,43 @@ export const initializeHeader = (paychecks, actions) => {
     const listViewBtn = document.getElementById('listViewBtn');
     const calendarViewBtn = document.getElementById('calendarViewBtn');
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
+    const headerControls = document.querySelector('.header-controls');
+    const mobileControlsToggle = document.getElementById('mobileControlsToggle');
+    const headerAdvancedControls = document.getElementById('headerAdvancedControls');
+
+    let mobileControlsExpanded = false;
+
+    const applyMobileControlsState = () => {
+        const isMobile = window.innerWidth <= 768;
+
+        if (!isMobile) {
+            mobileControlsToggle.setAttribute('aria-expanded', 'true');
+            mobileControlsToggle.setAttribute('aria-label', 'Advanced filters shown');
+            mobileControlsToggle.textContent = '⚙️ More';
+            headerControls.classList.remove('mobile-controls-collapsed');
+            headerControls.classList.remove('mobile-controls-expanded');
+            headerAdvancedControls.hidden = false;
+            return;
+        }
+
+        headerControls.classList.toggle('mobile-controls-expanded', mobileControlsExpanded);
+        headerControls.classList.toggle('mobile-controls-collapsed', !mobileControlsExpanded);
+        headerAdvancedControls.hidden = !mobileControlsExpanded;
+        mobileControlsToggle.setAttribute('aria-expanded', mobileControlsExpanded ? 'true' : 'false');
+        mobileControlsToggle.setAttribute(
+            'aria-label',
+            mobileControlsExpanded ? 'Hide advanced filters' : 'Show advanced filters'
+        );
+        mobileControlsToggle.textContent = mobileControlsExpanded ? '⚙️ Hide' : '⚙️ More';
+    };
+
+    mobileControlsToggle.addEventListener('click', () => {
+        mobileControlsExpanded = !mobileControlsExpanded;
+        applyMobileControlsState();
+    });
+
+    window.addEventListener('resize', applyMobileControlsState);
+    applyMobileControlsState();
 
     payPeriodSelect.addEventListener('change', (e) => {
         allBillsBtn.classList.remove('active');
