@@ -74,6 +74,17 @@ test('should compare all payment schedule fields when deciding if validation is 
     );
 });
 
+test('should not treat paycheck amount-only edits as payment schedule changes', () => {
+    assert(
+        settingsHandlerContent.includes('amount'),
+        'settings handler should include paycheck amount in saved settings'
+    );
+    assert(
+        !settingsHelpersContent.includes('existingAmount !== newAmount'),
+        'amount comparison should not be part of schedule-change detection'
+    );
+});
+
 test('should only validate payment settings inside the changed-settings branch', () => {
     const handleSettingsSaveMatch = settingsHandlerContent.match(
         /async function handleSettingsSave\(e, modal\) \{[\s\S]*?\n\}/

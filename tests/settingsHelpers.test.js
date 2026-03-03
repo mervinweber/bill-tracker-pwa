@@ -42,7 +42,7 @@ test('should return true when any schedule field changes', () => {
     assert(hasPaymentScheduleChanged(existing, { ...existing, payPeriodsToShow: 8 }), 'payPeriods change should return true');
 });
 
-test('should detect paycheck amount changes', () => {
+test('should ignore paycheck amount-only changes for schedule detection', () => {
     const existing = {
         startDate: '2026-03-01',
         frequency: 'bi-weekly',
@@ -51,8 +51,8 @@ test('should detect paycheck amount changes', () => {
     };
 
     assert(!hasPaymentScheduleChanged(existing, { ...existing, amount: 2500 }), 'same amount should return false');
-    assert(hasPaymentScheduleChanged(existing, { ...existing, amount: 2600 }), 'amount change should return true');
-    assert(hasPaymentScheduleChanged(existing, { ...existing, amount: null }), 'removing amount should return true');
+    assert(!hasPaymentScheduleChanged(existing, { ...existing, amount: 2600 }), 'amount-only change should return false');
+    assert(!hasPaymentScheduleChanged(existing, { ...existing, amount: null }), 'removing amount-only should return false');
 });
 
 console.log(`\n📊 Settings Helpers Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
