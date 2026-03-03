@@ -228,6 +228,12 @@ h1 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.view-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .settings-btn {
     padding: 8px 12px;
     background-color: var(--primary-color);
@@ -547,6 +553,136 @@ main {
     border-radius: 8px;
     box-shadow: 0 2px 8px var(--shadow-color);
     border: 1px solid var(--border-color);
+}
+
+.upcoming-bills-container {
+    display: none;
+}
+
+.upcoming-bills-shell {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+
+.upcoming-bills-header {
+    margin-bottom: 16px;
+}
+
+.upcoming-bills-header h2 {
+    color: var(--primary-color);
+    margin-bottom: 6px;
+}
+
+.dark-mode .upcoming-bills-header h2 {
+    color: var(--accent-color);
+}
+
+.upcoming-bills-header p {
+    color: var(--text-secondary);
+}
+
+.upcoming-bills-list {
+    display: grid;
+    gap: 12px;
+}
+
+.upcoming-bill-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: start;
+    background: var(--table-stripe);
+}
+
+.upcoming-bill-main h3 {
+    margin: 0 0 6px;
+    color: var(--text-color);
+}
+
+.upcoming-bill-meta {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.upcoming-bill-amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.upcoming-bill-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.upcoming-date-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.upcoming-date-input {
+    padding: 8px 10px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+}
+
+.upcoming-total-footer {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.upcoming-total-footer strong {
+    font-size: 1.15rem;
+    color: var(--primary-color);
+}
+
+.upcoming-coverage-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.upcoming-coverage-row strong {
+    font-size: 1.05rem;
+}
+
+.upcoming-coverage-row.covered strong {
+    color: var(--success-color);
+}
+
+.upcoming-coverage-row.short strong {
+    color: var(--danger-color);
+}
+
+.upcoming-coverage-row.unconfigured strong {
+    color: var(--text-secondary);
+}
+
+.upcoming-empty-state {
+    padding: 16px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    background: var(--table-stripe);
 }
 
 .bill-table {
@@ -1127,6 +1263,24 @@ input:checked+.slider:before {
     .view-controls {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .upcoming-bill-card {
+        grid-template-columns: 1fr;
+    }
+
+    .upcoming-bill-amount {
+        font-size: 1rem;
+    }
+
+    .upcoming-bill-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .upcoming-date-input,
+    .upcoming-bill-actions .view-btn {
+        width: 100%;
     }
 
     .pay-period-select {

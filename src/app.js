@@ -21,6 +21,7 @@ import { initializeAuthModal, openAuthModal, closeAuthModal, setAuthMessage } fr
 
 import { initializeCalendarView, renderCalendar } from './views/calendarView.js';
 import { initializeAnalyticsView, renderAnalytics, cleanupCharts } from './views/analyticsView.js';
+import { initializeUpcomingBillsView, renderUpcomingBills } from './views/upcomingBillsView.js';
 
 import {
     billActionHandlers,
@@ -104,12 +105,14 @@ class AppOrchestrator {
             // Initialize all views
             initializeCalendarView();
             initializeAnalyticsView();
+            initializeUpcomingBillsView();
 
             // Initialize components with callbacks
             initializeHeader(paycheckLabels, {
                 onPaycheckSelect: (index) => this.handlePaycheckSelect(index),
                 onFilterChange: (filter) => this.handleFilterChange(filter),
                 onAllBillsSelect: () => this.handleAllBillsSelect(),
+                onUpcomingBillsSelect: () => this.handleUpcomingBillsSelect(),
                 onToggleTheme: () => this.handleToggleTheme(),
                 onShowSettings: () => this.handleShowSettings(),
                 onDisplayModeSelect: (mode) => this.handleDisplayModeSelect(mode),
@@ -344,12 +347,14 @@ class AppOrchestrator {
             const billGrid = document.getElementById('billGrid');
             const calendarView = document.getElementById('calendarView');
             const analyticsView = document.getElementById('analyticsView');
+            const upcomingBillsView = document.getElementById('upcomingBillsView');
 
             // Hide all views first
             const dashboard = document.getElementById('dashboard');
             if (billGrid) billGrid.style.display = 'none';
             if (calendarView) calendarView.style.display = 'none';
             if (analyticsView) analyticsView.style.display = 'none';
+            if (upcomingBillsView) upcomingBillsView.style.display = 'none';
             if (dashboard) dashboard.style.display = 'none';
 
             if (state.displayMode === 'calendar') {
@@ -365,34 +370,46 @@ class AppOrchestrator {
                 });
             } else {
                 // List view (default)
-                if (billGrid) billGrid.style.display = 'block';
-                if (dashboard) dashboard.style.display = 'block';
+                if (state.viewMode === 'upcoming') {
+                    if (upcomingBillsView) upcomingBillsView.style.display = 'block';
+                    renderUpcomingBills(
+                        { bills },
+                        {
+                            onTogglePayment: (billId, isPaid) => this.handleTogglePayment(billId, isPaid),
+                            onEditBill: (billId) => this.handleEditBill(billId),
+                            onUpdateDueDate: (billId, dueDate) => this.handleUpdateDueDate(billId, dueDate),
+                            paycheckAmount: paycheckManager.paymentSettings?.amount
+                        }
+                    );
+                } else {
+                    if (billGrid) billGrid.style.display = 'block';
+                    if (dashboard) dashboard.style.display = 'block';
 
-                // Render dashboard
-                renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward);
+                    renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward);
 
-                renderBillGrid(
-                    {
-                        bills,
-                        viewMode: state.viewMode,
-                        selectedPaycheck: state.selectedPaycheck,
-                        selectedCategory: state.selectedCategory,
-                        paymentFilter: state.paymentFilter,
-                        showCarriedForward: state.showCarriedForward,
-                        payCheckDates: paycheckManager.payCheckDates
-                    },
-                    {
-                        onUpdateBalance: (billId, balance) =>
-                            this.handleUpdateBalance(billId, balance),
-                        onTogglePayment: (billId, isPaid) =>
-                            this.handleTogglePayment(billId, isPaid),
-                        onRecordPayment: (billId) => this.handleRecordPayment(billId),
-                        onViewHistory: (billId) => this.handleViewHistory(billId),
-                        onDeleteBill: (billId) => this.handleDeleteBill(billId),
-                        onEditBill: (billId) => this.handleEditBill(billId),
-                        onToggleReminder: (billId, enabled) => this.handleToggleReminder(billId, enabled)
-                    }
-                );
+                    renderBillGrid(
+                        {
+                            bills,
+                            viewMode: state.viewMode,
+                            selectedPaycheck: state.selectedPaycheck,
+                            selectedCategory: state.selectedCategory,
+                            paymentFilter: state.paymentFilter,
+                            showCarriedForward: state.showCarriedForward,
+                            payCheckDates: paycheckManager.payCheckDates
+                        },
+                        {
+                            onUpdateBalance: (billId, balance) =>
+                                this.handleUpdateBalance(billId, balance),
+                            onTogglePayment: (billId, isPaid) =>
+                                this.handleTogglePayment(billId, isPaid),
+                            onRecordPayment: (billId) => this.handleRecordPayment(billId),
+                            onViewHistory: (billId) => this.handleViewHistory(billId),
+                            onDeleteBill: (billId) => this.handleDeleteBill(billId),
+                            onEditBill: (billId) => this.handleEditBill(billId),
+                            onToggleReminder: (billId, enabled) => this.handleToggleReminder(billId, enabled)
+                        }
+                    );
+                }
             }
         } catch (error) {
             logger.error('Error re-rendering', error);
@@ -424,6 +441,11 @@ class AppOrchestrator {
         appState.setViewMode('all');
         // Reset calendar to today's month when viewing all bills
         appState.setCurrentCalendarDate(new Date());
+    }
+
+    handleUpcomingBillsSelect() {
+        appState.setViewMode('upcoming');
+        appState.setDisplayMode('list');
     }
 
     handleCategorySelect(category) {
@@ -536,6 +558,39 @@ class AppOrchestrator {
 
     handleUpdateBalance(billId, newBalance) {
         billActionHandlers.updateBillBalance(billId, newBalance);
+    }
+
+    handleUpdateDueDate(billId, newDueDate) {
+        try {
+            const bills = billStore.getAll();
+            const bill = bills.find((existingBill) => existingBill.id === billId);
+            if (!bill) return;
+
+            if (!newDueDate || Number.isNaN(new Date(newDueDate).getTime())) {
+                billActionHandlers.showErrorNotification('Please provide a valid due date.', 'Invalid Date');
+                return;
+            }
+
+            billStore.update({
+                ...bill,
+                dueDate: newDueDate
+            });
+
+            recordAuditEvent('bill.due_date.updated', {
+                entityType: 'bill',
+                entityId: billId,
+                summary: `Due date updated for ${bill.name}`,
+                metadata: {
+                    previousDueDate: bill.dueDate,
+                    newDueDate
+                }
+            });
+
+            billActionHandlers.showSuccessNotification(`Updated due date for "${bill.name}"`);
+        } catch (error) {
+            logger.error('Error updating due date', error);
+            billActionHandlers.showErrorNotification(error.message, 'Due Date Update Failed');
+        }
     }
 
     handleTogglePayment(billId, isPaid) {

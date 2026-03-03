@@ -5,7 +5,7 @@
  * Manages:
  * - selectedPaycheck: Current paycheck index for filtering
  * - selectedCategory: Current category filter
- * - viewMode: 'filtered' (paycheck+category view) or 'all' (all bills)
+ * - viewMode: 'filtered' (paycheck+category view), 'all' (all bills), or 'upcoming'
  * - displayMode: 'list', 'calendar', or 'analytics'
  * - paymentFilter: 'all', 'paid', or 'unpaid'
  * - isLoading: Loading state for async operations
@@ -26,7 +26,7 @@ class AppState {
         this.state = {
             selectedPaycheck: null,
             selectedCategory: null,
-            viewMode: 'filtered', // 'filtered' or 'all'
+            viewMode: 'filtered', // 'filtered', 'all', or 'upcoming'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
             paymentFilter: 'all', // 'all', 'unpaid', 'paid'
             showCarriedForward: true,
@@ -113,12 +113,12 @@ class AppState {
     /**
      * Set view mode (filtered or all bills)
      * 
-     * @param {string} mode - View mode: 'filtered' or 'all'
+     * @param {string} mode - View mode: 'filtered', 'all', or 'upcoming'
      * @returns {void}
      * @description Updates viewMode and notifies subscribers
      */
     setViewMode(mode) {
-        this.state.viewMode = mode; // 'filtered' or 'all'
+        this.state.viewMode = mode; // 'filtered', 'all', or 'upcoming'
         this.notifySubscribers();
     }
 

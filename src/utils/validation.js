@@ -334,11 +334,13 @@ export function validateRecurrence(recurrence) {
  * - startDate: When paycheck cycle begins (YYYY-MM-DD format)
  * - frequency: Paycheck frequency (weekly, bi-weekly, monthly)
  * - payPeriodsToShow: Number of upcoming paychecks to display and filter
+ * - amount: Optional paycheck amount used for coverage calculations
  * 
  * @param {Object} settings - Payment settings object to validate
  * @param {string} settings.startDate - Start date in YYYY-MM-DD format
  * @param {string} settings.frequency - Frequency type (weekly, bi-weekly, monthly)
  * @param {number} settings.payPeriodsToShow - Number of periods to show (positive integer)
+ * @param {number|null} [settings.amount] - Optional paycheck amount (0 or greater)
  * @returns {Object} Validation result with isValid and errors array
  * 
  * @example
@@ -432,6 +434,20 @@ export function validatePaymentSettings(settings) {
         errors.push('Pay periods to show must be a positive integer');
     } else if (settings.payPeriodsToShow > 52) {
         errors.push('Pay periods to show cannot exceed 52');
+    }
+
+    // Validate optional paycheck amount
+    if (settings.amount !== undefined && settings.amount !== null && settings.amount !== '') {
+        if (typeof settings.amount !== 'number' || Number.isNaN(settings.amount)) {
+            errors.push('Paycheck amount must be a valid number');
+        } else if (settings.amount < 0) {
+            errors.push('Paycheck amount must be 0 or greater');
+        } else {
+            const decimals = settings.amount.toString().split('.')[1];
+            if (decimals && decimals.length > 2) {
+                errors.push('Paycheck amount can have at most 2 decimal places');
+            }
+        }
     }
 
     return {

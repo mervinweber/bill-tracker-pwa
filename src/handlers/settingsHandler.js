@@ -78,6 +78,11 @@ export function showSettingsModal(categoriesList) {
                     <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label><strong>Paycheck Amount (optional):</strong></label>
+                <input type="number" id="settingsAmount" min="0" step="0.01" value="${typeof settings.amount === 'number' ? settings.amount : ''}" placeholder="e.g. 2500">
+                <small style="display:block; margin-top: 6px; color: #666;">Used for upcoming bill coverage calculations.</small>
+            </div>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
             <h3>Reminders</h3>
             <div class="form-group">
@@ -664,6 +669,8 @@ async function handleSettingsSave(e, modal) {
         const startDate = document.getElementById('settingsStartDate').value;
         const frequency = document.getElementById('settingsFrequency').value;
         const weeks = parseInt(document.getElementById('settingsWeeks').value);
+        const amountInput = document.getElementById('settingsAmount').value;
+        const amount = amountInput !== '' ? parseFloat(amountInput) : null;
         const notificationsEnabledInput = document.getElementById('settingsNotificationsEnabled');
         const reminderDaysInput = document.getElementById('settingsReminderDays');
 
@@ -674,10 +681,15 @@ async function handleSettingsSave(e, modal) {
             throw new Error('Start date is required');
         }
 
+        if (amountInput !== '' && (!Number.isFinite(amount) || amount < 0)) {
+            throw new Error('Paycheck amount must be 0 or greater');
+        }
+
         const newSettings = {
             startDate,
             frequency,
-            payPeriodsToShow: weeks
+            payPeriodsToShow: weeks,
+            amount
         };
 
         const paymentSettingsChanged = hasPaymentScheduleChanged(existingSettings, newSettings);
@@ -725,6 +737,7 @@ async function handleSettingsSave(e, modal) {
                 paymentSettingsChanged,
                 frequency: newSettings.frequency,
                 payPeriodsToShow: newSettings.payPeriodsToShow,
+                amount: newSettings.amount,
                 notificationsEnabled,
                 reminderDays: Number.isNaN(reminderDays) ? 1 : reminderDays
             }

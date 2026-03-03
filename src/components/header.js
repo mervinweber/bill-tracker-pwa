@@ -35,6 +35,7 @@ export const initializeHeader = (paychecks, actions) => {
                 
                 <div class="view-controls">
                     <button id="allBillsBtn" class="view-btn" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
+                    <button id="upcomingBillsBtn" class="view-btn" aria-label="View upcoming bills" aria-pressed="false">📅 Upcoming</button>
                 </div>
 
                 <button
@@ -76,6 +77,7 @@ export const initializeHeader = (paychecks, actions) => {
 
     const payPeriodSelect = document.getElementById('payPeriodSelect');
     const allBillsBtn = document.getElementById('allBillsBtn');
+    const upcomingBillsBtn = document.getElementById('upcomingBillsBtn');
     const headerStatus = document.getElementById('headerStatus');
     const listViewBtn = document.getElementById('listViewBtn');
     const calendarViewBtn = document.getElementById('calendarViewBtn');
@@ -121,6 +123,8 @@ export const initializeHeader = (paychecks, actions) => {
     payPeriodSelect.addEventListener('change', (e) => {
         allBillsBtn.classList.remove('active');
         allBillsBtn.setAttribute('aria-pressed', 'false');
+        upcomingBillsBtn.classList.remove('active');
+        upcomingBillsBtn.setAttribute('aria-pressed', 'false');
         const selectedText = e.target.options[e.target.selectedIndex].text;
         headerStatus.textContent = `Viewing bills for: ${selectedText}`;
         actions.onPaycheckSelect(parseInt(e.target.value));
@@ -129,9 +133,21 @@ export const initializeHeader = (paychecks, actions) => {
     allBillsBtn.addEventListener('click', () => {
         allBillsBtn.classList.add('active');
         allBillsBtn.setAttribute('aria-pressed', 'true');
+        upcomingBillsBtn.classList.remove('active');
+        upcomingBillsBtn.setAttribute('aria-pressed', 'false');
         payPeriodSelect.value = '';
         headerStatus.textContent = 'Viewing all bills';
         actions.onAllBillsSelect();
+    });
+
+    upcomingBillsBtn.addEventListener('click', () => {
+        upcomingBillsBtn.classList.add('active');
+        upcomingBillsBtn.setAttribute('aria-pressed', 'true');
+        allBillsBtn.classList.remove('active');
+        allBillsBtn.setAttribute('aria-pressed', 'false');
+        payPeriodSelect.value = '';
+        headerStatus.textContent = 'Viewing upcoming bills';
+        actions.onUpcomingBillsSelect();
     });
 
     document.getElementById('paymentFilter').addEventListener('change', (e) => {
@@ -178,6 +194,7 @@ export const initializeHeader = (paychecks, actions) => {
 export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward) => {
     const payPeriodSelect = document.getElementById('payPeriodSelect');
     const allBillsBtn = document.getElementById('allBillsBtn');
+    const upcomingBillsBtn = document.getElementById('upcomingBillsBtn');
     const listViewBtn = document.getElementById('listViewBtn');
     const calendarViewBtn = document.getElementById('calendarViewBtn');
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
@@ -186,9 +203,24 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
     if (viewMode === 'all') {
         allBillsBtn.classList.add('active');
         allBillsBtn.setAttribute('aria-pressed', 'true');
+        if (upcomingBillsBtn) {
+            upcomingBillsBtn.classList.remove('active');
+            upcomingBillsBtn.setAttribute('aria-pressed', 'false');
+        }
+    } else if (viewMode === 'upcoming') {
+        allBillsBtn.classList.remove('active');
+        allBillsBtn.setAttribute('aria-pressed', 'false');
+        if (upcomingBillsBtn) {
+            upcomingBillsBtn.classList.add('active');
+            upcomingBillsBtn.setAttribute('aria-pressed', 'true');
+        }
     } else {
         allBillsBtn.classList.remove('active');
         allBillsBtn.setAttribute('aria-pressed', 'false');
+        if (upcomingBillsBtn) {
+            upcomingBillsBtn.classList.remove('active');
+            upcomingBillsBtn.setAttribute('aria-pressed', 'false');
+        }
         if (payPeriodSelect && selectedPaycheck !== null) {
             payPeriodSelect.value = selectedPaycheck;
         }

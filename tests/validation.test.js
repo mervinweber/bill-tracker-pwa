@@ -524,6 +524,41 @@ test('validatePaymentSettings: should accept payPeriodsToShow of 52', () => {
     assert(result.isValid, 'Should accept 52 periods');
 });
 
+test('validatePaymentSettings: should accept valid paycheck amount', () => {
+    const settings = {
+        startDate: getFutureDateString(14),
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6,
+        amount: 2500.75
+    };
+    const result = validatePaymentSettings(settings);
+    assert(result.isValid, 'Should accept valid paycheck amount');
+});
+
+test('validatePaymentSettings: should reject negative paycheck amount', () => {
+    const settings = {
+        startDate: getFutureDateString(14),
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6,
+        amount: -10
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject negative paycheck amount');
+    assert(result.errors.some(e => e.includes('Paycheck amount')), 'Should mention paycheck amount error');
+});
+
+test('validatePaymentSettings: should reject paycheck amount with too many decimals', () => {
+    const settings = {
+        startDate: getFutureDateString(14),
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 6,
+        amount: 2500.123
+    };
+    const result = validatePaymentSettings(settings);
+    assert(!result.isValid, 'Should reject paycheck amount with too many decimals');
+    assert(result.errors.some(e => e.includes('decimal places')), 'Should mention decimal place error');
+});
+
 test('validatePaymentSettings: should reject non-object input', () => {
     const result = validatePaymentSettings(null);
     assert(!result.isValid, 'Should reject null');
