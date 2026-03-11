@@ -1,6 +1,45 @@
 # Release Notes
 
 ## Release Date
+- 2026-03-04
+
+## Scope
+This release adds the new Upcoming Bills experience, introduces optional paycheck amount tracking for coverage insight, and fixes a settings-save regression for amount-only edits when legacy paycheck dates are in the past.
+
+## Customer-Facing Summary
+BillTracker now includes a dedicated Upcoming tab with cleaner at-a-glance bill cards, inline actions, total upcoming due, and a paycheck coverage indicator. You can also save an optional paycheck amount in setup/settings to power coverage feedback. A regression fix ensures amount-only edits save correctly without incorrectly triggering schedule-date validation.
+
+## Included PRs
+
+### PR #19 — Paycheck Amount Save Regression Fix + Regression Guard
+- URL: https://github.com/mervinweber/bill-tracker-pwa/pull/19
+- Key changes:
+  - Fixed schedule-change detection to exclude paycheck amount-only edits
+  - Added regression test coverage to prevent reintroduction
+
+### Main Branch Feature Commit — Upcoming Bills + Coverage + Amount Input
+- Commit: 4882cd5
+- Key changes:
+  - Added dedicated Upcoming Bills tab and rendering flow
+  - Added inline mark-paid, update-due-date, and edit actions in Upcoming view
+  - Added total upcoming due summary and paycheck coverage indicator
+  - Added optional paycheck amount field in setup and settings
+
+## Validation Summary
+- Full test suite passes
+- Production build passes
+- Service worker cache manifest validation passes
+- Runtime dependency audit (`npm audit --omit=dev`) reports 0 vulnerabilities
+- Local dev server smoke check returns HTTP 200 and valid app shell on `http://127.0.0.1:4173/`
+
+## Recommended Post-Release Checks
+- Manual UI pass for Upcoming tab on desktop + mobile viewport
+- Manual confirmation of amount-only settings save with legacy past paycheck start date
+- Quick sanity pass on inline Upcoming actions (Mark Paid, Update Date, Edit)
+
+---
+
+## Release Date
 - 2026-03-02
 
 ## Scope

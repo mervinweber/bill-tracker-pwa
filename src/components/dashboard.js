@@ -93,41 +93,56 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         return dueDate < today && !b.isPaid;
     });
 
+    dashboard.className = "px-4 pt-4 sm:px-6";
     dashboard.innerHTML = `
-        <div class="dashboard">
-            <div class="dashboard-card">
-                <div class="card-icon">📊</div>
-                <div class="card-content">
-                    <div class="card-value">${totalBills}</div>
-                    <div class="card-label">Total Bills</div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4 mb-4">
+            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Total Bills</span>
+                    <span class="text-sm">📋</span>
+                </div>
+                <div class="flex items-center pt-1">
+                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">${totalBills}</span>
                 </div>
             </div>
-            <div class="dashboard-card">
-                <div class="card-icon">💰</div>
-                <div class="card-content">
-                    <div class="card-value">$${totalAmountDue.toFixed(2)}</div>
-                    <div class="card-label">Total Due</div>
+            
+            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Total Due</span>
+                    <span class="text-sm">💰</span>
+                </div>
+                <div class="flex items-center pt-1">
+                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">$${totalAmountDue.toFixed(2)}</span>
                 </div>
             </div>
-            <div class="dashboard-card unpaid">
-                <div class="card-icon">⚠️</div>
-                <div class="card-content">
-                    <div class="card-value">${unpaidBills.length}</div>
-                    <div class="card-label">Unpaid</div>
+
+            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Unpaid</span>
+                    <span class="text-sm">⚠️</span>
+                </div>
+                <div class="flex items-center pt-1">
+                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">${unpaidBills.length}</span>
                 </div>
             </div>
-            <div class="dashboard-card unpaid-amount">
-                <div class="card-icon">💳</div>
-                <div class="card-content">
-                    <div class="card-value">$${totalUnpaidAmount.toFixed(2)}</div>
-                    <div class="card-label">Unpaid Amt</div>
+
+            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Unpaid Amt</span>
+                    <span class="text-sm">💳</span>
+                </div>
+                <div class="flex items-center pt-1">
+                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl text-destructive">$${totalUnpaidAmount.toFixed(2)}</span>
                 </div>
             </div>
-            <div class="dashboard-card overdue">
-                <div class="card-icon">🔴</div>
-                <div class="card-content">
-                    <div class="card-value">${overdueBills.length}</div>
-                    <div class="card-label">Overdue</div>
+
+            <div class="col-span-2 flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm sm:col-span-1 border-destructive/20 bg-destructive/5">
+                <div class="flex items-center justify-between space-y-0 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-destructive sm:text-xs">Overdue</span>
+                    <span class="text-sm">🔴</span>
+                </div>
+                <div class="flex items-center pt-1">
+                    <span class="text-xl font-bold tracking-tight text-destructive sm:text-2xl">${overdueBills.length}</span>
                 </div>
             </div>
         </div>

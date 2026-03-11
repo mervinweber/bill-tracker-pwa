@@ -43,26 +43,27 @@ export function renderCalendar() {
         ];
 
         let html = `
-            <div class="calendar-header">
-                <button id="prevMonth" class="calendar-nav-btn">&lt; Prev</button>
-                <h2>${monthNames[month]} ${year}</h2>
-                <button id="nextMonth" class="calendar-nav-btn">Next &gt;</button>
+            <div class="flex items-center justify-between mb-6 px-2">
+                <button id="prevMonth" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4">&lt; Prev</button>
+                <h2 class="text-xl font-bold tracking-tight">${monthNames[month]} ${year}</h2>
+                <button id="nextMonth" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4">Next &gt;</button>
             </div>
-            <div class="calendar-grid">
-                <div class="calendar-day-header">Sun</div>
-                <div class="calendar-day-header">Mon</div>
-                <div class="calendar-day-header">Tue</div>
-                <div class="calendar-day-header">Wed</div>
-                <div class="calendar-day-header">Thu</div>
-                <div class="calendar-day-header">Fri</div>
-                <div class="calendar-day-header">Sat</div>
+            <div class="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-muted shadow-sm shadow-black/5 ring-1 ring-muted mb-4" role="grid">
+                <div class="bg-background py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Sun</div>
+                <div class="bg-background py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Mon</div>
+                <div class="bg-background py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Tue</div>
+                <div class="bg-background py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Wed</div>
+                <div class="bg-background py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Thu</div>
+                <div class="bg-background py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Fri</div>
+                <div class="bg-background py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">Sat</div>
         `;
 
         // Previous month filler days
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = 0; i < startingDay; i++) {
-            html += `<div class="calendar-day other-month"><span class="calendar-day-number">${prevMonthLastDay - startingDay + 1 + i
-                }</span></div>`;
+            html += `<div class="bg-muted/30 p-2 min-h-[100px] text-muted-foreground/40 opacity-50 shrink-0 select-none">
+                        <span class="text-xs font-medium">${prevMonthLastDay - startingDay + 1 + i}</span>
+                     </div>`;
         }
 
         // Current month days
@@ -78,7 +79,7 @@ export function renderCalendar() {
 
             const billsDue = currentBills.filter(b => b.dueDate === dateStr);
 
-            let billsHtml = '<div class="calendar-bills">';
+            let billsHtml = '<div class="space-y-1 mt-1">';
             billsDue.forEach(b => {
                 const isPaid = b.isPaid;
                 const isOverdue =
@@ -89,25 +90,35 @@ export function renderCalendar() {
                         today.getMonth(),
                         today.getDate()
                     );
-                const statusClass = isPaid ? 'paid' : isOverdue ? 'overdue' : '';
-                billsHtml += `<div class="calendar-bill ${statusClass}" title="${b.name} - $${(
-                    b.amountDue || 0
-                ).toFixed(2)}" onclick="window.editBillGlobal('${b.id}')" style="cursor: pointer;">${b.name
-                    }</div>`;
+                const statusClasses = isPaid
+                    ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
+                    : isOverdue
+                        ? 'bg-destructive/15 text-destructive border-destructive/30'
+                        : 'bg-primary/10 text-primary border-primary/20';
+
+                billsHtml += `
+                    <div class="px-1.5 py-0.5 rounded border text-[10px] font-semibold truncate cursor-pointer transition-transform hover:scale-[1.02] ${statusClasses}" 
+                         title="${b.name} - $${(b.amountDue || 0).toFixed(2)}" 
+                         onclick="window.editBillGlobal('${b.id}')">
+                        ${b.name}
+                    </div>`;
             });
             billsHtml += '</div>';
 
-            html += `<div class="calendar-day ${isToday ? 'today' : ''}">
-                <span class="calendar-day-number">${day}</span>
-                ${billsHtml}
-            </div>`;
+            html += `
+                <div class="relative bg-background p-2 min-h-[100px] hover:bg-accent/5 transition-colors ${isToday ? 'ring-2 ring-primary ring-inset z-10' : ''}">
+                    <span class="text-xs font-bold ${isToday ? 'text-primary' : 'text-muted-foreground'}">${day}</span>
+                    ${billsHtml}
+                </div>`;
         }
 
         // Next month filler days
         const totalCells = startingDay + daysInMonth;
         const remainingCells = (7 - (totalCells % 7)) % 7;
         for (let i = 1; i <= remainingCells; i++) {
-            html += `<div class="calendar-day other-month"><span class="calendar-day-number">${i}</span></div>`;
+            html += `<div class="bg-muted/30 p-2 min-h-[100px] text-muted-foreground/40 opacity-50 shrink-0 select-none">
+                        <span class="text-xs font-medium">${i}</span>
+                     </div>`;
         }
 
         html += '</div>';
@@ -131,7 +142,11 @@ export function renderCalendar() {
         logger.error('Error rendering calendar', error);
         const calendarView = document.getElementById('calendarView');
         if (calendarView) {
-            calendarView.innerHTML = `<div style="padding: 20px; color: var(--danger-color);">Error rendering calendar: ${error.message}</div>`;
+            calendarView.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-center rounded-lg border border-destructive/50 bg-destructive/10 text-destructive">
+                    <p class="font-bold">Error rendering calendar</p>
+                    <p class="text-sm opacity-80">${error.message}</p>
+                </div>`;
         }
     }
 }
@@ -149,7 +164,7 @@ export function initializeCalendarView() {
         if (!document.getElementById('calendarView')) {
             const calendarDiv = document.createElement('div');
             calendarDiv.id = 'calendarView';
-            calendarDiv.className = 'calendar-container';
+            calendarDiv.className = 'p-4 sm:p-6 transition-all duration-300';
             main.appendChild(calendarDiv);
         }
     } catch (error) {

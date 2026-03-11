@@ -16,31 +16,37 @@
  */
 export const initializeHeader = (paychecks, actions) => {
     const header = document.getElementById('header');
+    header.className = "border-b bg-background px-4 py-3 sm:px-6";
+    const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
+    const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground`;
+    const btnOutline = `${btnBase} border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground`;
+    const inputBase = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
+
     header.innerHTML = `
-        <div class="header-top">
-            <div class="header-title">
-                <h1>💰 Bill Tracker</h1>
-                <p class="header-subtitle" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="space-y-1">
+                <h1 class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">💰 Bill Tracker</h1>
+                <p class="text-xs text-muted-foreground sm:text-sm" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>
             </div>
             
-            <div class="header-controls">
-                <div class="pay-period-group">
-                    <label for="payPeriodSelect" class="control-label">Pay Period:</label>
-                    <select id="payPeriodSelect" class="pay-period-select" aria-label="Select pay period" aria-describedby="payPeriodHelp">
+            <div class="header-controls flex flex-wrap items-center gap-3 sm:gap-4">
+                <div class="flex items-center gap-2">
+                    <label for="payPeriodSelect" class="text-xs font-medium text-foreground sm:text-sm">Pay Period:</label>
+                    <select id="payPeriodSelect" class="${inputBase} h-8 w-auto min-w-[180px] sm:h-9" aria-label="Select pay period" aria-describedby="payPeriodHelp">
                         <option value="">-- Choose a pay period --</option>
                         ${paychecks.map((c, i) => `<option value="${i}">${c}</option>`).join('')}
                     </select>
                     <span id="payPeriodHelp" class="sr-only">Choose when to view bills due between this paycheck and the next</span>
                 </div>
                 
-                <div class="view-controls">
-                    <button id="allBillsBtn" class="view-btn" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
-                    <button id="upcomingBillsBtn" class="view-btn" aria-label="View upcoming bills" aria-pressed="false">📅 Upcoming</button>
+                <div class="flex items-center gap-1.5 rounded-lg border bg-muted/50 p-1 shadow-sm">
+                    <button id="allBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
+                    <button id="upcomingBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View upcoming bills" aria-pressed="false">📅 Upcoming</button>
                 </div>
 
                 <button
                     id="mobileControlsToggle"
-                    class="view-btn mobile-controls-toggle"
+                    class="${btnOutline} h-8 px-3 text-xs sm:hidden"
                     aria-label="Show advanced filters"
                     aria-expanded="false"
                     aria-controls="headerAdvancedControls"
@@ -48,26 +54,27 @@ export const initializeHeader = (paychecks, actions) => {
                     ⚙️ More
                 </button>
 
-                <div id="headerAdvancedControls" class="header-advanced-controls">
-                    <div class="display-mode-controls mobile-advanced-control" style="display: flex; gap: 5px; background: rgba(0,0,0,0.1); padding: 4px; border-radius: 8px;">
-                        <button id="listViewBtn" class="view-btn active" title="List View">📋 List</button>
-                        <button id="calendarViewBtn" class="view-btn" title="Calendar View">📅 Calendar</button>
-                        <button id="analyticsViewBtn" class="view-btn" title="Analytics View">📊 Analytics</button>
+                <div id="headerAdvancedControls" class="flex items-center gap-3 sm:gap-4">
+                    <div class="flex items-center gap-1 rounded-md bg-muted/50 p-1">
+                        <button id="listViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs active" title="List View">📋 List</button>
+                        <button id="calendarViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Calendar View">📅 Calendar</button>
+                        <button id="analyticsViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Analytics View">📊 Analytics</button>
                     </div>
 
-                    <div class="filter-group mobile-advanced-control">
-                        <label for="paymentFilter" class="control-label">Filter:</label>
-                        <select id="paymentFilter" class="payment-filter-dropdown" aria-label="Filter bills by payment status">
+                    <div class="flex items-center gap-2">
+                        <label for="paymentFilter" class="text-xs font-medium text-foreground sm:text-sm">Filter:</label>
+                        <select id="paymentFilter" class="${inputBase} h-8 w-auto min-w-[80px] sm:h-9" aria-label="Filter bills by payment status">
                             <option value="all">All</option>
                             <option value="unpaid">Unpaid</option>
                             <option value="paid">Paid</option>
                         </select>
                     </div>
 
-                    <div class="toggle-group mobile-advanced-control" style="display: flex; align-items: center; gap: 8px;">
-                        <label class="switch-container" style="display: flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 500;">
-                            <input type="checkbox" id="carriedForwardToggle" checked style="margin-right: 5px;">
-                            <span>Show Overdue</span>
+                    <div class="flex items-center gap-2">
+                        <label class="relative inline-flex cursor-pointer items-center transition-opacity hover:opacity-80">
+                            <input type="checkbox" id="carriedForwardToggle" class="peer sr-only" checked>
+                            <div class="peer h-5 w-9 rounded-full bg-muted transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring"></div>
+                            <span class="ml-2 text-xs font-medium text-foreground sm:text-sm">Show Overdue</span>
                         </label>
                     </div>
                 </div>
@@ -92,30 +99,41 @@ export const initializeHeader = (paychecks, actions) => {
         const isMobile = window.innerWidth <= 768;
 
         if (!isMobile) {
-            mobileControlsToggle.setAttribute('aria-expanded', 'true');
-            mobileControlsToggle.setAttribute('aria-label', 'Advanced filters shown');
-            mobileControlsToggle.textContent = '⚙️ More';
-            headerControls.classList.remove('mobile-controls-collapsed');
-            headerControls.classList.remove('mobile-controls-expanded');
-            headerAdvancedControls.hidden = false;
+            if (mobileControlsToggle) {
+                mobileControlsToggle.setAttribute('aria-expanded', 'true');
+                mobileControlsToggle.setAttribute('aria-label', 'Advanced filters shown');
+                mobileControlsToggle.textContent = '⚙️ More';
+            }
+            if (headerControls) {
+                headerControls.classList.remove('mobile-controls-collapsed');
+                headerControls.classList.remove('mobile-controls-expanded');
+            }
+            if (headerAdvancedControls) headerAdvancedControls.hidden = false;
             return;
         }
 
-        headerControls.classList.toggle('mobile-controls-expanded', mobileControlsExpanded);
-        headerControls.classList.toggle('mobile-controls-collapsed', !mobileControlsExpanded);
-        headerAdvancedControls.hidden = !mobileControlsExpanded;
-        mobileControlsToggle.setAttribute('aria-expanded', mobileControlsExpanded ? 'true' : 'false');
-        mobileControlsToggle.setAttribute(
-            'aria-label',
-            mobileControlsExpanded ? 'Hide advanced filters' : 'Show advanced filters'
-        );
-        mobileControlsToggle.textContent = mobileControlsExpanded ? '⚙️ Hide' : '⚙️ More';
+        if (headerControls) {
+            headerControls.classList.toggle('mobile-controls-expanded', mobileControlsExpanded);
+            headerControls.classList.toggle('mobile-controls-collapsed', !mobileControlsExpanded);
+        }
+        if (headerAdvancedControls) headerAdvancedControls.hidden = !mobileControlsExpanded;
+
+        if (mobileControlsToggle) {
+            mobileControlsToggle.setAttribute('aria-expanded', mobileControlsExpanded ? 'true' : 'false');
+            mobileControlsToggle.setAttribute(
+                'aria-label',
+                mobileControlsExpanded ? 'Hide advanced filters' : 'Show advanced filters'
+            );
+            mobileControlsToggle.textContent = mobileControlsExpanded ? '⚙️ Hide' : '⚙️ More';
+        }
     };
 
-    mobileControlsToggle.addEventListener('click', () => {
-        mobileControlsExpanded = !mobileControlsExpanded;
-        applyMobileControlsState();
-    });
+    if (mobileControlsToggle) {
+        mobileControlsToggle.addEventListener('click', () => {
+            mobileControlsExpanded = !mobileControlsExpanded;
+            applyMobileControlsState();
+        });
+    }
 
     window.addEventListener('resize', applyMobileControlsState);
     applyMobileControlsState();

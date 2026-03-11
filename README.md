@@ -8,7 +8,7 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 **Architecture**: Modular, production-ready  
 **Test Coverage**: 24+ unit tests  
 **Accessibility**: WCAG 2.1 Level AA compliant  
-**Latest Update**: March 2026 - Analytics forecasts, mobile optimizations, improved offline queue
+**Latest Update**: March 2026 - Modernized Calendar/Analytics views with Tailwind CSS, refined sidebar alignment, and verified codebase stability.
 
 ## 🚀 Features
 

@@ -25,94 +25,115 @@ import { isSupabaseConfigured } from '../services/supabase.js';
 
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
-    sidebar.innerHTML = '';
-
-    // Dark Mode Logic - Check localStorage for theme preference on load
     const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
+
+    // Shadcn-like styling constants
+    const btnBase = "inline-flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
+    const btnSecondary = `${btnBase} bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80`;
+    const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground justify-start px-3 h-10`;
+    const btnOutline = `${btnBase} border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground`;
+    const btnPrimary = `${btnBase} bg-primary text-primary-foreground shadow hover:bg-primary/90`;
+    const btnDanger = `${btnBase} bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90`;
+
+    sidebar.innerHTML = '';
+    sidebar.className = "flex w-full md:w-64 flex-col border-r bg-muted/30 py-6 pl-2 pr-6 md:flex shrink-0";
 
     const nav = document.createElement('nav');
-    nav.className = 'sidebar-nav';
+    nav.className = "flex h-full flex-col gap-6";
     nav.setAttribute('role', 'navigation');
     nav.setAttribute('aria-label', 'Main navigation');
 
-    // Categories Header
-    const catHeader = document.createElement('h2');
-    catHeader.textContent = 'Categories';
-    nav.appendChild(catHeader);
+    // Categories Section
+    const catSection = document.createElement('div');
+    catSection.className = "space-y-4";
 
-    // Categories List
+    const catHeader = document.createElement('h2');
+    catHeader.className = "px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+    catHeader.textContent = 'Categories';
+    catSection.appendChild(catHeader);
+
     const catList = document.createElement('ul');
-    catList.className = 'categories-list';
+    catList.className = "flex flex-col gap-1";
     catList.setAttribute('role', 'group');
     catList.setAttribute('aria-label', 'Bill categories');
 
     categories.forEach((cat, idx) => {
         const li = document.createElement('li');
         const btn = document.createElement('button');
-        btn.className = 'category-btn';
+        btn.className = `${btnGhost} w-full category-btn`;
         btn.dataset.category = cat;
         btn.setAttribute('role', 'menuitemradio');
         btn.setAttribute('aria-checked', 'false');
         btn.tabIndex = idx === 0 ? 0 : -1;
-        btn.textContent = cat; // Safe text content
+        btn.textContent = cat;
         li.appendChild(btn);
         catList.appendChild(li);
     });
-    nav.appendChild(catList);
+    catSection.appendChild(catList);
+    nav.appendChild(catSection);
 
-    // Sidebar Actions
+    // Sidebar Actions Section
+    const actionsSection = document.createElement('div');
+    actionsSection.className = "space-y-4";
+
+    const actionsHeader = document.createElement('h3');
+    actionsHeader.className = "px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+    actionsHeader.textContent = 'Actions';
+    actionsSection.appendChild(actionsHeader);
+
     const actionsDiv = document.createElement('div');
-    actionsDiv.className = 'sidebar-actions';
+    actionsDiv.className = "flex flex-col gap-2";
 
     const addBtn = document.createElement('button');
     addBtn.id = 'addBillBtn';
-    addBtn.className = 'add-bill-btn';
+    addBtn.className = `${btnPrimary} w-full gap-2 h-10`;
     addBtn.ariaLabel = 'Add a new bill';
-    addBtn.textContent = '➕ Add Bill';
+    addBtn.innerHTML = '<span>➕</span> Add Bill';
     addBtn.addEventListener('click', actions.onOpenAddBill);
     actionsDiv.appendChild(addBtn);
 
     const regenBtn = document.createElement('button');
     regenBtn.id = 'regenerateBillsBtn';
-    regenBtn.className = 'regenerate-btn';
+    regenBtn.className = `${btnSecondary} w-full gap-2 h-10`;
     regenBtn.ariaLabel = 'Regenerate all recurring bills for the next pay period';
-    regenBtn.title = 'Regenerate all recurring bills';
-    regenBtn.textContent = '🔄 Regenerate';
+    regenBtn.innerHTML = '<span>🔄</span> Regenerate';
     regenBtn.addEventListener('click', actions.onRegenerateBills);
     actionsDiv.appendChild(regenBtn);
 
-    nav.appendChild(actionsDiv);
+    actionsSection.appendChild(actionsDiv);
+    nav.appendChild(actionsSection);
 
-    // Backup Controls
-    const backupDiv = document.createElement('div');
-    backupDiv.className = 'backup-controls';
-    backupDiv.setAttribute('role', 'region');
-    backupDiv.ariaLabel = 'Data backup controls';
+    // Data Management Section
+    const dataSection = document.createElement('div');
+    dataSection.className = "space-y-4";
+
+    const dataHeader = document.createElement('h3');
+    dataHeader.className = "px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+    dataHeader.textContent = 'Data Management';
+    dataSection.appendChild(dataHeader);
+
+    const dataDiv = document.createElement('div');
+    dataDiv.className = "flex flex-col gap-2";
 
     const exportBtn = document.createElement('button');
     exportBtn.id = 'exportDataBtn';
-    exportBtn.className = 'action-btn';
+    exportBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
     exportBtn.ariaLabel = 'Export bills data to JSON file';
-    exportBtn.textContent = '⬇️ Export';
+    exportBtn.innerHTML = '<span>⬇️</span> Export';
     exportBtn.addEventListener('click', actions.onExportData);
-    backupDiv.appendChild(exportBtn);
+    dataDiv.appendChild(exportBtn);
 
     const importBtn = document.createElement('button');
     importBtn.id = 'importDataBtn';
-    importBtn.className = 'action-btn';
+    importBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
     importBtn.ariaLabel = 'Import bills data from JSON file';
-    importBtn.textContent = '⬆️ Import';
+    importBtn.innerHTML = '<span>⬆️</span> Import';
 
-    // File Input
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.id = 'importFileInput';
     fileInput.accept = '.json';
-    fileInput.style.display = 'none';
-    fileInput.ariaLabel = 'Select JSON file to import';
+    fileInput.className = "sr-only";
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             actions.onImportData(e.target.files[0]);
@@ -121,153 +142,128 @@ export const initializeSidebar = (categories, actions) => {
     });
 
     importBtn.addEventListener('click', () => fileInput.click());
-    backupDiv.appendChild(importBtn);
-    backupDiv.appendChild(fileInput);
-    nav.appendChild(backupDiv);
-
-    // Bulk Actions
-    const bulkDiv = document.createElement('div');
-    bulkDiv.className = 'bulk-actions';
-    bulkDiv.setAttribute('role', 'region');
-    bulkDiv.ariaLabel = 'Bulk actions';
-
-    const bulkHeader = document.createElement('h3');
-    bulkHeader.textContent = 'Bulk Actions';
-    bulkDiv.appendChild(bulkHeader);
-
-    const bulkPaidBtn = document.createElement('button');
-    bulkPaidBtn.id = 'bulkMarkPaidBtn';
-    bulkPaidBtn.className = 'action-btn bulk-btn';
-    bulkPaidBtn.ariaLabel = 'Mark all visible bills as paid';
-    bulkPaidBtn.textContent = '✅ Mark All Paid';
-    bulkPaidBtn.addEventListener('click', actions.onBulkMarkPaid);
-    bulkDiv.appendChild(bulkPaidBtn);
-
-    const bulkDelBtn = document.createElement('button');
-    bulkDelBtn.id = 'bulkDeleteBtn';
-    bulkDelBtn.className = 'action-btn bulk-btn danger';
-    bulkDelBtn.ariaLabel = 'Delete all bill data';
-    bulkDelBtn.textContent = '🗑️ Clear All Data';
-    bulkDelBtn.addEventListener('click', actions.onBulkDelete);
-    bulkDiv.appendChild(bulkDelBtn);
+    dataDiv.appendChild(importBtn);
+    dataDiv.appendChild(fileInput);
 
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'settingsBtn';
-    settingsBtn.className = 'action-btn';
-    settingsBtn.ariaLabel = 'Open settings modal for category management';
-    settingsBtn.textContent = '⚙️ Settings';
+    settingsBtn.className = `${btnSecondary} w-full gap-2 h-9`;
+    settingsBtn.ariaLabel = 'Open settings';
+    settingsBtn.innerHTML = '<span>⚙️</span> Settings';
     settingsBtn.addEventListener('click', actions.onShowSettings);
-    bulkDiv.appendChild(settingsBtn);
+    dataDiv.appendChild(settingsBtn);
 
-    nav.appendChild(bulkDiv);
+    const bulkPaidBtn = document.createElement('button');
+    bulkPaidBtn.id = 'bulkMarkPaidBtn';
+    bulkPaidBtn.className = `${btnSecondary} w-full gap-2 h-9`;
+    bulkPaidBtn.ariaLabel = 'Mark all paid';
+    bulkPaidBtn.innerHTML = '<span>✅</span> Mark All Paid';
+    bulkPaidBtn.addEventListener('click', actions.onBulkMarkPaid);
+    dataDiv.appendChild(bulkPaidBtn);
 
-    // Theme Toggle
+    const bulkDelBtn = document.createElement('button');
+    bulkDelBtn.id = 'bulkDeleteBtn';
+    bulkDelBtn.className = `${btnDanger} w-full gap-2 h-9`;
+    bulkDelBtn.ariaLabel = 'Delete all data';
+    bulkDelBtn.innerHTML = '<span>🗑️</span> Clear All';
+    bulkDelBtn.addEventListener('click', actions.onBulkDelete);
+    dataDiv.appendChild(bulkDelBtn);
+
+    dataSection.appendChild(dataDiv);
+    nav.appendChild(dataSection);
+
+    // Bottom Section (Theme + Auth)
+    const bottomSection = document.createElement('div');
+    bottomSection.className = "mt-auto space-y-4 pt-4 border-t";
+
     const themeDiv = document.createElement('div');
-    themeDiv.className = 'theme-toggle-container';
-    themeDiv.setAttribute('role', 'region');
-    themeDiv.ariaLabel = 'Theme settings';
+    themeDiv.className = "flex items-center justify-between px-2";
 
-    const themeLabel = document.createElement('label');
-    themeLabel.htmlFor = 'themeToggle';
-    themeLabel.className = 'theme-label';
-    themeLabel.textContent = 'Dark Mode';
+    const themeLabel = document.createElement('span');
+    themeLabel.className = "text-sm font-medium";
+    themeLabel.textContent = "Dark Mode";
     themeDiv.appendChild(themeLabel);
 
     const themeSwitch = document.createElement('label');
-    themeSwitch.className = 'theme-switch';
-    themeSwitch.ariaLabel = 'Toggle dark mode';
+    themeSwitch.className = "relative inline-flex cursor-pointer items-center transition-opacity hover:opacity-80";
 
     const themeInput = document.createElement('input');
     themeInput.type = 'checkbox';
     themeInput.id = 'themeToggle';
-    themeInput.ariaChecked = savedTheme === 'dark' ? 'true' : 'false';
+    themeInput.className = "peer sr-only";
     themeInput.checked = savedTheme === 'dark';
     themeInput.addEventListener('change', (e) => {
         if (e.target.checked) {
-            document.body.classList.add('dark-mode');
-            e.target.setAttribute('aria-checked', 'true');
+            document.body.classList.add('dark');
             localStorage.setItem('theme', 'dark');
         } else {
-            document.body.classList.remove('dark-mode');
-            e.target.setAttribute('aria-checked', 'false');
+            document.body.classList.remove('dark');
             localStorage.setItem('theme', 'light');
         }
     });
 
-    const slider = document.createElement('span');
-    slider.className = 'slider';
-    slider.setAttribute('aria-hidden', 'true');
+    const switchTrack = document.createElement('div');
+    switchTrack.className = "peer h-5 w-9 rounded-full bg-muted transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring";
 
     themeSwitch.appendChild(themeInput);
-    themeSwitch.appendChild(slider);
+    themeSwitch.appendChild(switchTrack);
     themeDiv.appendChild(themeSwitch);
-    nav.appendChild(themeDiv);
+    bottomSection.appendChild(themeDiv);
 
-    // Auth Info
     const userEmail = localStorage.getItem('userEmail');
     if (userEmail) {
         const authDiv = document.createElement('div');
-        authDiv.className = 'auth-info';
-        authDiv.setAttribute('role', 'region');
-        authDiv.ariaLabel = 'Account information';
+        authDiv.className = "rounded-lg bg-muted/50 p-3 space-y-3";
 
-        const p = document.createElement('p');
-        p.className = 'user-email';
-        p.innerHTML = `Logged in as:<br><span>${userEmail}</span>`; // Safe as userEmail is from authenticated session, but better to be safe
-        // Let's make this safe too
-        p.innerHTML = '';
-        p.appendChild(document.createTextNode('Logged in as:'));
-        p.appendChild(document.createElement('br'));
-        const span = document.createElement('span');
-        span.textContent = userEmail;
-        p.appendChild(span);
+        const emailDiv = document.createElement('div');
+        emailDiv.className = "text-[11px] leading-tight text-muted-foreground uppercase font-bold";
+        emailDiv.textContent = "Account";
+        authDiv.appendChild(emailDiv);
+
+        const emailText = document.createElement('div');
+        emailText.className = "text-xs font-semibold truncate";
+        emailText.textContent = userEmail;
+        authDiv.appendChild(emailText);
 
         const logoutBtn = document.createElement('button');
-        logoutBtn.id = 'authBtn';
-        logoutBtn.className = 'action-btn';
-        logoutBtn.ariaLabel = 'Logout from cloud sync';
-        logoutBtn.textContent = '🚪 Logout';
+        logoutBtn.className = `${btnOutline} w-full h-8 px-2 text-xs`;
+        logoutBtn.innerHTML = '<span>🚪</span> Logout';
         logoutBtn.addEventListener('click', actions.onLogout);
-
-        authDiv.appendChild(p);
         authDiv.appendChild(logoutBtn);
-        nav.appendChild(authDiv);
+
+        bottomSection.appendChild(authDiv);
     } else if (isSupabaseConfigured()) {
-        // Only show login button if Supabase is configured
         const loginBtn = document.createElement('button');
-        loginBtn.id = 'authBtn';
-        loginBtn.className = 'action-btn';
-        loginBtn.ariaLabel = 'Login to enable cloud sync';
-        loginBtn.textContent = '☁️ Sync (Login)';
+        loginBtn.className = `${btnPrimary} w-full h-9 text-xs`;
+        loginBtn.innerHTML = '<span>☁️</span> Login to Sync';
         loginBtn.addEventListener('click', actions.onOpenAuth);
-        nav.appendChild(loginBtn);
+        bottomSection.appendChild(loginBtn);
     }
 
+    nav.appendChild(bottomSection);
     sidebar.appendChild(nav);
 
-    // Category button logic (delegation or attached above? I removed the selector queries)
-    // I need to re-implement the radio button behavior logic since I'm not querying them anymore
-    // Actually, I can query them from `nav` easily.
+    // Interaction Logic
     const categoryBtns = nav.querySelectorAll('.category-btn');
     categoryBtns.forEach((btn) => {
+        const activeClass = "bg-accent text-accent-foreground font-semibold";
+
         btn.addEventListener('click', (e) => {
             categoryBtns.forEach(b => {
-                b.classList.remove('active');
+                b.classList.remove(...activeClass.split(' '));
                 b.setAttribute('aria-checked', 'false');
-                b.setAttribute('tabindex', '-1');
+                b.tabIndex = -1;
             });
-            e.target.classList.add('active');
-            e.target.setAttribute('aria-checked', 'true');
-            e.target.setAttribute('tabindex', '0');
-            e.target.focus();
-            actions.onCategorySelect(e.target.dataset.category);
+            btn.classList.add(...activeClass.split(' '));
+            btn.setAttribute('aria-checked', 'true');
+            btn.tabIndex = 0;
+            actions.onCategorySelect(btn.dataset.category);
         });
 
         // Keyboard navigation
         btn.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                // Logic needs to find next button in the list
                 const nextLi = btn.closest('li').nextElementSibling;
                 const nextBtn = nextLi ? nextLi.querySelector('.category-btn') : categoryBtns[0];
                 nextBtn.focus();

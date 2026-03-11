@@ -49,13 +49,13 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
 
         if (!currentBills || currentBills.length === 0) {
             analyticsView.innerHTML = `
-                <div class="header-top" style="margin-bottom: 20px;">
-                    <h2 style="color: var(--primary-color);">📊 ${viewTitle}</h2>
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold tracking-tight text-primary">📊 ${viewTitle}</h2>
                 </div>
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; text-align: center; color: var(--text-secondary);">
-                    <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
-                    <h3>No Data for this Period</h3>
-                    <p>Add some bills in this date range to see analytics.</p>
+                <div class="flex flex-col items-center justify-center py-24 text-center border border-dashed rounded-lg bg-card">
+                    <div class="text-4xl mb-4 text-muted-foreground/40">📊</div>
+                    <h3 class="text-lg font-semibold">No Data for this Period</h3>
+                    <p class="text-sm text-muted-foreground">Add some bills in this date range to see analytics.</p>
                 </div>
             `;
             return;
@@ -76,102 +76,138 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
         const alerts = getSpendingAlerts(currentBills, 25);
 
         analyticsView.innerHTML = `
-            <div class="header-top" style="margin-bottom: 20px;">
-                <h2 style="color: var(--primary-color);">📊 ${viewTitle}</h2>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold tracking-tight text-foreground">📊 ${viewTitle}</h2>
             </div>
             
             <!-- Spending Alerts Section -->
             ${alerts.length > 0 ? `
-                <div class="alerts-section" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; background: rgba(255,107,107,0.1); border-left: 4px solid var(--danger-color);">
-                    <h3 style="margin-top: 0; color: var(--danger-color);">⚠️ Spending Alerts (${alerts.length})</h3>
-                    ${alerts.map(alert => `
-                        <div style="padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <div style="font-weight: 500; color: var(--text-primary);">${alert.message}</div>
-                                <small style="color: var(--text-secondary);">${new Date().toLocaleString()}</small>
+                <div class="mb-8 overflow-hidden rounded-lg border border-destructive/20 bg-destructive/5 shadow-sm">
+                    <div class="flex items-center gap-2 border-b border-destructive/20 bg-destructive/10 px-4 py-2">
+                        <span class="text-sm">⚠️</span>
+                        <h3 class="text-sm font-bold text-destructive">Spending Alerts (${alerts.length})</h3>
+                    </div>
+                    <div class="divide-y divide-destructive/10">
+                        ${alerts.map(alert => `
+                            <div class="flex items-center justify-between p-4">
+                                <div class="space-y-0.5">
+                                    <div class="text-sm font-medium text-foreground">${alert.message}</div>
+                                    <div class="text-[10px] text-muted-foreground uppercase font-mono">${new Date().toLocaleString()}</div>
+                                </div>
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${alert.severity === 'critical' ? 'bg-destructive text-destructive-foreground' :
+                alert.severity === 'warning' ? 'bg-amber-500 text-white' :
+                    'bg-blue-500 text-white'
+            }">${alert.severity}</span>
                             </div>
-                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; ${
-                                alert.severity === 'critical' ? 'background: var(--danger-color); color: white' :
-                                alert.severity === 'warning' ? 'background: #f5a623; color: white' :
-                                'background: #5eb3d6; color: white'
-                            };">${alert.severity.toUpperCase()}</span>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
             ` : ''}
             
-            <div class="dashboard" style="margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div class="dashboard-card">
-                    <div class="card-icon">💸</div>
-                    <div class="card-content">
-                        <div class="card-label">Total Volume</div>
-                        <div class="card-value">$${totalDue.toFixed(2)}</div>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+                <!-- Total Volume -->
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="tracking-tight text-sm font-medium">Total Volume</h3>
+                        <span class="text-muted-foreground">💸</span>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="text-2xl font-bold font-mono">$${totalDue.toFixed(2)}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Total across all categories</p>
                     </div>
                 </div>
-                <div class="dashboard-card">
-                    <div class="card-icon">✅</div>
-                    <div class="card-content">
-                        <div class="card-label">Total Paid</div>
-                        <div class="card-value" style="color: var(--success-color)">$${totalPaid.toFixed(2)}</div>
+
+                <!-- Total Paid -->
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="tracking-tight text-sm font-medium">Total Paid</h3>
+                        <span class="text-muted-foreground text-emerald-500">✅</span>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="text-2xl font-bold font-mono text-emerald-600">$${totalPaid.toFixed(2)}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Already settled</p>
                     </div>
                 </div>
-                <div class="dashboard-card ${remaining > 0 ? 'overdue' : ''}">
-                    <div class="card-icon">⏳</div>
-                    <div class="card-content">
-                        <div class="card-label">Remaining</div>
-                        <div class="card-value">$${remaining.toFixed(2)}</div>
+
+                <!-- Remaining -->
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm ${remaining > 0 ? 'ring-1 ring-destructive' : ''}">
+                    <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="tracking-tight text-sm font-medium">Remaining</h3>
+                        <span class="text-muted-foreground">⏳</span>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="text-2xl font-bold font-mono ${remaining > 0 ? 'text-destructive' : ''}">$${remaining.toFixed(2)}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Still to be paid</p>
                     </div>
                 </div>
-                <div class="dashboard-card">
-                    <div class="card-icon">📈</div>
-                    <div class="card-content">
-                        <div class="card-label">Monthly Avg</div>
-                        <div class="card-value">$${avgMonthly.toFixed(2)}</div>
+
+                <!-- Monthly Avg -->
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="tracking-tight text-sm font-medium">Monthly Avg</h3>
+                        <span class="text-muted-foreground">📈</span>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="text-2xl font-bold font-mono">$${avgMonthly.toFixed(2)}</div>
+                        <p class="text-xs text-muted-foreground mt-1">Last 3 months</p>
                     </div>
                 </div>
-                <div class="dashboard-card">
-                    <div class="card-icon">${trend.direction === 'up' ? '📊' : trend.direction === 'down' ? '📉' : '➡️'}</div>
-                    <div class="card-content">
-                        <div class="card-label">3-Month Trend</div>
-                        <div class="card-value" style="color: ${trend.direction === 'up' ? '#d97f7f' : trend.direction === 'down' ? '#27ae60' : '#f5a623'};">${trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'} ${Math.abs(trend.percentChange)}%</div>
+
+                <!-- Trend -->
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm">
+                    <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="tracking-tight text-sm font-medium">3-Month Trend</h3>
+                        <span class="text-muted-foreground">${trend.direction === 'up' ? '📊' : trend.direction === 'down' ? '📉' : '➡️'}</span>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="text-2xl font-bold ${trend.direction === 'up' ? 'text-destructive' : trend.direction === 'down' ? 'text-emerald-600' : 'text-amber-500'}">
+                            ${trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'} ${Math.abs(trend.percentChange)}%
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-1">Compared to previous periods</p>
                     </div>
                 </div>
-                <div class="dashboard-card">
-                    <div class="card-icon">🔮</div>
-                    <div class="card-content">
-                        <div class="card-label">Next Month Forecast</div>
-                        <div class="card-value">$${forecast.total.toFixed(2)}</div>
-                        <small style="color: var(--text-secondary);">${forecast.recurringCount} recurring</small>
+
+                <!-- Forecast -->
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm border-primary/20 bg-primary/5">
+                    <div class="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 class="tracking-tight text-sm font-medium">Next Month Forecast</h3>
+                        <span class="text-muted-foreground text-primary">🔮</span>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="text-2xl font-bold font-mono text-primary">$${forecast.total.toFixed(2)}</div>
+                        <p class="text-xs text-secondary-foreground/70 mt-1">${forecast.recurringCount} recurring bills projected</p>
                     </div>
                 </div>
             </div>
 
             <!-- Forecast Details -->
             ${forecast.total > 0 ? `
-                <div style="margin-bottom: 30px; padding: 15px; background: rgba(94,179,214,0.1); border-radius: 8px;">
-                    <h3 style="margin-top: 0; color: var(--primary-color);">📅 Next Month Forecast</h3>
-                    <p style="color: var(--text-secondary); margin: 10px 0;">Projected recurring bills: <strong style="color: var(--primary-color);">$${forecast.total.toFixed(2)}</strong></p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                <div class="mb-8 rounded-xl border bg-accent/5 p-6 ring-1 ring-inset ring-accent/10">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-primary font-bold">📅</span>
+                        <h3 class="text-lg font-bold tracking-tight">Projected Recurring Bills</h3>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         ${Object.entries(forecast.byCategory).map(([cat, amount]) => `
-                            <div style="padding: 10px; background: white; border-radius: 4px; border-left: 3px solid var(--primary-color);">
-                                <div style="font-size: 12px; color: var(--text-secondary);">${cat}</div>
-                                <div style="font-weight: bold; color: var(--primary-color);">$${amount.toFixed(2)}</div>
+                            <div class="flex flex-col gap-1 p-3 rounded-lg border bg-background/50 border-primary/10">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">${cat}</span>
+                                <span class="text-lg font-mono font-bold text-primary">$${amount.toFixed(2)}</span>
                             </div>
                         `).join('')}
                     </div>
                 </div>
             ` : ''}
 
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <h3>Spending by Category</h3>
-                    <div class="chart-wrapper">
+            <div class="grid gap-6 md:grid-cols-2">
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 overflow-hidden">
+                    <h3 class="text-lg font-bold tracking-tight mb-6">Spending by Category</h3>
+                    <div class="h-[250px] w-full">
                         <canvas id="categoryChart"></canvas>
                     </div>
                 </div>
-                <div class="chart-card">
-                    <h3>Monthly Trend (Last 6 Months)</h3>
-                    <div class="chart-wrapper">
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 overflow-hidden">
+                    <h3 class="text-lg font-bold tracking-tight mb-6">Monthly Trend (Last 6 Months)</h3>
+                    <div class="h-[250px] w-full">
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
@@ -190,16 +226,16 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
         const catLabels = Object.keys(categoryTotals);
         const catData = Object.values(categoryTotals);
 
-        // Use app colors for consistency
+        // Modern palette for consistency
         const backgroundColors = [
-            '#2c5aa0', // Primary
-            '#5eb3d6', // Accent
-            '#27ae60', // Success
-            '#f5a623', // Warning
-            '#d97f7f', // Danger
-            '#7b68ee', // Purple (Regen)
-            '#4a8dd9',
-            '#82c4e0'
+            'hsl(var(--primary))',
+            '#3b82f6', // blue-500
+            '#10b981', // emerald-500
+            '#f59e0b', // amber-500
+            '#ef4444', // red-500
+            '#8b5cf6', // violet-500
+            '#06b6d4', // cyan-500
+            '#ec4899'  // pink-500
         ];
 
         // Destroy existing charts if any
@@ -212,9 +248,9 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
             trendChart = null;
         }
 
-        const isDark = document.body.classList.contains('dark-mode');
-        const textColor = isDark ? '#e0e0e0' : '#333333';
-        const gridColor = isDark ? '#333333' : '#d9e3ed';
+        const isDark = document.body.classList.contains('dark');
+        const textColor = isDark ? '#e2e8f0' : '#475569';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
 
         // Draw Category Chart
         const ctxCat = document.getElementById('categoryChart');
@@ -227,18 +263,38 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                         {
                             data: catData,
                             backgroundColor: backgroundColors,
-                            borderColor: isDark ? '#1e1e1e' : '#ffffff',
-                            borderWidth: 2
+                            borderColor: isDark ? 'hsl(var(--card))' : '#ffffff',
+                            borderWidth: 2,
+                            hoverOffset: 15
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '65%',
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: { color: textColor }
+                            labels: {
+                                color: textColor,
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { size: 11, weight: '500' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: isDark ? 'hsl(var(--popover))' : '#ffffff',
+                            titleColor: isDark ? '#ffffff' : '#000000',
+                            bodyColor: isDark ? '#cbd5e1' : '#475569',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            boxPadding: 6,
+                            callbacks: {
+                                label: (context) => ` $${context.parsed.toLocaleString()}`
+                            }
                         }
                     }
                 }
@@ -271,8 +327,6 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                 const monthKey = d.toLocaleString('default', { month: 'short' });
 
                 if (trendData[monthKey] !== undefined) {
-                    // Check if this specific month/year combination is in our keys
-                    // To be safe, let's verify if the diff is within our window
                     const diffMonths = (refMonth.getFullYear() - d.getFullYear()) * 12 + (refMonth.getMonth() - d.getMonth());
                     if (diffMonths >= -1 && diffMonths <= 4) {
                         trendData[monthKey] += bill.amountDue || 0;
@@ -297,9 +351,10 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                         {
                             label: 'Total Amount Due',
                             data: trendValues,
-                            backgroundColor: '#5eb3d6', // Accent
+                            backgroundColor: 'hsl(var(--primary))',
                             borderRadius: 6,
-                            maxBarThickness: 40
+                            maxBarThickness: 45,
+                            hoverBackgroundColor: 'hsl(var(--primary) / 0.8)'
                         }
                     ]
                 },
@@ -309,22 +364,29 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: { color: gridColor },
+                            grid: { color: gridColor, drawBorder: false },
                             ticks: {
                                 color: textColor,
+                                font: { size: 10 },
                                 callback: (value) => '$' + value
                             }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { color: textColor }
+                            ticks: { color: textColor, font: { size: 10 } }
                         }
                     },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            backgroundColor: isDark ? 'hsl(var(--popover))' : '#ffffff',
+                            titleColor: isDark ? '#ffffff' : '#000000',
+                            bodyColor: isDark ? '#cbd5e1' : '#475569',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
                             callbacks: {
-                                label: (context) => `Total: $${context.parsed.y.toFixed(2)}`
+                                label: (context) => ` Total: $${context.parsed.y.toFixed(2)}`
                             }
                         }
                     }
@@ -335,7 +397,11 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
         logger.error('Error rendering analytics', error);
         const analyticsView = document.getElementById('analyticsView');
         if (analyticsView) {
-            analyticsView.innerHTML = `<div style="padding: 20px; color: var(--danger-color);">Error rendering analytics: ${error.message}</div>`;
+            analyticsView.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-center rounded-lg border border-destructive/50 bg-destructive/10 text-destructive">
+                    <p class="font-bold">Error rendering analytics</p>
+                    <p class="text-sm opacity-80">${error.message}</p>
+                </div>`;
         }
     }
 }
@@ -353,7 +419,7 @@ export function initializeAnalyticsView() {
         if (!document.getElementById('analyticsView')) {
             const analyticsDiv = document.createElement('div');
             analyticsDiv.id = 'analyticsView';
-            analyticsDiv.className = 'analytics-container';
+            analyticsDiv.className = 'p-4 sm:p-6 transition-all duration-300';
             main.appendChild(analyticsDiv);
         }
     } catch (error) {

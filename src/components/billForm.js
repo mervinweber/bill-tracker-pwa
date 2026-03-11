@@ -24,97 +24,109 @@ let formActions = {};
 export const initializeBillForm = (categories, actions) => {
     formActions = actions;
     const form = document.getElementById('billForm');
-    form.innerHTML = `<div class="modal" role="dialog" aria-labelledby="billFormTitle" aria-modal="true" style="max-height: 100vh; overflow-y: auto;">
-        <div class="modal-content" style="max-width: min(500px, 100vw); margin: 10px;">
-            <button class="close" aria-label="Close dialog">&times;</button>
-            <h2 id="billFormTitle" style="font-size: clamp(1.25rem, 5vw, 1.5rem);">Add/Edit Bill</h2>
-            <form id="billFormElement" novalidate style="display: flex; flex-direction: column; gap: 16px;">
+
+    // Shadcn-like styling constants
+    const inputBase = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    const labelBase = "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70";
+    const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2";
+    const btnPrimary = `${btnBase} bg-primary text-primary-foreground hover:bg-primary/90`;
+    const btnSecondary = `${btnBase} bg-secondary text-secondary-foreground hover:bg-secondary/80`;
+    const btnOutline = `${btnBase} border border-input bg-background hover:bg-accent hover:text-accent-foreground`;
+    const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0`;
+
+    form.className = "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0";
+    form.style.display = 'none'; // Controlled by open/close functions
+
+    form.innerHTML = `
+        <div class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg md:w-full">
+            <div class="flex flex-col space-y-1.5 text-center sm:text-left">
+                <h2 id="billFormTitle" class="text-lg font-semibold leading-none tracking-tight">Add/Edit Bill</h2>
+                <p class="text-sm text-muted-foreground">Fill in the details for your bill. Click save when you're done.</p>
+            </div>
+            
+            <button class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground" id="closeBillFormBtn" aria-label="Close dialog">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                <span class="sr-only">Close</span>
+            </button>
+
+            <form id="billFormElement" novalidate class="space-y-4">
                 <input type="hidden" id="billId">
                 
-                <div class="form-group">
-                    <label for="billCategory" style="display: block; font-weight: 500; margin-bottom: 6px;">Category: <span aria-label="required">*</span></label>
-                    <select id="billCategory" required aria-required="true" aria-describedby="categoryHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
+                <div class="grid gap-2">
+                    <label for="billCategory" class="${labelBase}">Category <span class="text-destructive">*</span></label>
+                    <select id="billCategory" required aria-required="true" class="${inputBase}">
                         <option value="">Select Category</option>
                         ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
                     </select>
-                    <span id="categoryHelp" class="sr-only">Choose the category this bill belongs to</span>
                 </div>
                 
-                <div class="form-group">
-                    <label for="billName" style="display: block; font-weight: 500; margin-bottom: 6px;">Bill Name: <span aria-label="required">*</span></label>
-                    <input type="text" id="billName" required aria-required="true" placeholder="e.g., Electric Bill" aria-describedby="billNameHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
-                    <span id="billNameHelp" class="sr-only">Enter the name of the bill</span>
+                <div class="grid gap-2">
+                    <label for="billName" class="${labelBase}">Bill Name <span class="text-destructive">*</span></label>
+                    <input type="text" id="billName" required aria-required="true" placeholder="Electric Bill" class="${inputBase}">
                 </div>
                 
-                <div class="form-group">
-                    <label for="billDueDate" style="display: block; font-weight: 500; margin-bottom: 6px;">Due Date: <span aria-label="required">*</span></label>
-                    <input type="date" id="billDueDate" required aria-required="true" aria-describedby="dueDateHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
-                    <span id="dueDateHelp" class="sr-only">Select the date when this bill is due</span>
+                <div class="grid gap-2">
+                    <label for="billDueDate" class="${labelBase}">Due Date <span class="text-destructive">*</span></label>
+                    <input type="date" id="billDueDate" required aria-required="true" class="${inputBase}">
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="form-group">
-                        <label for="billAmountDue" style="display: block; font-weight: 500; margin-bottom: 6px;">Amount Due: <span aria-label="required">*</span></label>
-                        <input type="number" id="billAmountDue" step="0.01" required aria-required="true" placeholder="0.00" aria-describedby="amountHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;" inputmode="decimal">
-                        <span id="amountHelp" class="sr-only">Enter the amount due in dollars</span>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="grid gap-2">
+                        <label for="billAmountDue" class="${labelBase}">Amount Due <span class="text-destructive">*</span></label>
+                        <input type="number" id="billAmountDue" step="0.01" required aria-required="true" placeholder="0.00" class="${inputBase}" inputmode="decimal">
                     </div>
                     
-                    <div class="form-group">
-                        <label for="billBalance" style="display: block; font-weight: 500; margin-bottom: 6px;">Balance: <span aria-label="required">*</span></label>
-                        <input type="number" id="billBalance" step="0.01" required aria-required="true" placeholder="0.00" aria-describedby="balanceHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;" inputmode="decimal">
-                        <span id="balanceHelp" class="sr-only">Enter the current balance remaining on this bill</span>
+                    <div class="grid gap-2">
+                        <label for="billBalance" class="${labelBase}">Balance <span class="text-destructive">*</span></label>
+                        <input type="number" id="billBalance" step="0.01" required aria-required="true" placeholder="0.00" class="${inputBase}" inputmode="decimal">
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="billRecurrence" style="display: block; font-weight: 500; margin-bottom: 6px;">Recurrence:</label>
-                    <select id="billRecurrence" aria-describedby="recurrenceHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
+                <div class="grid gap-2">
+                    <label for="billRecurrence" class="${labelBase}">Recurrence</label>
+                    <select id="billRecurrence" class="${inputBase}">
                         <option value="One-time">One-time</option>
                         <option value="Weekly">Weekly</option>
                         <option value="Bi-weekly">Bi-weekly</option>
                         <option value="Monthly">Monthly</option>
                         <option value="Yearly">Yearly</option>
                     </select>
-                    <span id="recurrenceHelp" class="sr-only">Select how often this bill recurs</span>
                 </div>
 
-                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" id="billReminderEnabled" checked style="width: auto; cursor: pointer;">
-                    <label for="billReminderEnabled" style="margin: 0; cursor: pointer;">Enable reminders for this bill</label>
+                <div class="flex items-center space-x-2 py-2">
+                    <input type="checkbox" id="billReminderEnabled" checked class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
+                    <label for="billReminderEnabled" class="text-sm font-medium leading-none cursor-pointer">Enable reminders for this bill</label>
                 </div>
                 
-                <div class="form-group">
-                    <label for="billWebsite" style="display: block; font-weight: 500; margin-bottom: 6px;">Website / Login URL:</label>
-                    <input type="url" id="billWebsite" placeholder="https://..." aria-describedby="websiteHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px;">
-                    <span id="websiteHelp" class="sr-only">Enter the website where you pay this bill</span>
+                <div class="grid gap-2">
+                    <label for="billWebsite" class="${labelBase}">Website / Login URL</label>
+                    <input type="url" id="billWebsite" placeholder="https://..." class="${inputBase}">
                 </div>
 
-                <div class="form-group">
-                    <label for="billNotes" style="display: block; font-weight: 500; margin-bottom: 6px;">Notes:</label>
-                    <textarea id="billNotes" rows="3" placeholder="Add any notes or comments..." aria-describedby="notesHelp" style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px; resize: vertical;"></textarea>
-                    <span id="notesHelp" class="sr-only">Add any additional notes about this bill</span>
+                <div class="grid gap-2">
+                    <label for="billNotes" class="${labelBase}">Notes</label>
+                    <textarea id="billNotes" rows="2" placeholder="Add any notes..." class="${inputBase} min-h-[60px] resize-none"></textarea>
                 </div>
                 
-                <div class="form-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
-                    <button type="submit" class="submit-btn" style="flex: 1; min-width: 100px; padding: 12px; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; background: var(--primary-color); color: white; font-weight: 500;">Save Bill</button>
-                    <button type="button" id="markPaidBtn" class="action-btn" style="display: none; flex: 1; min-width: 100px; padding: 12px; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; background: var(--success-color); color: white; font-weight: 500;"></button>
-                    <button type="button" id="cancelBillBtn" class="cancel-btn" style="flex: 1; min-width: 100px; padding: 12px; font-size: 16px; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; background: transparent; font-weight: 500;">Cancel</button>
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2 mt-4">
+                    <button type="button" id="cancelBillBtn" class="${btnOutline}">Cancel</button>
+                    <button type="button" id="markPaidBtn" class="${btnSecondary} hidden">Mark as Paid</button>
+                    <button type="submit" class="${btnPrimary}">Save Bill</button>
                 </div>
             </form>
         </div>
-    </div>`;
+    `;
 
-    const modal = form.querySelector('.modal');
-    const closeBtn = form.querySelector('.close');
+    const closeBtn = document.getElementById('closeBillFormBtn');
+    const cancelBtn = document.getElementById('cancelBillBtn');
 
-    closeBtn.addEventListener('click', () => {
+    const hideForm = () => {
         form.style.display = 'none';
-        closeBtn.setAttribute('aria-label', 'Close');
-    });
+        form.classList.remove('animate-in', 'fade-in-0');
+    };
 
-    document.getElementById('cancelBillBtn').addEventListener('click', () => {
-        form.style.display = 'none';
-    });
+    closeBtn.addEventListener('click', hideForm);
+    cancelBtn.addEventListener('click', hideForm);
 
     // Record payment button handler
     const markPaidBtn = document.getElementById('markPaidBtn');
@@ -127,15 +139,14 @@ export const initializeBillForm = (categories, actions) => {
     });
 
     window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            form.style.display = 'none';
+        if (e.target === form) {
+            hideForm();
         }
     });
 
-    // Trap focus within modal when open
     form.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            form.style.display = 'none';
+            hideForm();
         }
     });
 
@@ -144,8 +155,7 @@ export const initializeBillForm = (categories, actions) => {
 
         const amount = parseFloat(document.getElementById('billAmountDue').value);
         if (amount < 0) {
-            const msg = 'Amount Due must be a positive number';
-            alert(msg);
+            alert('Amount Due must be a positive number');
             document.getElementById('billAmountDue').setAttribute('aria-invalid', 'true');
             return;
         }
@@ -166,14 +176,6 @@ export const initializeBillForm = (categories, actions) => {
     });
 };
 
-/**
- * Opens the bill form modal and populates it with bill data for editing
- * 
- * @param {Object} bill - Bill object to edit with properties: id, category, name, dueDate, amountDue, balance, recurrence, notes
- * @returns {void}
- * @description Displays the form modal, fills in all fields with the provided bill data,
- *   and sets focus to the category field for accessibility.
- */
 export const openBillForm = (bill) => {
     const isEdit = !!bill;
     const billData = bill || {
@@ -195,61 +197,28 @@ export const openBillForm = (bill) => {
     document.getElementById('billDueDate').value = billData.dueDate;
     document.getElementById('billAmountDue').value = billData.amountDue || 0;
     document.getElementById('billBalance').value = billData.balance || 0;
-    
-    // Ensure all recurrence options are available (safeguard against caching issues)
-    const recurrenceSelect = document.getElementById('billRecurrence');
-    const requiredOptions = ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly'];
-    const currentOptions = Array.from(recurrenceSelect.options).map(o => o.value);
-    
-    // Add missing options
-    requiredOptions.forEach(optValue => {
-        if (!currentOptions.includes(optValue)) {
-            const newOption = document.createElement('option');
-            newOption.value = optValue;
-            newOption.textContent = optValue;
-            recurrenceSelect.appendChild(newOption);
-            logger.warn('Recurrence option was missing and has been added', { option: optValue });
-        }
-    });
-    
-    recurrenceSelect.value = billData.recurrence;
+
+    document.getElementById('billRecurrence').value = billData.recurrence;
     document.getElementById('billReminderEnabled').checked = billData.reminderEnabled !== false;
     document.getElementById('billNotes').value = billData.notes || '';
     document.getElementById('billWebsite').value = billData.website || '';
-    
-    // Update form title based on create vs edit
+
     const titleElement = document.getElementById('billFormTitle');
-    if (isEdit) {
-        titleElement.textContent = 'Edit Bill';
-        titleElement.innerHTML = '✏️ Edit Bill';
-    } else {
-        titleElement.textContent = 'Add Bill';
-        titleElement.innerHTML = '➕ Add Bill';
-    }
-    
-    // Show/hide Record Payment button based on whether we're editing
+    titleElement.textContent = isEdit ? 'Edit Bill' : 'Add Bill';
+
     const markPaidBtn = document.getElementById('markPaidBtn');
     if (isEdit) {
-        markPaidBtn.textContent = '💳 Record Payment';
-        markPaidBtn.style.display = 'block';
+        markPaidBtn.classList.remove('hidden');
     } else {
-        markPaidBtn.style.display = 'none';
+        markPaidBtn.classList.add('hidden');
     }
-    
-    document.getElementById('billForm').style.display = 'block';
+
+    const form = document.getElementById('billForm');
+    form.style.display = 'block';
+    form.classList.add('animate-in', 'fade-in-0');
     document.getElementById('billCategory').focus();
 };
 
-/**
- * Clears all form fields and resets to empty state
- * 
- * @returns {void}
- * @description Resets the form by:
- *   - Clearing all input fields
- *   - Resetting the ID field
- *   - Removing any aria-invalid attributes
- *   - Preparing for a new bill entry
- */
 export const resetBillForm = () => {
     document.getElementById('billId').value = '';
     document.getElementById('billCategory').value = '';
@@ -258,12 +227,6 @@ export const resetBillForm = () => {
     document.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
 };
 
-/**
- * Closes the bill form modal and resets it
- * 
- * @returns {void}
- * @description Hides the form modal and calls resetBillForm to clear all fields.
- */
 export const closeBillForm = () => {
     document.getElementById('billForm').style.display = 'none';
     resetBillForm();

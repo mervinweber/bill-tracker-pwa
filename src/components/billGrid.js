@@ -26,383 +26,202 @@ export const cleanupBillGrid = () => {
     runBillGridCleanup();
 };
 
-
-/**
- * Initializes the bill grid with empty state message
- * 
- * @returns {void}
- * @description Displays initial empty state message that prompts users to select filters.
- *   Includes aria-live region for screen reader announcements.
- */
 export const initializeBillGrid = () => {
-    document.getElementById('billGrid').innerHTML = '<p aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>';
+    const billGrid = document.getElementById('billGrid');
+    billGrid.className = "flex flex-col gap-4 p-4 sm:p-6";
+    billGrid.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+            <div class="rounded-full bg-muted p-3 mb-4 text-2xl">📋</div>
+            <h3 class="text-sm font-semibold text-foreground">No selection</h3>
+            <p class="text-xs text-muted-foreground mt-1" aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>
+        </div>
+    `;
 };
 
-/**
- * Renders the bill grid table with filtered and sorted bills
- * 
- * @param {Object} state - Application state object
- * @param {Array<Object>} state.bills - Array of bill objects with properties: id, name, dueDate, amountDue, balance, isPaid, category, recurrence, notes, lastPaymentDate
- * @param {string} state.viewMode - View mode: 'all' for all bills or index-based for pay period view
- * @param {number|null} state.selectedPaycheck - Index of selected paycheck (null if viewing all)
- * @param {string|null} state.selectedCategory - Selected category name (null if not filtered)
- * @param {string} state.paymentFilter - Payment status filter: 'all'|'paid'|'unpaid'
- * @param {Date[]} state.payCheckDates - Array of paycheck dates for range filtering
- * @param {Object} actions - Action handler object
- * @param {Function} actions.onUpdateBalance - Called when user updates a bill's balance (receives billId, newBalance)
- * @param {Function} actions.onTogglePayment - Called when user toggles payment status (receives billId, isPaid)
- * @param {Function} actions.onRecordPayment - Called when user clicks payment button (receives billId)
- * @param {Function} actions.onViewHistory - Called when user clicks history button (receives billId)
- * @param {Function} actions.onDeleteBill - Called when user clicks delete button (receives billId)
- * @param {Function} actions.onEditBill - Called when user clicks edit button (receives billId)
- * @returns {void}
- * @description Renders a fully accessible table with:
- *   - Dynamic filtering by category, pay period, and payment status
- *   - Sorting by due date
- *   - Overdue status detection and visual indicators
- *   - Semantic table structure with proper ARIA roles and labels (WCAG 2.1 Level AA)
- *   - Action buttons for each bill (pay, history, edit, delete)
- *   - Payment toggle and balance input fields
- *   - Proper error handling and empty state messages
- */
 export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates }, actions) => {
     runBillGridCleanup();
     const useCompactMobileActions = isTouchDevice() && isMobileViewport();
-
     const billGrid = document.getElementById('billGrid');
+    billGrid.className = "flex flex-col gap-4 p-4 sm:p-6";
     billGrid.innerHTML = '';
-    const totalColumns = viewMode === 'all' ? 12 : 11;
 
-    // Use shared filtering logic
     const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward);
 
     if (viewMode !== 'all' && (selectedPaycheck === null || selectedCategory === null)) {
-        billGrid.innerHTML = '<p aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>';
+        initializeBillGrid();
         return;
     }
 
-    const container = document.createElement('div');
-    container.className = 'bill-grid-container';
-    container.setAttribute('role', 'region');
-    container.setAttribute('aria-label', 'Bills table');
+    if (dueBills.length === 0) {
+        const message = viewMode === 'all' ? 'No bills found' : 'No bills in this category due before the next paycheck';
+        billGrid.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 text-center bg-card rounded-lg border border-dashed">
+                <div class="text-2xl mb-2">✨</div>
+                <p class="text-sm text-muted-foreground" aria-live="polite" role="status">${message}</p>
+            </div>
+        `;
+        return;
+    }
 
-    const keyboardHelpId = 'bill-grid-keyboard-help';
-    const keyboardHelp = document.createElement('p');
-    keyboardHelp.id = keyboardHelpId;
-    keyboardHelp.className = 'sr-only';
-    keyboardHelp.textContent = 'Tip: focus a bill row and press Delete, Backspace, or Control+D to delete the bill. On touch devices, you can also swipe left.';
-    container.appendChild(keyboardHelp);
+    // Shadcn-like styling constants
+    const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
+    const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground h-8 w-8`;
+    const checkboxBase = "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground";
+    const inputBase = "flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
+
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = "relative w-full overflow-auto rounded-lg border bg-card shadow-sm";
 
     const table = document.createElement('table');
-    table.className = 'bill-table';
+    table.className = "w-full caption-bottom text-sm";
     table.setAttribute('role', 'table');
-    table.setAttribute('aria-label', 'List of bills with payment status');
 
     const thead = document.createElement('thead');
-    thead.setAttribute('role', 'rowgroup');
-    // Headers are static and safe
+    thead.className = "[&_tr]:border-b";
     thead.innerHTML = `
-        <tr role="row">
-            <th scope="col" role="columnheader" class="col-name">Bill Name</th>
-            <th scope="col" role="columnheader" class="col-due-date">Due Date</th>
-            ${viewMode === 'all' ? '<th scope="col" role="columnheader" class="col-category">Category</th>' : ''}
-            <th scope="col" role="columnheader" class="col-amount-due">Amount Due</th>
-            <th scope="col" role="columnheader" class="col-balance">Balance</th>
-            <th scope="col" role="columnheader" class="col-paid">Paid <span class="sr-only">(checkbox)</span></th>
-            <th scope="col" role="columnheader" class="col-last-payment">Last Payment</th>
-            <th scope="col" role="columnheader" class="col-notes">Notes</th>
-            <th scope="col" role="columnheader" class="col-recurrence">Recurrence</th>
-            <th scope="col" role="columnheader" class="col-reminders">Reminders</th>
-            <th scope="col" role="columnheader" class="col-actions">Actions <span class="sr-only">(buttons)</span></th>
+        <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Bill</th>
+            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Due</th>
+            ${viewMode === 'all' ? '<th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Category</th>' : ''}
+            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Amount</th>
+            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Balance</th>
+            <th class="h-10 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
+            <th class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
         </tr>
     `;
     table.appendChild(thead);
 
     const tbody = document.createElement('tbody');
-    tbody.setAttribute('role', 'rowgroup');
+    tbody.className = "[&_tr:last-child]:border-0";
 
-    if (dueBills.length > 0) {
-        dueBills.forEach(bill => {
-            const isPaid = bill.isPaid || false;
-            const lastPayment = bill.lastPaymentDate ? new Date(bill.lastPaymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not paid';
-            const notes = bill.notes || '';
-            const notesDisplay = notes ? (notes.length > 30 ? notes.substring(0, 30) + '...' : notes) : '-';
-            const notesTitle = notes ? notes : 'No notes';
+    dueBills.forEach(bill => {
+        const isPaid = bill.isPaid || false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dueDate = new Date(bill.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        const isOverdue = dueDate < today && !isPaid;
 
-            // Check if bill is overdue
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dueDate = new Date(bill.dueDate);
-            dueDate.setHours(0, 0, 0, 0);
-            const isOverdue = dueDate < today && !isPaid;
+        const row = document.createElement('tr');
+        row.className = `border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted ${isPaid ? 'opacity-60 bg-muted/20' : ''}`;
+        row.setAttribute('role', 'row');
 
-            const row = document.createElement('tr');
-            row.className = `${isPaid ? 'paid-bill' : ''} ${isOverdue ? 'overdue-bill' : ''}`;
-            row.setAttribute('role', 'row');
-            row.tabIndex = 0;
-            row.setAttribute('aria-keyshortcuts', 'Delete Backspace Ctrl+D');
-            row.setAttribute('aria-describedby', keyboardHelpId);
-            row.setAttribute('aria-label', `${bill.name}, due ${bill.dueDate}, $${(bill.amountDue || 0).toFixed(2)}, ${isPaid ? 'paid' : 'unpaid'}${isOverdue ? ', overdue' : ''}`);
+        // Name & Notes hidden
+        const nameCell = document.createElement('td');
+        nameCell.className = "p-4 align-middle";
+        nameCell.innerHTML = `
+            <div class="flex flex-col">
+                <span class="font-semibold text-foreground">${bill.name}</span>
+                <span class="text-[10px] text-muted-foreground truncate max-w-[150px]">${bill.notes || '-'}</span>
+            </div>
+        `;
+        row.appendChild(nameCell);
 
-            // Bill Name
-            const nameCell = document.createElement('td');
-            nameCell.setAttribute('role', 'cell');
-            nameCell.className = 'col-name';
-            nameCell.textContent = bill.name;
-            row.appendChild(nameCell);
+        // Due Date
+        const dateCell = document.createElement('td');
+        dateCell.className = "p-4 align-middle whitespace-nowrap";
+        dateCell.innerHTML = `
+            <div class="flex flex-col">
+                <span class="${isOverdue ? 'text-destructive font-bold' : ''}">${bill.dueDate}</span>
+                <span class="text-[10px] text-muted-foreground uppercase">${bill.recurrence}</span>
+            </div>
+        `;
+        row.appendChild(dateCell);
 
-            // Due Date
-            const dateCell = document.createElement('td');
-            dateCell.setAttribute('role', 'cell');
-            dateCell.classList.add('col-due-date');
-            if (isOverdue) dateCell.classList.add('overdue-date');
-            dateCell.setAttribute('aria-label', `Due date: ${bill.dueDate}${isOverdue ? ' (overdue)' : ''}`);
-            dateCell.textContent = bill.dueDate + (isOverdue ? ' ⚠️' : '');
-            row.appendChild(dateCell);
+        // Category
+        if (viewMode === 'all') {
+            const catCell = document.createElement('td');
+            catCell.className = "p-4 align-middle";
+            catCell.innerHTML = `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">${bill.category}</span>`;
+            row.appendChild(catCell);
+        }
 
-            // Category (conditional)
-            if (viewMode === 'all') {
-                const catCell = document.createElement('td');
-                catCell.setAttribute('role', 'cell');
-                catCell.className = 'col-category';
-                catCell.textContent = bill.category;
-                row.appendChild(catCell);
-            }
+        // Amount Due
+        const amountCell = document.createElement('td');
+        amountCell.className = "p-4 align-middle font-medium font-mono";
+        amountCell.textContent = `$${(bill.amountDue || 0).toFixed(2)}`;
+        row.appendChild(amountCell);
 
-            // Amount Due
-            const amountCell = document.createElement('td');
-            amountCell.setAttribute('role', 'cell');
-            amountCell.className = 'col-amount-due';
-            amountCell.textContent = `$${(bill.amountDue || 0).toFixed(2)}`;
-            row.appendChild(amountCell);
+        // Balance Input
+        const balanceCell = document.createElement('td');
+        balanceCell.className = "p-4 align-middle min-w-[100px]";
+        const balanceInput = document.createElement('input');
+        balanceInput.className = inputBase;
+        balanceInput.type = 'number';
+        balanceInput.step = '0.01';
+        balanceInput.value = (bill.balance || 0).toFixed(2);
+        balanceInput.addEventListener('change', (e) => actions.onUpdateBalance(bill.id, parseFloat(e.target.value)));
+        balanceCell.appendChild(balanceInput);
+        row.appendChild(balanceCell);
 
-            // Balance Input
-            const balanceCell = document.createElement('td');
-            balanceCell.setAttribute('role', 'cell');
-            balanceCell.className = 'col-balance';
-            const balanceInput = document.createElement('input');
-            balanceInput.type = 'number';
-            balanceInput.className = 'balance-input';
-            balanceInput.dataset.billId = bill.id;
-            balanceInput.value = (bill.balance || 0).toFixed(2);
-            balanceInput.step = '0.01';
-            balanceInput.ariaLabel = `Balance for ${bill.name}`;
-            balanceInput.addEventListener('change', (e) => actions.onUpdateBalance(bill.id, parseFloat(e.target.value)));
-            balanceCell.appendChild(balanceInput);
-            row.appendChild(balanceCell);
+        // Status / Paid Toggle
+        const statusCell = document.createElement('td');
+        statusCell.className = "p-4 align-middle text-center";
+        const toggleDiv = document.createElement('div');
+        toggleDiv.className = "flex items-center justify-center";
 
-            // Paid Checkbox
-            const paidCell = document.createElement('td');
-            paidCell.setAttribute('role', 'cell');
-            paidCell.className = 'col-paid';
-            const toggleLabel = document.createElement('label');
-            toggleLabel.className = 'payment-toggle';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isPaid;
+        checkbox.className = "h-4 w-4 rounded border-input text-primary focus:ring-primary";
+        checkbox.addEventListener('change', (e) => actions.onTogglePayment(bill.id, e.target.checked));
+        toggleDiv.appendChild(checkbox);
+        statusCell.appendChild(toggleDiv);
+        row.appendChild(statusCell);
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'payment-checkbox';
-            checkbox.dataset.billId = bill.id;
-            checkbox.ariaLabel = `Mark ${bill.name} as ${isPaid ? 'unpaid' : 'paid'}`;
-            checkbox.checked = isPaid;
-            checkbox.addEventListener('change', (e) => actions.onTogglePayment(bill.id, e.target.checked));
+        // Actions
+        const actionsCell = document.createElement('td');
+        actionsCell.className = "p-4 align-middle text-right";
+        const actionGroup = document.createElement('div');
+        actionGroup.className = "flex items-center justify-end gap-1";
 
-            const slider = document.createElement('span');
-            slider.className = 'toggle-slider';
-            slider.setAttribute('aria-hidden', 'true');
+        const btnStyle = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8";
 
-            toggleLabel.appendChild(checkbox);
-            toggleLabel.appendChild(slider);
-            paidCell.appendChild(toggleLabel);
-            row.appendChild(paidCell);
+        if (bill.website) {
+            const linkBtn = document.createElement('button');
+            linkBtn.className = btnStyle;
+            linkBtn.title = "Pay Website";
+            linkBtn.innerHTML = "🌐";
+            linkBtn.addEventListener('click', () => window.open(bill.website, '_blank'));
+            actionGroup.appendChild(linkBtn);
+        }
 
-            // Last Payment
-            const lastPaymentCell = document.createElement('td');
-            lastPaymentCell.className = 'payment-date col-last-payment';
-            lastPaymentCell.setAttribute('role', 'cell');
-            lastPaymentCell.textContent = lastPayment;
-            row.appendChild(lastPaymentCell);
+        const payBtn = document.createElement('button');
+        payBtn.className = btnStyle;
+        payBtn.title = "Record Payment";
+        payBtn.innerHTML = "💰";
+        payBtn.addEventListener('click', () => actions.onRecordPayment(bill.id));
+        actionGroup.appendChild(payBtn);
 
-            // Notes
-            const notesCell = document.createElement('td');
-            notesCell.className = 'notes-cell col-notes';
-            notesCell.setAttribute('role', 'cell');
-            notesCell.title = notesTitle; // Tooltips are safe text
-            notesCell.textContent = notesDisplay;
-            row.appendChild(notesCell);
+        const editBtn = document.createElement('button');
+        editBtn.className = btnStyle;
+        editBtn.title = "Edit";
+        editBtn.innerHTML = "✏️";
+        editBtn.addEventListener('click', () => actions.onEditBill(bill.id));
+        actionGroup.appendChild(editBtn);
 
-            // Recurrence
-            const recurrenceCell = document.createElement('td');
-            recurrenceCell.setAttribute('role', 'cell');
-            recurrenceCell.className = 'col-recurrence';
-            recurrenceCell.textContent = bill.recurrence;
-            row.appendChild(recurrenceCell);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = `${btnStyle} hover:text-destructive`;
+        deleteBtn.title = "Delete";
+        deleteBtn.innerHTML = "🗑️";
+        deleteBtn.addEventListener('click', () => actions.onDeleteBill(bill.id));
+        actionGroup.appendChild(deleteBtn);
 
-            // Reminder Toggle
-            const reminderCell = document.createElement('td');
-            reminderCell.setAttribute('role', 'cell');
-            reminderCell.className = 'col-reminders';
-            const reminderToggle = document.createElement('input');
-            reminderToggle.type = 'checkbox';
-            reminderToggle.className = 'payment-checkbox';
-            reminderToggle.checked = bill.reminderEnabled !== false;
-            reminderToggle.ariaLabel = `${reminderToggle.checked ? 'Disable' : 'Enable'} reminders for ${bill.name}`;
-            reminderToggle.addEventListener('change', (e) => {
-                if (actions.onToggleReminder) {
-                    actions.onToggleReminder(bill.id, e.target.checked);
-                }
-            });
-            reminderCell.appendChild(reminderToggle);
-            row.appendChild(reminderCell);
+        actionsCell.appendChild(actionGroup);
+        row.appendChild(actionsCell);
 
-            // Actions
-            const actionsCell = document.createElement('td');
-            actionsCell.setAttribute('role', 'cell');
-            actionsCell.className = 'col-actions';
-            const btnGroup = document.createElement('div');
-            btnGroup.className = 'action-buttons';
-            btnGroup.setAttribute('role', 'group');
-            btnGroup.ariaLabel = `Actions for ${bill.name}`;
+        tbody.appendChild(row);
 
-            const mobileSecondaryActions = [];
-
-            const addActionButton = (button, isPrimary = false) => {
-                if (useCompactMobileActions && !isPrimary) {
-                    mobileSecondaryActions.push(button);
-                } else {
-                    btnGroup.appendChild(button);
-                }
-            };
-
-            if (bill.website) {
-                const linkBtn = document.createElement('button');
-                linkBtn.className = 'icon-btn link-btn';
-                linkBtn.title = 'Pay Online';
-                linkBtn.ariaLabel = `Pay ${bill.name} online`;
-                linkBtn.textContent = '🔗';
-                linkBtn.addEventListener('click', () => window.open(bill.website, '_blank'));
-                addActionButton(linkBtn);
-            }
-
-            const payBtn = document.createElement('button');
-            payBtn.className = 'icon-btn pay-btn';
-            payBtn.title = 'Record Payment';
-            payBtn.ariaLabel = `Record payment for ${bill.name}`;
-            payBtn.textContent = '💳';
-            payBtn.addEventListener('click', () => actions.onRecordPayment(bill.id));
-            addActionButton(payBtn, true);
-
-            const historyBtn = document.createElement('button');
-            historyBtn.className = 'icon-btn history-btn';
-            historyBtn.title = 'View History';
-            historyBtn.ariaLabel = `View payment history for ${bill.name}`;
-            historyBtn.textContent = '📜';
-            historyBtn.addEventListener('click', () => actions.onViewHistory(bill.id));
-            addActionButton(historyBtn);
-
-            const editBtn = document.createElement('button');
-            editBtn.className = 'icon-btn edit-btn';
-            editBtn.title = 'Edit';
-            editBtn.ariaLabel = `Edit ${bill.name}`;
-            editBtn.textContent = '✏️';
-            editBtn.addEventListener('click', () => actions.onEditBill(bill.id));
-            addActionButton(editBtn);
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'icon-btn delete-btn';
-            deleteBtn.title = 'Delete';
-            deleteBtn.ariaLabel = `Delete ${bill.name}. Keyboard: focus row and press Delete, Backspace, or Control+D. Touch: swipe left.`;
-            deleteBtn.textContent = '🗑️';
-
-            const deleteBill = () => actions.onDeleteBill(bill.id);
-            const handleDeleteClick = () => deleteBill();
-            deleteBtn.addEventListener('click', handleDeleteClick);
-
-            const handleRowKeyDown = (e) => {
-                const targetTag = e.target?.tagName;
-                if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || targetTag === 'BUTTON') {
-                    return;
-                }
-
-                const isDeleteKey = e.key === 'Delete' || e.key === 'Backspace';
-                const isCtrlDeleteShortcut = (e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D');
-
-                if (isDeleteKey || isCtrlDeleteShortcut) {
-                    e.preventDefault();
-                    deleteBill();
-                }
-            };
-
-            row.addEventListener('keydown', handleRowKeyDown);
-            registerBillGridCleanup(() => row.removeEventListener('keydown', handleRowKeyDown));
-            registerBillGridCleanup(() => deleteBtn.removeEventListener('click', handleDeleteClick));
-
-            addActionButton(deleteBtn, true);
-
-            if (useCompactMobileActions && mobileSecondaryActions.length > 0) {
-                const moreBtn = document.createElement('button');
-                moreBtn.className = 'icon-btn more-btn';
-                moreBtn.title = 'More actions';
-                moreBtn.ariaLabel = `Show more actions for ${bill.name}`;
-                moreBtn.textContent = '⋯';
-                moreBtn.setAttribute('aria-expanded', 'false');
-
-                const secondaryActionGroup = document.createElement('div');
-                secondaryActionGroup.className = 'mobile-secondary-actions';
-                secondaryActionGroup.setAttribute('role', 'group');
-                secondaryActionGroup.ariaLabel = `More actions for ${bill.name}`;
-                secondaryActionGroup.hidden = true;
-
-                mobileSecondaryActions.forEach((button) => {
-                    secondaryActionGroup.appendChild(button);
-                });
-
-                const handleMoreClick = () => {
-                    const expanded = secondaryActionGroup.hidden;
-                    secondaryActionGroup.hidden = !expanded;
-                    moreBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-                    moreBtn.ariaLabel = expanded
-                        ? `Hide more actions for ${bill.name}`
-                        : `Show more actions for ${bill.name}`;
-                };
-
-                moreBtn.addEventListener('click', handleMoreClick);
-                registerBillGridCleanup(() => moreBtn.removeEventListener('click', handleMoreClick));
-
-                btnGroup.appendChild(moreBtn);
-                actionsCell.appendChild(btnGroup);
-                actionsCell.appendChild(secondaryActionGroup);
-            } else {
-                actionsCell.appendChild(btnGroup);
-            }
-
-            row.appendChild(actionsCell);
-
-            tbody.appendChild(row);
-
-            // Add swipe-to-delete gesture on mobile
-            if (useCompactMobileActions) {
-                const cleanupSwipeDelete = initializeSwipeDelete(row, () => {
-                    actions.onDeleteBill(bill.id);
-                }, 80);
-                registerBillGridCleanup(cleanupSwipeDelete);
-            }
-        });
-    } else {
-        const message = viewMode === 'all' ? 'No bills found' : 'No bills in this category due before the next paycheck';
-        const emptyRow = document.createElement('tr');
-        emptyRow.setAttribute('role', 'row');
-        const emptyCell = document.createElement('td');
-        emptyCell.colSpan = totalColumns;
-        emptyCell.setAttribute('role', 'cell');
-        emptyCell.setAttribute('aria-live', 'polite');
-        emptyCell.textContent = message;
-        emptyRow.appendChild(emptyCell);
-        tbody.appendChild(emptyRow);
-    }
+        // Swipe delete for mobile
+        if (useCompactMobileActions) {
+            const cleanupSwipeDelete = initializeSwipeDelete(row, () => {
+                actions.onDeleteBill(bill.id);
+            }, 80);
+            registerBillGridCleanup(cleanupSwipeDelete);
+        }
+    });
 
     table.appendChild(tbody);
-    container.appendChild(table);
-    billGrid.appendChild(container);
-
-    // Event listeners are already attached during element creation above
+    tableWrapper.appendChild(table);
+    billGrid.appendChild(tableWrapper);
 };

@@ -162,7 +162,7 @@ class AppOrchestrator {
                     } else {
                         logger.info('No bills found in cloud.');
                     }
-                    
+
                     // If cloud is empty but we have local data, sync them to cloud
                     const localBills = billStore.getAll();
                     const localPaymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
@@ -321,7 +321,7 @@ class AppOrchestrator {
         }
 
         this.categories = categories;
-                        StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, categories);
+        StorageManager.set(STORAGE_KEYS.CUSTOM_CATEGORIES, categories);
     }
 
     /**
@@ -902,7 +902,7 @@ class AppOrchestrator {
                 logger.error('Error syncing data on login', err);
                 billActionHandlers.showErrorNotification('Error syncing data from cloud', 'Sync Error');
             }
-            
+
             // Add small delay to ensure storage is written before reload
             // This is especially important on mobile devices
             setTimeout(() => {
@@ -1005,8 +1005,8 @@ class AppOrchestrator {
     }
 
     handleToggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
+        document.body.classList.toggle('dark');
+        const isDark = document.body.classList.contains('dark');
         StorageManager.set(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light');
 
         // Update button icon
@@ -1133,7 +1133,7 @@ class AppOrchestrator {
     initializeTheme() {
         const savedTheme = StorageManager.get(STORAGE_KEYS.THEME);
         if (savedTheme === 'dark') {
-            document.body.classList.add('dark-mode');
+            document.body.classList.add('dark');
         }
     }
 }
