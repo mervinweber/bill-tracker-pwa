@@ -1,21 +1,16 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Bill Action Handlers Unit Tests
  * Tests bill operations with validation and error handling
  */
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (actual !== expected) {
-        throw new Error(`Expected ${expected}, but got ${actual}. ${message}`);
-    }
+
 }
 
 function test(description, testFn) {
@@ -29,7 +24,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running Bill Action Handlers Tests...\n');
 
 // Mock bill data
 const mockBill = {
@@ -140,5 +134,5 @@ function validateBill(bill) {
     };
 }
 
-console.log(`\n📊 Bill Action Handlers Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
-export { testsPassed, testsFailed };
+
+

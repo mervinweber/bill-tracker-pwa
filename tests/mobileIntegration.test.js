@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Mobile Integration Runtime Tests
  * Verifies mobile gesture/responsive behavior using runtime-style mocks.
@@ -11,19 +12,13 @@ import {
     isTouchDevice
 } from '../src/utils/mobileGestures.js';
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (actual !== expected) {
-        throw new Error(`Expected ${expected}, got ${actual}. ${message}`);
-    }
+
 }
 
 async function test(description, testFn) {
@@ -74,7 +69,6 @@ function createClassList() {
     };
 }
 
-console.log('📋 Running Mobile Integration Runtime Tests...\n');
 
 const windowTarget = createEventTarget();
 const documentTarget = createEventTarget();
@@ -108,7 +102,7 @@ Object.defineProperty(globalThis, 'navigator', {
     writable: true
 });
 
-await test('initializeResponsiveDetection should toggle mobile class and cleanup listener', async () => {
+it('initializeResponsiveDetection should toggle mobile class and cleanup listener', async () => {
     window.innerWidth = 500;
     const cleanup = initializeResponsiveDetection();
 
@@ -127,7 +121,7 @@ await test('initializeResponsiveDetection should toggle mobile class and cleanup
     assertEqual(resizeListenerCountAfterCleanup, 0, 'resize listener should be removed on cleanup');
 });
 
-await test('initializeSwipeDelete should trigger delete callback when threshold exceeded', async () => {
+it('initializeSwipeDelete should trigger delete callback when threshold exceeded', async () => {
     const row = createMockElement();
     let deleted = false;
 
@@ -145,7 +139,7 @@ await test('initializeSwipeDelete should trigger delete callback when threshold 
     cleanup();
 });
 
-await test('initializeSwipeGesture should detect a quick left swipe', async () => {
+it('initializeSwipeGesture should detect a quick left swipe', async () => {
     const element = createMockElement();
     let leftSwipeCount = 0;
 
@@ -168,7 +162,7 @@ await test('initializeSwipeGesture should detect a quick left swipe', async () =
     cleanup();
 });
 
-await test('disablePinchZoom should prevent default for multi-touch move and cleanup listener', async () => {
+it('disablePinchZoom should prevent default for multi-touch move and cleanup listener', async () => {
     const cleanup = disablePinchZoom();
 
     let prevented = false;
@@ -191,7 +185,7 @@ await test('disablePinchZoom should prevent default for multi-touch move and cle
     assertEqual(touchMoveListenersAfterCleanup, 0, 'touchmove listener should be removed on cleanup');
 });
 
-await test('isTouchDevice should detect touch capability from maxTouchPoints', async () => {
+it('isTouchDevice should detect touch capability from maxTouchPoints', async () => {
     navigator.maxTouchPoints = 3;
     assert(isTouchDevice(), 'touch device should be detected when maxTouchPoints > 0');
 
@@ -200,8 +194,6 @@ await test('isTouchDevice should detect touch capability from maxTouchPoints', a
     assertEqual(isTouchDevice(), false, 'touch device should be false when touch points are zero');
 });
 
-console.log(`\n📊 Mobile Integration Runtime Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
 
-if (testsFailed > 0) {
-    process.exit(1);
-}
+
+

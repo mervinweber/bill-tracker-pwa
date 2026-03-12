@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Validation Utilities Test Suite
  * Tests security-focused validation and sanitization functions
@@ -17,19 +18,13 @@ import {
     validatePaymentSettings
 } from '../src/utils/validation.js';
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-        throw new Error(`Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}. ${message}`);
-    }
+
 }
 
 function test(description, testFn) {
@@ -580,12 +575,6 @@ test('validatePaymentSettings: should report multiple errors', () => {
 // Test Summary
 // ============================================================================
 
-console.log(`\n📊 Validation Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
 
-if (testsFailed === 0) {
-    console.log('🎉 All validation tests passed!');
-    process.exit(0);
-} else {
-    console.log(`⚠️ ${testsFailed} test(s) failed`);
-    process.exit(1);
-}
+
+

@@ -1,21 +1,16 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * JSON Import/Export Functions Test Suite (Node.js Compatible)
  * Tests data import and export functionality
  */
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-        throw new Error(`Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}. ${message}`);
-    }
+
 }
 
 function test(description, testFn) {
@@ -29,7 +24,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running JSON Import/Export Tests...\n');
 
 // Mock data
 const mockBill = {
@@ -224,13 +218,7 @@ test('should preserve special characters in bill names', () => {
     );
 });
 
-console.log(`\n📊 JSON Import/Export Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
 
-if (testsFailed === 0) {
-    console.log('🎉 All tests passed!');
-    process.exit(0);
-} else {
-    console.log(`⚠️ ${testsFailed} test(s) failed`);
-    process.exit(1);
-}
+
+
 

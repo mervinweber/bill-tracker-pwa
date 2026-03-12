@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Settings Handler regression tests
  * Verifies non-schedule settings can be saved without forcing a new paycheck start date.
@@ -10,13 +11,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
 function test(description, testFn) {
@@ -30,7 +28,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running Settings Handler Tests...\n');
 
 const settingsHandlerPath = path.join(__dirname, '../src/handlers/settingsHandler.js');
 const settingsHandlerContent = fs.readFileSync(settingsHandlerPath, 'utf8');
@@ -107,5 +104,5 @@ test('should only validate payment settings inside the changed-settings branch',
     assert(validateCallCount === 1, 'validatePaymentSettings should be called exactly once in handleSettingsSave');
 });
 
-console.log(`\n📊 Settings Handler Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
-export { testsPassed, testsFailed };
+
+

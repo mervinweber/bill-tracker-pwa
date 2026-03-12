@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * AppState Unit Tests
  * Tests the centralized state management with subscriber pattern
@@ -6,19 +7,13 @@
 import { appState } from '../src/store/appState.js';
 
 // Test utilities
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (actual !== expected) {
-        throw new Error(`Expected ${expected}, but got ${actual}. ${message}`);
-    }
+
 }
 
 function test(description, testFn) {
@@ -33,7 +28,6 @@ function test(description, testFn) {
 }
 
 // Tests
-console.log('📋 Running AppState Tests...\n');
 
 test('should initialize with default state', () => {
     const state = appState.getState();
@@ -101,5 +95,5 @@ test('should handle multiple subscribers independently', () => {
     unsub2();
 });
 
-console.log(`\n📊 AppState Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
-export { testsPassed, testsFailed };
+
+

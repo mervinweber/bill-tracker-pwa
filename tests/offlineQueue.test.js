@@ -1,12 +1,10 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Test Suite: Offline Queue
  * Tests operation queuing, persistence, and size management
  */
 
-const assert = (condition, message) => {
-    if (!condition) throw new Error(`❌ ${message}`);
-    console.log(`✅ ${message}`);
-};
+;
 
 const assertEquals = (actual, expected, message) => {
     if (actual !== expected) {

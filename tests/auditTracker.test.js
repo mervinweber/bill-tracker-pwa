@@ -1,13 +1,11 @@
+import { assert, describe, it, expect } from 'vitest';
 import { STORAGE_KEYS } from '../src/utils/constants.js';
 import { recordAuditEvent, getAuditEvents, clearAuditEvents } from '../src/utils/auditTracker.js';
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
 function test(description, testFn) {
@@ -21,7 +19,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running Audit Tracker Tests...\n');
 
 const storageMap = new Map();
 
@@ -85,8 +82,6 @@ test('should return most recent events first', () => {
     assert(events[1].eventType === 'event.one', 'older event should be second');
 });
 
-console.log(`\n📊 Audit Tracker Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
 
-if (testsFailed > 0) {
-    process.exit(1);
-}
+
+

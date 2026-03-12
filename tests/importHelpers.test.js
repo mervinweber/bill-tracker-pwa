@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Import Helpers Integration Tests
  * Verifies normalization and validation behavior for imported bill payloads.
@@ -5,19 +6,13 @@
 
 import { normalizeImportPayload, MAX_IMPORT_BILLS } from '../src/utils/importHelpers.js';
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (actual !== expected) {
-        throw new Error(`Expected ${expected}, but got ${actual}. ${message}`);
-    }
+
 }
 
 function test(description, testFn) {
@@ -31,7 +26,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running Import Helpers Tests...\n');
 
 const validPayload = {
     bills: [
@@ -113,5 +107,5 @@ test('should reject oversized bill payloads', () => {
     assert(rejected, 'oversized import should be rejected');
 });
 
-console.log(`\n📊 Import Helpers Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
-export { testsPassed, testsFailed };
+
+

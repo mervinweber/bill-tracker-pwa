@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Settings Helpers Tests
  * Verifies payment schedule change detection logic.
@@ -5,13 +6,10 @@
 
 import { hasPaymentScheduleChanged } from '../src/utils/settingsHelpers.js';
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
 function test(description, testFn) {
@@ -25,7 +23,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running Settings Helpers Tests...\n');
 
 test('should return false when schedule values are unchanged', () => {
     const existing = { startDate: '2026-03-01', frequency: 'bi-weekly', payPeriodsToShow: 6 };
@@ -55,5 +52,5 @@ test('should ignore paycheck amount-only changes for schedule detection', () => 
     assert(!hasPaymentScheduleChanged(existing, { ...existing, amount: null }), 'removing amount-only should return false');
 });
 
-console.log(`\n📊 Settings Helpers Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
-export { testsPassed, testsFailed };
+
+

@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Tests for StorageManager Utility
  * Tests safe storage access with error handling

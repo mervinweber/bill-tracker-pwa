@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * PaycheckManager Unit Tests
  * Tests business logic for paycheck generation and bill calculations
@@ -12,19 +13,13 @@ function formatDateString(date) {
     return `${year}-${month}-${day}`;
 }
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-        throw new Error(`Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}. ${message}`);
-    }
+
 }
 
 function test(description, testFn) {
@@ -38,7 +33,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running PaycheckManager Tests...\n');
 
 test('should generate paycheck dates correctly', () => {
     const startDate = new Date();
@@ -146,5 +140,5 @@ test('should handle monthly frequency', () => {
     assert(daysDiff === 30, 'monthly frequency should generate 30 days apart');
 });
 
-console.log(`\n📊 PaycheckManager Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
-export { testsPassed, testsFailed };
+
+

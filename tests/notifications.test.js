@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Test Suite: Notifications
  * Tests notification permissions and system concepts
@@ -20,10 +21,7 @@ global.navigator = {
     }
 };
 
-const assert = (condition, message) => {
-    if (!condition) throw new Error(`❌ ${message}`);
-    console.log(`✅ ${message}`);
-};
+;
 
 const assertEquals = (actual, expected, message) => {
     if (actual !== expected) {

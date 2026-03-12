@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Monthly Catch-up Option Tests
  * Verifies overdue monthly cycle counting and catch-up due date behavior.
@@ -5,19 +6,13 @@
 
 import { getMissedMonthlyCycles, getNextNonOverdueMonthlyDate, formatLocalDate } from '../src/utils/dates.js';
 
-let testsPassed = 0;
-let testsFailed = 0;
 
-function assert(condition, message) {
-    if (!condition) {
-        throw new Error(`Assertion failed: ${message}`);
-    }
+
+
+
 }
 
-function assertEqual(actual, expected, message) {
-    if (actual !== expected) {
-        throw new Error(`Expected ${expected}, but got ${actual}. ${message}`);
-    }
+
 }
 
 function test(description, testFn) {
@@ -31,7 +26,6 @@ function test(description, testFn) {
     }
 }
 
-console.log('📋 Running Monthly Catch-up Option Tests...\n');
 
 test('should return zero missed cycles when due date is not overdue', () => {
     const dueDate = new Date(2026, 2, 15); // Mar 15, 2026
@@ -58,5 +52,5 @@ test('should advance to next non-overdue monthly due date', () => {
     assertEqual(formatLocalDate(nextDue), '2026-03-15', 'catch-up should move due date to current cycle');
 });
 
-console.log(`\n📊 Monthly Catch-up Option Test Results: ${testsPassed} passed, ${testsFailed} failed\n`);
-export { testsPassed, testsFailed };
+
+

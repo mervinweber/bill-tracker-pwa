@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -42,7 +43,6 @@ test('includes most recent payment date in unpaid audit summary', () => {
     }
 });
 
-console.log('\n' + '='.repeat(50));
 console.log(`Tests Passed: ${passed}`);
 console.log(`Tests Failed: ${failed}`);
 console.log(`Total Tests: ${passed + failed}`);

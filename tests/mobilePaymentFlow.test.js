@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,12 +9,7 @@ const __dirname = path.dirname(__filename);
 let passed = 0;
 let failed = 0;
 
-const test = (name, fn) => {
-    try {
-        fn();
-        console.log(`✅ ${name}`);
-        passed++;
-    } catch (error) {
+ catch (error) {
         console.log(`❌ ${name}: ${error.message}`);
         failed++;
     }
@@ -77,7 +73,6 @@ test('Edit form payment action routes through payment modal flow', () => {
     }
 });
 
-console.log('\n' + '='.repeat(50));
 console.log(`Tests Passed: ${passed}`);
 console.log(`Tests Failed: ${failed}`);
 console.log(`Total Tests: ${passed + failed}`);

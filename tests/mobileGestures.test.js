@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Test Suite: Mobile Gestures
  * Tests touch device detection, viewport detection, and swipe logic
@@ -15,10 +16,7 @@ global.navigator = {
     msMaxTouchPoints: 0
 };
 
-const assert = (condition, message) => {
-    if (!condition) throw new Error(`❌ ${message}`);
-    console.log(`✅ ${message}`);
-};
+;
 
 const assertEquals = (actual, expected, message) => {
     if (actual !== expected) {

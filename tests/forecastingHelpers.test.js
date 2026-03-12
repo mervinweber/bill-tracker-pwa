@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Test Suite: Forecasting Helpers
  * Tests spending predictions, trends, and alerts
@@ -11,10 +12,7 @@ import {
     calculateBudgetMetrics
 } from '../src/utils/forecastingHelpers.js';
 
-const assert = (condition, message) => {
-    if (!condition) throw new Error(`❌ ${message}`);
-    console.log(`✅ ${message}`);
-};
+;
 
 const assertEquals = (actual, expected, message) => {
     if (actual !== expected) {

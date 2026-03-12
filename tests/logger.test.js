@@ -1,3 +1,4 @@
+import { assert, describe, it, expect } from 'vitest';
 /**
  * Tests for Logger Utility
  * Tests logging functionality and log levels
