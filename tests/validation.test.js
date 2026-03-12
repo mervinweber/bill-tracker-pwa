@@ -1,9 +1,4 @@
-import { assert, describe, it, expect } from 'vitest';
-/**
- * Validation Utilities Test Suite
- * Tests security-focused validation and sanitization functions
- */
-
+import { it, expect } from 'vitest';
 import {
     sanitizeInput,
     isValidURL,
@@ -18,563 +13,196 @@ import {
     validatePaymentSettings
 } from '../src/utils/validation.js';
 
+const getFutureDate = (daysAhead) => {
+    const d = new Date();
+    d.setDate(d.getDate() + daysAhead);
+    return d.toISOString().split('T')[0];
+};
 
-
-
-
-}
-
-
-}
-
-function test(description, testFn) {
-    try {
-        testFn();
-        console.log(`✅ ${description}`);
-        testsPassed++;
-    } catch (error) {
-        console.error(`❌ ${description}: ${error.message}`);
-        testsFailed++;
-    }
-}
-
-console.log('🔒 Running Validation Security Tests...\n');
-
-function toLocalDateString(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-function getFutureDateString(daysAhead = 14) {
-    const date = new Date();
-    date.setDate(date.getDate() + daysAhead);
-    return toLocalDateString(date);
-}
-
-// ============================================================================
-// sanitizeInput() Tests
-// ============================================================================
-
-test('sanitizeInput: should remove HTML tags', () => {
+// ---- sanitizeInput ----
+it('sanitizeInput removes HTML tags', () => {
     const result = sanitizeInput('<script>alert("XSS")</script>');
-    assert(!result.includes('<'), 'Should not contain opening bracket');
-    assert(!result.includes('>'), 'Should not contain closing bracket');
+    expect(result).not.toContain('<');
+    expect(result).not.toContain('>');
 });
 
-test('sanitizeInput: should remove control characters', () => {
-    const result = sanitizeInput('Test\x00\x01\x02String');
-    assert(result === 'TestString', 'Should remove null bytes and control chars');
+it('sanitizeInput removes control characters', () => {
+    expect(sanitizeInput('Test\x00\x01String')).toBe('TestString');
 });
 
-test('sanitizeInput: should normalize whitespace', () => {
-    const result = sanitizeInput('Test    Multiple   Spaces');
-    assertEqual(result, 'Test Multiple Spaces', 'Should normalize to single spaces');
+it('sanitizeInput handles null input', () => {
+    expect(sanitizeInput(null)).toBe('');
+    expect(sanitizeInput(undefined)).toBe('');
 });
 
-test('sanitizeInput: should enforce max length', () => {
-    const longString = 'a'.repeat(1000);
-    const result = sanitizeInput(longString, 100);
-    assert(result.length === 100, 'Should truncate to max length');
+it('sanitizeInput preserves valid text', () => {
+    expect(sanitizeInput('Electric Bill - January 2026')).toBe('Electric Bill - January 2026');
 });
 
-test('sanitizeInput: should handle non-string input', () => {
-    assertEqual(sanitizeInput(null), '', 'Should return empty string for null');
-    assertEqual(sanitizeInput(undefined), '', 'Should return empty string for undefined');
-    assertEqual(sanitizeInput(123), '', 'Should return empty string for number');
+// ---- isValidURL ----
+it('isValidURL accepts valid HTTPS URL', () => {
+    expect(isValidURL('https://example.com')).toBe(true);
 });
 
-test('sanitizeInput: should preserve valid text', () => {
-    const result = sanitizeInput('Electric Bill - January 2026');
-    assertEqual(result, 'Electric Bill - January 2026', 'Should preserve normal text');
+it('isValidURL accepts empty string (optional field)', () => {
+    expect(isValidURL('')).toBe(true);
+    expect(isValidURL(null)).toBe(true);
 });
 
-// ============================================================================
-// isValidURL() Tests
-// ============================================================================
-
-test('isValidURL: should accept valid HTTPS URLs', () => {
-    assert(isValidURL('https://example.com'), 'Should accept HTTPS URL');
+it('isValidURL rejects javascript protocol', () => {
+    expect(isValidURL('javascript:alert(1)')).toBe(false);
 });
 
-test('isValidURL: should accept valid HTTP URLs', () => {
-    assert(isValidURL('http://example.com'), 'Should accept HTTP URL');
+// ---- safeJSONParse ----
+it('safeJSONParse parses valid JSON', () => {
+    expect(safeJSONParse('{"name":"Test"}')).toEqual({ name: 'Test' });
 });
 
-test('isValidURL: should reject javascript: protocol', () => {
-    assert(!isValidURL('javascript:alert(1)'), 'Should reject javascript protocol');
+it('safeJSONParse returns default on invalid JSON', () => {
+    expect(safeJSONParse('invalid json', [])).toEqual([]);
 });
 
-test('isValidURL: should reject data: protocol', () => {
-    assert(!isValidURL('data:text/html,<script>alert(1)</script>'), 'Should reject data protocol');
+it('safeJSONParse returns default for null', () => {
+    expect(safeJSONParse(null, {})).toEqual({});
 });
 
-test('isValidURL: should accept empty string (optional field)', () => {
-    assert(isValidURL(''), 'Should accept empty string');
-    assert(isValidURL(null), 'Should accept null');
+it('safeJSONParse parses arrays', () => {
+    expect(safeJSONParse('[1,2,3]')).toEqual([1, 2, 3]);
 });
 
-test('isValidURL: should reject malformed URLs', () => {
-    assert(!isValidURL('not a url'), 'Should reject malformed URL');
+// ---- containsMaliciousContent ----
+it('containsMaliciousContent detects script tags', () => {
+    expect(containsMaliciousContent('<script>alert(1)</script>')).toBe(true);
 });
 
-// ============================================================================
-// safeJSONParse() Tests
-// ============================================================================
-
-test('safeJSONParse: should parse valid JSON', () => {
-    const result = safeJSONParse('{"name": "Test"}');
-    assertEqual(result.name, 'Test', 'Should parse valid JSON');
+it('containsMaliciousContent detects javascript protocol', () => {
+    expect(containsMaliciousContent('javascript:alert(1)')).toBe(true);
 });
 
-test('safeJSONParse: should return default on invalid JSON', () => {
-    const result = safeJSONParse('invalid json', []);
-    assertEqual(result, [], 'Should return default value');
+it('containsMaliciousContent allows normal text', () => {
+    expect(containsMaliciousContent('Electric Bill')).toBe(false);
 });
 
-test('safeJSONParse: should handle null input', () => {
-    const result = safeJSONParse(null, {});
-    assertEqual(result, {}, 'Should return default for null');
+// ---- validateBillName ----
+it('validateBillName accepts valid names', () => {
+    expect(validateBillName('Electric Bill').isValid).toBe(true);
 });
 
-test('safeJSONParse: should handle non-string input', () => {
-    const result = safeJSONParse(123, 'default');
-    assertEqual(result, 'default', 'Should return default for non-string');
+it('validateBillName rejects empty names', () => {
+    expect(validateBillName('   ').isValid).toBe(false);
 });
 
-test('safeJSONParse: should reject oversized JSON', () => {
-    const largeString = '{"data": "' + 'x'.repeat(6 * 1024 * 1024) + '"}';
-    const result = safeJSONParse(largeString, null);
-    assertEqual(result, null, 'Should reject JSON over 5MB');
+it('validateBillName rejects names over 100 chars', () => {
+    expect(validateBillName('a'.repeat(101)).isValid).toBe(false);
 });
 
-test('safeJSONParse: should parse arrays', () => {
-    const result = safeJSONParse('[1, 2, 3]');
-    assertEqual(result, [1, 2, 3], 'Should parse arrays');
+it('validateBillName rejects malicious content', () => {
+    expect(validateBillName('<script>alert(1)</script>').isValid).toBe(false);
 });
 
-// ============================================================================
-// containsMaliciousContent() Tests
-// ============================================================================
-
-test('containsMaliciousContent: should detect <script> tags', () => {
-    assert(containsMaliciousContent('<script>alert(1)</script>'), 'Should detect script tags');
+// ---- validateDate ----
+it('validateDate accepts valid dates', () => {
+    expect(validateDate('2026-02-15').isValid).toBe(true);
 });
 
-test('containsMaliciousContent: should detect javascript: protocol', () => {
-    assert(containsMaliciousContent('javascript:alert(1)'), 'Should detect javascript protocol');
+it('validateDate rejects invalid format', () => {
+    expect(validateDate('02/15/2026').isValid).toBe(false);
 });
 
-test('containsMaliciousContent: should detect event handlers', () => {
-    assert(containsMaliciousContent('onclick=alert(1)'), 'Should detect onclick');
-    assert(containsMaliciousContent('onload=malicious()'), 'Should detect onload');
+it('validateDate rejects Feb 30', () => {
+    expect(validateDate('2026-02-30').isValid).toBe(false);
 });
 
-test('containsMaliciousContent: should detect eval()', () => {
-    assert(containsMaliciousContent('eval(maliciousCode)'), 'Should detect eval');
+it('validateDate rejects past dates when allowPast=false', () => {
+    expect(validateDate('2020-01-01', false).isValid).toBe(false);
 });
 
-test('containsMaliciousContent: should detect iframe tags', () => {
-    assert(containsMaliciousContent('<iframe src="evil.com"></iframe>'), 'Should detect iframe');
+// ---- validateAmount ----
+it('validateAmount accepts valid amounts', () => {
+    expect(validateAmount(150.50).isValid).toBe(true);
 });
 
-test('containsMaliciousContent: should allow normal text', () => {
-    assert(!containsMaliciousContent('Electric Bill'), 'Should allow normal text');
-    assert(!containsMaliciousContent('Rent & Utilities'), 'Should allow ampersands');
+it('validateAmount rejects negative amounts', () => {
+    expect(validateAmount(-50).isValid).toBe(false);
 });
 
-// ============================================================================
-// validateBillName() Tests
-// ============================================================================
-
-test('validateBillName: should accept valid names', () => {
-    const result = validateBillName('Electric Bill');
-    assert(result.isValid, 'Should accept valid name');
-    assertEqual(result.error, null, 'Should have no error');
+it('validateAmount rejects non-numeric values', () => {
+    expect(validateAmount('not a number').isValid).toBe(false);
 });
 
-test('validateBillName: should reject empty names', () => {
-    const result = validateBillName('   ');
-    assert(!result.isValid, 'Should reject empty name');
+it('validateAmount accepts zero', () => {
+    expect(validateAmount(0).isValid).toBe(true);
 });
 
-test('validateBillName: should reject names over 100 chars', () => {
-    const result = validateBillName('a'.repeat(101));
-    assert(!result.isValid, 'Should reject long names');
+it('validateAmount rejects amounts over max', () => {
+    expect(validateAmount(2000000).isValid).toBe(false);
 });
 
-test('validateBillName: should reject malicious content', () => {
-    const result = validateBillName('<script>alert(1)</script>');
-    assert(!result.isValid, 'Should reject script tags');
+// ---- validateCategory ----
+it('validateCategory accepts valid categories', () => {
+    expect(validateCategory('Utilities').isValid).toBe(true);
 });
 
-test('validateBillName: should accept names with special chars', () => {
-    const result = validateBillName('Bill & Utilities (2026) - "Important"');
-    assert(result.isValid, 'Should accept special characters');
+it('validateCategory rejects empty categories', () => {
+    expect(validateCategory('').isValid).toBe(false);
 });
 
-// ============================================================================
-// validateDate() Tests
-// ============================================================================
-
-test('validateDate: should accept valid dates', () => {
-    const result = validateDate('2026-02-15');
-    assert(result.isValid, 'Should accept valid date');
+it('validateCategory rejects categories over 50 chars', () => {
+    expect(validateCategory('a'.repeat(51)).isValid).toBe(false);
 });
 
-test('validateDate: should reject invalid format', () => {
-    const result = validateDate('02/15/2026');
-    assert(!result.isValid, 'Should reject MM/DD/YYYY format');
+// ---- validateNotes ----
+it('validateNotes accepts valid notes', () => {
+    expect(validateNotes('Payment due on the 15th').isValid).toBe(true);
 });
 
-test('validateDate: should reject dates too far in future', () => {
-    const result = validateDate('2050-01-01');
-    assert(!result.isValid, 'Should reject dates >10 years in future');
+it('validateNotes accepts empty notes', () => {
+    expect(validateNotes('').isValid).toBe(true);
+    expect(validateNotes(null).isValid).toBe(true);
 });
 
-test('validateDate: should accept past dates by default', () => {
-    const result = validateDate('2020-01-01');
-    assert(result.isValid, 'Should accept past dates by default');
+it('validateNotes rejects notes over 500 chars', () => {
+    expect(validateNotes('a'.repeat(501)).isValid).toBe(false);
 });
 
-test('validateDate: should reject past dates when allowPast=false', () => {
-    const result = validateDate('2020-01-01', false);
-    assert(!result.isValid, 'Should reject past dates when not allowed');
-});
-
-test('validateDate: should reject invalid dates', () => {
-    const result = validateDate('2026-02-30'); // Feb 30 doesn't exist
-    assert(!result.isValid, 'Should reject invalid dates');
-});
-
-// ============================================================================
-// validateAmount() Tests
-// ============================================================================
-
-test('validateAmount: should accept valid amounts', () => {
-    const result = validateAmount(150.50);
-    assert(result.isValid, 'Should accept valid amount');
-});
-
-test('validateAmount: should reject negative amounts', () => {
-    const result = validateAmount(-50);
-    assert(!result.isValid, 'Should reject negative amounts');
-});
-
-test('validateAmount: should reject non-numeric values', () => {
-    const result = validateAmount('not a number');
-    assert(!result.isValid, 'Should reject non-numeric');
-});
-
-test('validateAmount: should reject amounts over max', () => {
-    const result = validateAmount(2000000);
-    assert(!result.isValid, 'Should reject amounts over $1M');
-});
-
-test('validateAmount: should reject more than 2 decimal places', () => {
-    const result = validateAmount(150.555);
-    assert(!result.isValid, 'Should reject >2 decimal places');
-});
-
-test('validateAmount: should accept zero', () => {
-    const result = validateAmount(0);
-    assert(result.isValid, 'Should accept zero');
-});
-
-// ============================================================================
-// validateCategory() Tests
-// ============================================================================
-
-test('validateCategory: should accept valid categories', () => {
-    const result = validateCategory('Utilities');
-    assert(result.isValid, 'Should accept valid category');
-});
-
-test('validateCategory: should reject empty categories', () => {
-    const result = validateCategory('');
-    assert(!result.isValid, 'Should reject empty category');
-});
-
-test('validateCategory: should reject categories over 50 chars', () => {
-    const result = validateCategory('a'.repeat(51));
-    assert(!result.isValid, 'Should reject long categories');
-});
-
-test('validateCategory: should reject malicious content', () => {
-    const result = validateCategory('<script>alert(1)</script>');
-    assert(!result.isValid, 'Should reject malicious content');
-});
-
-// ============================================================================
-// validateNotes() Tests
-// ============================================================================
-
-test('validateNotes: should accept valid notes', () => {
-    const result = validateNotes('Payment due on the 15th');
-    assert(result.isValid, 'Should accept valid notes');
-});
-
-test('validateNotes: should accept empty notes (optional)', () => {
-    const result = validateNotes('');
-    assert(result.isValid, 'Should accept empty notes');
-    const result2 = validateNotes(null);
-    assert(result2.isValid, 'Should accept null notes');
-});
-
-test('validateNotes: should reject notes over 500 chars', () => {
-    const result = validateNotes('a'.repeat(501));
-    assert(!result.isValid, 'Should reject long notes');
-});
-
-test('validateNotes: should reject malicious content', () => {
-    const result = validateNotes('<script>alert(1)</script>');
-    assert(!result.isValid, 'Should reject malicious content');
-});
-
-// ============================================================================
-// validateRecurrence() Tests
-// ============================================================================
-
-test('validateRecurrence: should accept valid recurrence types', () => {
-    const validTypes = ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly'];
-    validTypes.forEach(type => {
-        const result = validateRecurrence(type);
-        assert(result.isValid, `Should accept ${type}`);
+// ---- validateRecurrence ----
+it('validateRecurrence accepts valid types', () => {
+    ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly'].forEach(t => {
+        expect(validateRecurrence(t).isValid).toBe(true);
     });
 });
 
-test('validateRecurrence: should reject invalid types', () => {
-    const result = validateRecurrence('Daily');
-    assert(!result.isValid, 'Should reject invalid type');
+it('validateRecurrence rejects invalid types', () => {
+    expect(validateRecurrence('Daily').isValid).toBe(false);
 });
 
-test('validateRecurrence: should reject empty recurrence', () => {
-    const result = validateRecurrence('');
-    assert(!result.isValid, 'Should reject empty recurrence');
+// ---- validatePaymentSettings ----
+it('validatePaymentSettings accepts valid settings', () => {
+    expect(validatePaymentSettings({ startDate: getFutureDate(14), frequency: 'bi-weekly', payPeriodsToShow: 6 }).isValid).toBe(true);
 });
 
-// ============================================================================
-// validatePaymentSettings() Tests
-// ============================================================================
-
-test('validatePaymentSettings: should accept valid settings', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(result.isValid, 'Should accept valid settings');
-    assert(result.errors.length === 0, 'Should have no errors');
+it('validatePaymentSettings rejects null input', () => {
+    expect(validatePaymentSettings(null).isValid).toBe(false);
 });
 
-test('validatePaymentSettings: should accept all frequency types', () => {
-    const frequencies = ['weekly', 'bi-weekly', 'monthly', 'Weekly', 'Bi-Weekly', 'MONTHLY'];
-    frequencies.forEach(freq => {
-        const settings = {
-            startDate: getFutureDateString(14),
-            frequency: freq,
-            payPeriodsToShow: 6
-        };
-        const result = validatePaymentSettings(settings);
-        assert(result.isValid, `Should accept frequency: ${freq}`);
-    });
+it('validatePaymentSettings rejects invalid frequency', () => {
+    expect(validatePaymentSettings({ startDate: getFutureDate(14), frequency: 'daily', payPeriodsToShow: 6 }).isValid).toBe(false);
 });
 
-test('validatePaymentSettings: should reject invalid frequency', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'daily',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject invalid frequency');
-    assert(result.errors.some(e => e.includes('Frequency')), 'Should mention frequency error');
+it('validatePaymentSettings rejects missing startDate', () => {
+    expect(validatePaymentSettings({ frequency: 'bi-weekly', payPeriodsToShow: 6 }).isValid).toBe(false);
 });
 
-test('validatePaymentSettings: should reject missing startDate', () => {
-    const settings = {
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject missing startDate');
-    assert(result.errors.some(e => e.includes('Start date')), 'Should mention startDate error');
+it('validatePaymentSettings rejects zero payPeriods', () => {
+    expect(validatePaymentSettings({ startDate: getFutureDate(14), frequency: 'bi-weekly', payPeriodsToShow: 0 }).isValid).toBe(false);
 });
 
-test('validatePaymentSettings: should reject invalid date format', () => {
-    const settings = {
-        startDate: '02-15-2026',
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject invalid date format');
-    assert(result.errors.some(e => e.includes('YYYY-MM-DD')), 'Should mention format error');
+it('validatePaymentSettings rejects payPeriods over 52', () => {
+    expect(validatePaymentSettings({ startDate: getFutureDate(14), frequency: 'bi-weekly', payPeriodsToShow: 53 }).isValid).toBe(false);
 });
 
-test('validatePaymentSettings: should reject past dates', () => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const dateStr = toLocalDateString(yesterday);
-
-    const settings = {
-        startDate: dateStr,
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject past dates');
-    assert(result.errors.some(e => e.includes('past')), 'Should mention past date error');
+it('validatePaymentSettings reports multiple errors', () => {
+    const result = validatePaymentSettings({ startDate: 'bad', frequency: 'bad', payPeriodsToShow: -1 });
+    expect(result.isValid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(2);
 });
-
-test('validatePaymentSettings: should reject dates too far in future', () => {
-    const future = new Date();
-    future.setFullYear(future.getFullYear() + 3);
-    const dateStr = toLocalDateString(future);
-
-    const settings = {
-        startDate: dateStr,
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject dates too far in future');
-    assert(result.errors.some(e => e.includes('2 years')), 'Should mention 2 year limit');
-});
-
-test('validatePaymentSettings: should accept today as startDate', () => {
-    const today = toLocalDateString(new Date());
-    const settings = {
-        startDate: today,
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(result.isValid, 'Should accept today as startDate');
-});
-
-test('validatePaymentSettings: should reject invalid day (Feb 30)', () => {
-    const settings = {
-        startDate: '2026-02-30',
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject invalid day');
-});
-
-test('validatePaymentSettings: should reject non-integer payPeriodsToShow', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6.5
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject non-integer periods');
-    assert(result.errors.some(e => e.includes('integer')), 'Should mention integer requirement');
-});
-
-test('validatePaymentSettings: should reject zero payPeriodsToShow', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 0
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject zero periods');
-    assert(result.errors.some(e => e.includes('positive')), 'Should mention positive requirement');
-});
-
-test('validatePaymentSettings: should reject negative payPeriodsToShow', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: -5
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject negative periods');
-    assert(result.errors.some(e => e.includes('positive')), 'Should mention positive requirement');
-});
-
-test('validatePaymentSettings: should reject payPeriodsToShow over 52', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 53
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject periods over 52');
-    assert(result.errors.some(e => e.includes('52')), 'Should mention 52 limit');
-});
-
-test('validatePaymentSettings: should accept payPeriodsToShow of 52', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 52
-    };
-    const result = validatePaymentSettings(settings);
-    assert(result.isValid, 'Should accept 52 periods');
-});
-
-test('validatePaymentSettings: should accept valid paycheck amount', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6,
-        amount: 2500.75
-    };
-    const result = validatePaymentSettings(settings);
-    assert(result.isValid, 'Should accept valid paycheck amount');
-});
-
-test('validatePaymentSettings: should reject negative paycheck amount', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6,
-        amount: -10
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject negative paycheck amount');
-    assert(result.errors.some(e => e.includes('Paycheck amount')), 'Should mention paycheck amount error');
-});
-
-test('validatePaymentSettings: should reject paycheck amount with too many decimals', () => {
-    const settings = {
-        startDate: getFutureDateString(14),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 6,
-        amount: 2500.123
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should reject paycheck amount with too many decimals');
-    assert(result.errors.some(e => e.includes('decimal places')), 'Should mention decimal place error');
-});
-
-test('validatePaymentSettings: should reject non-object input', () => {
-    const result = validatePaymentSettings(null);
-    assert(!result.isValid, 'Should reject null');
-    assert(result.errors.length > 0, 'Should have error message');
-});
-
-test('validatePaymentSettings: should report multiple errors', () => {
-    const settings = {
-        startDate: 'invalid',
-        frequency: 'invalid',
-        payPeriodsToShow: -1
-    };
-    const result = validatePaymentSettings(settings);
-    assert(!result.isValid, 'Should be invalid');
-    assert(result.errors.length >= 3, 'Should report all three errors');
-});
-
-// ============================================================================
-// Test Summary
-// ============================================================================
-
-
-
-

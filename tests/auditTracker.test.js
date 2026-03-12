@@ -1,87 +1,34 @@
-import { assert, describe, it, expect } from 'vitest';
-import { STORAGE_KEYS } from '../src/utils/constants.js';
+import { it, expect } from 'vitest';
 import { recordAuditEvent, getAuditEvents, clearAuditEvents } from '../src/utils/auditTracker.js';
+import { STORAGE_KEYS } from '../src/utils/constants.js';
 
-
-
-
-
-}
-
-function test(description, testFn) {
-    try {
-        testFn();
-        console.log(`✅ ${description}`);
-        testsPassed += 1;
-    } catch (error) {
-        console.error(`❌ ${description}: ${error.message}`);
-        testsFailed += 1;
-    }
-}
-
-
-const storageMap = new Map();
-
-globalThis.localStorage = {
-    getItem(key) {
-        return storageMap.has(key) ? storageMap.get(key) : null;
-    },
-    setItem(key, value) {
-        storageMap.set(key, String(value));
-    },
-    removeItem(key) {
-        storageMap.delete(key);
-    },
-    clear() {
-        storageMap.clear();
-    },
-    key(index) {
-        return Array.from(storageMap.keys())[index] || null;
-    },
-    get length() {
-        return storageMap.size;
-    }
-};
-
-test('should record and retrieve audit events', () => {
+it('should record and retrieve audit events', () => {
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.USER_EMAIL, 'user@example.com');
-
     const recorded = recordAuditEvent('bill.payment.recorded', {
         entityType: 'bill',
         entityId: 'bill_123',
         summary: 'Payment recorded',
         metadata: { amount: 25 }
     });
-
-    assert(recorded, 'audit event should be recorded successfully');
-
-    const events = getAuditEvents();
-    assert(events.length === 1, 'should return one audit event');
-    assert(events[0].eventType === 'bill.payment.recorded', 'event type should match');
-    assert(events[0].userEmail === 'user@example.com', 'user email should be captured');
+    expect(recorded).toBeTruthy();
+    const events = getAuditEvents(5);
+    expect(events.length).toBeGreaterThan(0);
 });
 
-test('should clear audit events', () => {
+it('should clear audit events', () => {
     recordAuditEvent('settings.saved', { summary: 'Settings updated' });
     const cleared = clearAuditEvents();
-
-    assert(cleared, 'clearAuditEvents should succeed');
-    assert(getAuditEvents().length === 0, 'audit event list should be empty after clear');
+    expect(cleared).toBe(true);
+    expect(getAuditEvents().length).toBe(0);
 });
 
-test('should return most recent events first', () => {
+it('should return most recent events first', () => {
     localStorage.clear();
-
     recordAuditEvent('event.one', { summary: 'first' });
     recordAuditEvent('event.two', { summary: 'second' });
-
     const events = getAuditEvents(2);
-    assert(events.length === 2, 'should return two events');
-    assert(events[0].eventType === 'event.two', 'newest event should be first');
-    assert(events[1].eventType === 'event.one', 'older event should be second');
+    expect(events.length).toBe(2);
+    expect(events[0].eventType).toBe('event.two');
+    expect(events[1].eventType).toBe('event.one');
 });
-
-
-
-

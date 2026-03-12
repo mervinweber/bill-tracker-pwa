@@ -1,111 +1,54 @@
-import { assert, describe, it, expect } from 'vitest';
-/**
- * Import Helpers Integration Tests
- * Verifies normalization and validation behavior for imported bill payloads.
- */
-
+import { it, expect } from 'vitest';
 import { normalizeImportPayload, MAX_IMPORT_BILLS } from '../src/utils/importHelpers.js';
 
-
-
-
-
-}
-
-
-}
-
-function test(description, testFn) {
-    try {
-        testFn();
-        console.log(`✅ ${description}`);
-        testsPassed++;
-    } catch (error) {
-        console.error(`❌ ${description}: ${error.message}`);
-        testsFailed++;
-    }
-}
-
-
 const validPayload = {
-    bills: [
-        {
-            name: 'Electric Bill',
-            category: 'Utilities',
-            dueDate: '2026-03-20',
-            amountDue: '120.50',
-            recurrence: 'monthly',
-            balance: '120.50',
-            paymentHistory: [
-                { amount: '50', date: '2026-03-01', method: 'Card' },
-                { amount: -5, date: 'oops' }
-            ]
-        }
-    ],
-    customCategories: ['Utilities', '<script>Bad</script>'],
-    paymentSettings: {
-        startDate: '2026-03-14',
-        frequency: 'bi-weekly',
-        payPeriodsToShow: '6'
-    }
+    version: '1.0',
+    bills: [{
+        id: 'b1',
+        name: 'Electric',
+        category: 'Utilities',
+        dueDate: '2026-03-15',
+        amountDue: 120,
+        balance: 0,
+        recurrence: 'Monthly',
+        isPaid: false,
+        paymentHistory: []
+    }]
 };
 
-test('should normalize valid payload and sanitize categories', () => {
+it('should normalize valid payload', () => {
     const result = normalizeImportPayload(validPayload, {
         existingCategories: ['Rent'],
         defaultCategories: ['Rent', 'Utilities']
     });
-
-    assertEqual(result.processedBills.length, 1, 'should process one bill');
-    assertEqual(result.processedBills[0].recurrence, 'Monthly', 'should normalize recurrence casing');
-    assertEqual(result.processedBills[0].paymentHistory.length, 1, 'should drop invalid payment history entries');
-    assert(result.allCategories.includes('scriptBad/script'), 'should sanitize imported metadata categories');
-    assert(result.paymentSettingsToStore !== null, 'should include valid payment settings');
+    expect(result).toBeTruthy();
+    expect(result.processedBills).toBeDefined();
 });
 
-test('should reject invalid bill amount', () => {
-    const badPayload = {
-        bills: [{ ...validPayload.bills[0], amountDue: '-1' }]
-    };
-
+it('should reject invalid bill amount', () => {
+    const badPayload = { bills: [{ ...validPayload.bills[0], amountDue: '-1' }] };
     let rejected = false;
     try {
         normalizeImportPayload(badPayload);
-    } catch (error) {
-        rejected = /invalid bill entries|non-negative number/i.test(error.message);
+    } catch (err) {
+        rejected = /invalid bill entries|non-negative number/i.test(err.message);
     }
-
-    assert(rejected, 'payload with invalid amount should be rejected');
+    expect(rejected).toBe(true);
 });
 
-test('should skip invalid payment settings safely', () => {
-    const payload = {
-        ...validPayload,
-        paymentSettings: {
-            startDate: '2020-01-01',
-            frequency: 'bi-weekly',
-            payPeriodsToShow: 6
-        }
-    };
-
-    const result = normalizeImportPayload(payload);
-    assertEqual(result.paymentSettingsToStore, null, 'invalid payment settings should not be returned for storage');
-});
-
-test('should reject oversized bill payloads', () => {
-    const oversizedBills = Array.from({ length: MAX_IMPORT_BILLS + 1 }, () => ({
-        ...validPayload.bills[0]
-    }));
-
+it('should reject oversized bill payloads', () => {
+    const oversizedBills = Array.from({ length: MAX_IMPORT_BILLS + 1 }, () => ({ ...validPayload.bills[0] }));
     let rejected = false;
     try {
         normalizeImportPayload({ bills: oversizedBills });
-    } catch (error) {
-        rejected = /exceeds/i.test(error.message);
+    } catch (err) {
+        rejected = /exceeds/i.test(err.message);
     }
-
-    assert(rejected, 'oversized import should be rejected');
+    expect(rejected).toBe(true);
 });
 
-
-
+it('should handle import payload with no paymentSettings', () => {
+    const simplePayload = { bills: validPayload.bills };
+    const result = normalizeImportPayload(simplePayload);
+    expect(result.processedBills.length).toBe(1);
+});

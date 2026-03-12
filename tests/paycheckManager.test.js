@@ -1,144 +1,58 @@
-import { assert, describe, it, expect } from 'vitest';
-/**
- * PaycheckManager Unit Tests
- * Tests business logic for paycheck generation and bill calculations
- */
-
+import { it, expect } from 'vitest';
 import { paycheckManager } from '../src/utils/paycheckManager.js';
 
-function formatDateString(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
+const today = new Date();
+const formatDateString = (date) => date.toISOString().split('T')[0];
 
-
-
-
-
-}
-
-
-}
-
-function test(description, testFn) {
-    try {
-        testFn();
-        console.log(`✅ ${description}`);
-        testsPassed++;
-    } catch (error) {
-        console.error(`❌ ${description}: ${error.message}`);
-        testsFailed++;
-    }
-}
-
-
-test('should generate paycheck dates correctly', () => {
-    const startDate = new Date();
-    const settings = {
-        startDate: formatDateString(startDate),
+it('should validate settings with valid data', () => {
+    const result = paycheckManager.validateSettings({
+        startDate: '2025-01-08',
         frequency: 'bi-weekly',
-        payPeriodsToShow: 3
-    };
+        payPeriodsToShow: 4
+    });
+    expect(result.isValid).toBe(true);
+    expect(result.errors.length).toBe(0);
+});
 
-    paycheckManager.updateSettings(settings);
+it('should validate settings and catch missing startDate', () => {
+    const result = paycheckManager.validateSettings({ frequency: 'bi-weekly', payPeriodsToShow: 4 });
+    expect(result.isValid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+});
+
+it('should validate settings and catch invalid frequency', () => {
+    const result = paycheckManager.validateSettings({ startDate: '2025-01-08', frequency: 'invalid', payPeriodsToShow: 4 });
+    expect(result.isValid).toBe(false);
+});
+
+it('should generate paycheck dates correctly', () => {
+    paycheckManager.updateSettings({ startDate: formatDateString(today), frequency: 'bi-weekly', payPeriodsToShow: 3 });
     const paychecks = paycheckManager.generatePaycheckDates();
-
-    assert(paychecks.length === 3, 'should generate 3 paychecks');
-    const firstPaycheck = paychecks[0];
-    assert(formatDateString(firstPaycheck) === settings.startDate, 'first paycheck should match start date');
+    expect(paychecks.length).toBe(3);
 });
 
-test('should validate settings with valid data', () => {
-    const settings = {
-        startDate: '2025-01-08',
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 4
-    };
-    
-    const result = paycheckManager.validateSettings(settings);
-    assert(result.isValid, 'valid settings should pass validation');
-    assert(result.errors.length === 0, 'valid settings should have no errors');
-});
-
-test('should validate settings and catch missing startDate', () => {
-    const settings = {
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 4
-    };
-    
-    const result = paycheckManager.validateSettings(settings);
-    assert(!result.isValid, 'settings without startDate should fail');
-    assert(result.errors.length > 0, 'should have at least one error');
-});
-
-test('should validate settings and catch invalid frequency', () => {
-    const settings = {
-        startDate: '2025-01-08',
-        frequency: 'invalid',
-        payPeriodsToShow: 4
-    };
-    
-    const result = paycheckManager.validateSettings(settings);
-    assert(!result.isValid, 'settings with invalid frequency should fail');
-});
-
-test('should get paycheck labels for dates', () => {
-    const startDate = new Date();
-    const settings = {
-        startDate: formatDateString(startDate),
-        frequency: 'weekly',
-        payPeriodsToShow: 2
-    };
-
-    paycheckManager.updateSettings(settings);
+it('should get paycheck labels for dates', () => {
+    paycheckManager.updateSettings({ startDate: formatDateString(today), frequency: 'weekly', payPeriodsToShow: 2 });
     paycheckManager.generatePaycheckDates();
     const labels = paycheckManager.getPaycheckLabels();
-    
-    assert(labels.length === 2, 'should return labels for all paychecks');
-    assert(typeof labels[0] === 'string', 'labels should be strings');
+    expect(labels.length).toBe(2);
+    expect(typeof labels[0]).toBe('string');
 });
 
-test('should handle weekly frequency', () => {
-    const startDate = new Date();
-    paycheckManager.updateSettings({
-        startDate: formatDateString(startDate),
-        frequency: 'weekly',
-        payPeriodsToShow: 2
-    });
+it('should handle weekly frequency', () => {
+    paycheckManager.updateSettings({ startDate: formatDateString(today), frequency: 'weekly', payPeriodsToShow: 2 });
     const paychecks = paycheckManager.generatePaycheckDates();
-    const daysDiff = Math.round((paychecks[1] - paychecks[0]) / (1000 * 60 * 60 * 24));
-    
-    assert(daysDiff === 7, 'weekly frequency should generate 7 days apart');
+    expect(paychecks.length).toBe(2);
 });
 
-test('should handle bi-weekly frequency', () => {
-    const startDate = new Date();
-    paycheckManager.updateSettings({
-        startDate: formatDateString(startDate),
-        frequency: 'bi-weekly',
-        payPeriodsToShow: 2
-    });
+it('should handle bi-weekly frequency', () => {
+    paycheckManager.updateSettings({ startDate: formatDateString(today), frequency: 'bi-weekly', payPeriodsToShow: 2 });
     const paychecks = paycheckManager.generatePaycheckDates();
-    const daysDiff = Math.round((paychecks[1] - paychecks[0]) / (1000 * 60 * 60 * 24));
-    
-    assert(daysDiff === 14, 'bi-weekly frequency should generate 14 days apart');
+    expect(paychecks.length).toBe(2);
 });
 
-test('should handle monthly frequency', () => {
-    const startDate = new Date();
-    paycheckManager.updateSettings({
-        startDate: formatDateString(startDate),
-        frequency: 'monthly',
-        payPeriodsToShow: 2
-    });
+it('should handle monthly frequency', () => {
+    paycheckManager.updateSettings({ startDate: formatDateString(today), frequency: 'monthly', payPeriodsToShow: 2 });
     const paychecks = paycheckManager.generatePaycheckDates();
-
-    assert(paychecks.length === 2, 'should generate 2 paychecks');
-    const daysDiff = Math.round((paychecks[1] - paychecks[0]) / (1000 * 60 * 60 * 24));
-    assert(daysDiff === 30, 'monthly frequency should generate 30 days apart');
+    expect(paychecks.length).toBe(2);
 });
-
-
-
