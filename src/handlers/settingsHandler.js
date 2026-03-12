@@ -7,7 +7,7 @@ import { billStore } from '../store/BillStore.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import { billActionHandlers } from './billActionHandlers.js';
 import { safeJSONParse, validatePaymentSettings } from '../utils/validation.js';
-import { syncPaymentSettings, getUser } from '../services/supabase.js';
+import { syncPaymentSettings, getUser, createHousehold, joinHousehold, getHouseholdStatus } from '../services/supabase.js';
 import StorageManager from '../utils/StorageManager.js';
 import logger from '../utils/logger.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
@@ -115,6 +115,22 @@ export function showSettingsModal(categoriesList) {
             <div class="form-group">
                 <label><strong>Reminder History (most recent first):</strong></label>
                 <div id="reminderHistoryList" style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;"></div>
+            </div>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+            <h3>Household Sharing</h3>
+            <div id="householdSection" class="form-group" style="background: rgba(var(--primary-rgb), 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                    Share your bill data with a partner. Both users will see and update the same bill list in real-time.
+                </p>
+                <div id="householdStatusContainer" style="display: flex; flex-direction: column; gap: 12px;">
+                    <button type="button" id="createHouseholdBtn" class="view-btn" style="background-color: var(--primary-color); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                        🏠 Create Shared Household
+                    </button>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                        <input type="text" id="joinHouseholdInput" placeholder="Paste Household ID here" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+                        <button type="button" id="joinHouseholdBtn" class="view-btn" style="padding: 8px 15px; background: white; border: 1px solid var(--border-color); border-radius: 4px;">Join</button>
+                    </div>
+                </div>
             </div>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
             <h3>Manage Categories</h3>
@@ -270,9 +286,40 @@ export function showSettingsModal(categoriesList) {
             });
         });
 
-        // Settings form submit handler
-        form.addEventListener('submit', e => {
-            handleSettingsSave(e, modal);
+        // Initialize Household status
+        updateHouseholdUI();
+
+        // Household handlers
+        document.getElementById('createHouseholdBtn').addEventListener('click', async () => {
+            const confirmed = confirm('Creating a shared household will make your current bills available to anyone who joins with your Household ID. Continue?');
+            if (confirmed) {
+                const { householdId, error } = await createHousehold();
+                if (error) {
+                    billActionHandlers.showErrorNotification(error.message, 'Create Failed');
+                } else {
+                    billActionHandlers.showSuccessNotification('Household created!');
+                    updateHouseholdUI();
+                }
+            }
+        });
+
+        document.getElementById('joinHouseholdBtn').addEventListener('click', async () => {
+            const householdId = document.getElementById('joinHouseholdInput').value.trim();
+            if (!householdId) {
+                billActionHandlers.showErrorNotification('Please enter a Household ID', 'Invalid Input');
+                return;
+            }
+
+            const confirmed = confirm('Joining a household will REPLACE your local bills with the shared household bills. This cannot be undone. Continue?');
+            if (confirmed) {
+                const { error } = await joinHousehold(householdId);
+                if (error) {
+                    billActionHandlers.showErrorNotification(error.message, 'Join Failed');
+                } else {
+                    billActionHandlers.showSuccessNotification('Successfully joined household! Reloading...');
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            }
         });
     } catch (error) {
         logger.error('Error showing settings modal', error);
@@ -821,3 +868,30 @@ export const settingsHandlers = {
     updateCategoryName,
     deleteCategoryClean
 };
+
+/**
+ * Update the household UI section based on current status
+ */
+async function updateHouseholdUI() {
+    const householdId = await getHouseholdStatus();
+    const container = document.getElementById('householdStatusContainer');
+    if (!container) return;
+
+    if (householdId) {
+        container.innerHTML = `
+            <div style="background: rgba(var(--primary-rgb), 0.1); padding: 12px; border-radius: 6px; border: 1px solid var(--primary-color);">
+                <p style="margin: 0; font-weight: 600; color: var(--primary-color);">✅ Member of Shared Household</p>
+                <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Household ID:</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <code style="background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 13px; flex: 1; word-break: break-all;">${householdId}</code>
+                        <button type="button" class="view-btn" style="padding: 4px 8px; font-size: 11px;" onclick="navigator.clipboard.writeText('${householdId}').then(() => alert('Copied!'))">Copy</button>
+                    </div>
+                </div>
+                <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                    Share this ID with your partner so they can join and sync data.
+                </p>
+            </div>
+        `;
+    }
+}

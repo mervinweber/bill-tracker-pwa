@@ -1,5 +1,5 @@
-const CACHE_NAME = 'bill-tracker-v8';
-const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/setup.html'];
+const CACHE_NAME = 'bill-tracker-v9';
+const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/setup.html', '/src/index.css'];
 
 self.addEventListener('install', (event) => {
     event.waitUntil((async () => {
@@ -62,4 +62,28 @@ self.addEventListener('activate', (event) => {
 
         await self.clients.claim();
     })());
+});
+
+self.addEventListener('notificationclick', (event) => {
+    const notification = event.notification;
+    const action = event.action;
+
+    notification.close();
+
+    if (action === 'pay' && notification.data?.website) {
+        event.waitUntil(clients.openWindow(notification.data.website));
+    } else {
+        event.waitUntil(
+            clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+                for (const client of clientList) {
+                    if (client.url === '/' && 'focus' in client) {
+                        return client.focus();
+                    }
+                }
+                if (clients.openWindow) {
+                    return clients.openWindow('/');
+                }
+            })
+        );
+    }
 });

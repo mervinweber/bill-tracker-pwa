@@ -107,6 +107,28 @@ export const initializeBillForm = (categories, actions) => {
                     <label for="billNotes" class="${labelBase}">Notes</label>
                     <textarea id="billNotes" rows="2" placeholder="Add any notes..." class="${inputBase} min-h-[60px] resize-none"></textarea>
                 </div>
+
+                <div class="border-t pt-4 mt-4">
+                    <div class="flex items-center justify-between py-2">
+                        <label for="billSplitEnabled" class="text-sm font-semibold cursor-pointer">Split this bill?</label>
+                        <input type="checkbox" id="billSplitEnabled" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
+                    </div>
+                    
+                    <div id="splitSection" class="hidden space-y-3 mt-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold uppercase text-muted-foreground tracking-wider">Payers</h4>
+                            <button type="button" id="addPayerBtn" class="text-xs text-primary hover:underline">+ Add Payer</button>
+                        </div>
+                        <div id="payersList" class="space-y-2">
+                            <!-- Payer rows will be added here -->
+                        </div>
+                        <div class="flex justify-between items-center text-xs pt-2 border-t">
+                            <span class="text-muted-foreground">Total Split:</span>
+                            <span id="splitTotalDisplay" class="font-mono font-bold">$0.00</span>
+                        </div>
+                        <div id="splitError" class="text-[10px] text-destructive hidden">Total split must equal Amount Due.</div>
+                    </div>
+                </div>
                 
                 <div class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2 mt-4">
                     <button type="button" id="cancelBillBtn" class="${btnOutline}">Cancel</button>
@@ -150,6 +172,65 @@ export const initializeBillForm = (categories, actions) => {
         }
     });
 
+    const splitSection = document.getElementById('splitSection');
+    const splitEnabled = document.getElementById('billSplitEnabled');
+    const payersList = document.getElementById('payersList');
+    const addPayerBtn = document.getElementById('addPayerBtn');
+    const splitTotalDisplay = document.getElementById('splitTotalDisplay');
+    const splitError = document.getElementById('splitError');
+
+    const updateSplitTotal = () => {
+        const amounts = Array.from(payersList.querySelectorAll('.payer-amount')).map(input => parseFloat(input.value) || 0);
+        const total = amounts.reduce((sum, a) => sum + a, 0);
+        splitTotalDisplay.textContent = `$${total.toFixed(2)}`;
+        
+        const amountDue = parseFloat(document.getElementById('billAmountDue').value) || 0;
+        if (Math.abs(total - amountDue) > 0.01) {
+            splitTotalDisplay.classList.add('text-destructive');
+            splitError.classList.remove('hidden');
+        } else {
+            splitTotalDisplay.classList.remove('text-destructive');
+            splitError.classList.add('hidden');
+        }
+    };
+
+    const createPayerRow = (payer = { name: '', amount: 0 }) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 group';
+        row.innerHTML = `
+            <input type="text" class="${inputBase} payer-name" placeholder="Name" value="${payer.name}">
+            <input type="number" step="0.01" class="${inputBase} payer-amount w-24" placeholder="0.00" value="${payer.amount || ''}">
+            <button type="button" class="remove-payer text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                &times;
+            </button>
+        `;
+        
+        row.querySelector('.payer-amount').addEventListener('input', updateSplitTotal);
+        row.querySelector('.remove-payer').addEventListener('click', () => {
+            row.remove();
+            updateSplitTotal();
+        });
+        
+        return row;
+    };
+
+    splitEnabled.addEventListener('change', () => {
+        if (splitEnabled.checked) {
+            splitSection.classList.remove('hidden');
+            if (payersList.children.length === 0) {
+                const amountDue = parseFloat(document.getElementById('billAmountDue').value) || 0;
+                payersList.appendChild(createPayerRow({ name: 'Me', amount: amountDue }));
+                updateSplitTotal();
+            }
+        } else {
+            splitSection.classList.add('hidden');
+        }
+    });
+
+    addPayerBtn.addEventListener('click', () => {
+        payersList.appendChild(createPayerRow());
+    });
+
     document.getElementById('billFormElement').addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -158,6 +239,25 @@ export const initializeBillForm = (categories, actions) => {
             alert('Amount Due must be a positive number');
             document.getElementById('billAmountDue').setAttribute('aria-invalid', 'true');
             return;
+        }
+
+        let splitData = { enabled: false, payers: [] };
+        if (splitEnabled.checked) {
+            const payerRows = Array.from(payersList.querySelectorAll('div.flex'));
+            const payers = payerRows.map(row => ({
+                id: Math.random().toString(36).substr(2, 9),
+                name: row.querySelector('.payer-name').value,
+                amount: parseFloat(row.querySelector('.payer-amount').value) || 0,
+                isPaid: false
+            }));
+
+            const splitTotal = payers.reduce((sum, p) => sum + p.amount, 0);
+            if (Math.abs(splitTotal - amount) > 0.01) {
+                alert('Total split amount must equal Amount Due');
+                return;
+            }
+
+            splitData = { enabled: true, payers };
         }
 
         const billData = {
@@ -170,7 +270,8 @@ export const initializeBillForm = (categories, actions) => {
             recurrence: document.getElementById('billRecurrence').value,
             reminderEnabled: document.getElementById('billReminderEnabled').checked,
             notes: document.getElementById('billNotes').value,
-            website: document.getElementById('billWebsite').value
+            website: document.getElementById('billWebsite').value,
+            split: splitData
         };
         actions.onSaveBill(billData);
     });
@@ -188,7 +289,8 @@ export const openBillForm = (bill) => {
         recurrence: 'One-time',
         reminderEnabled: true,
         notes: '',
-        website: ''
+        website: '',
+        split: { enabled: false, payers: [] }
     };
 
     document.getElementById('billId').value = billData.id;
@@ -202,6 +304,34 @@ export const openBillForm = (bill) => {
     document.getElementById('billReminderEnabled').checked = billData.reminderEnabled !== false;
     document.getElementById('billNotes').value = billData.notes || '';
     document.getElementById('billWebsite').value = billData.website || '';
+
+    // Initialize Split Section
+    const splitEnabled = document.getElementById('billSplitEnabled');
+    const splitSection = document.getElementById('splitSection');
+    const payersList = document.getElementById('payersList');
+    
+    splitEnabled.checked = billData.split?.enabled || false;
+    payersList.innerHTML = '';
+    
+    if (billData.split?.enabled) {
+        splitSection.classList.remove('hidden');
+        billData.split.payers.forEach(payer => {
+            // Need access to createPayerRow, but it's local to initializeBillForm
+            // Refactoring to make it accessible or re-implementing
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 group';
+            row.innerHTML = `
+                <input type="text" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 payer-name" placeholder="Name" value="${payer.name}">
+                <input type="number" step="0.01" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 payer-amount w-24" placeholder="0.00" value="${payer.amount}">
+                <button type="button" class="remove-payer text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                    &times;
+                </button>
+            `;
+            payersList.appendChild(row);
+        });
+    } else {
+        splitSection.classList.add('hidden');
+    }
 
     const titleElement = document.getElementById('billFormTitle');
     titleElement.textContent = isEdit ? 'Edit Bill' : 'Add Bill';
@@ -224,6 +354,9 @@ export const resetBillForm = () => {
     document.getElementById('billCategory').value = '';
     document.getElementById('billFormElement').reset();
     document.getElementById('billReminderEnabled').checked = true;
+    document.getElementById('billSplitEnabled').checked = false;
+    document.getElementById('splitSection').classList.add('hidden');
+    document.getElementById('payersList').innerHTML = '';
     document.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
 };
 

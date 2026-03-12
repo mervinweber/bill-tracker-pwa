@@ -16,14 +16,14 @@
  */
 export const initializeHeader = (paychecks, actions) => {
     const header = document.getElementById('header');
-    header.className = "border-b bg-background px-4 py-3 sm:px-6";
+    header.className = "border-b bg-background py-3";
     const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
     const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground`;
     const btnOutline = `${btnBase} border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground`;
     const inputBase = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
     header.innerHTML = `
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="px-4 sm:px-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="space-y-1">
                 <h1 class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">💰 Bill Tracker</h1>
                 <p class="text-xs text-muted-foreground sm:text-sm" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>

@@ -36,7 +36,7 @@ export const initializeSidebar = (categories, actions) => {
     const btnDanger = `${btnBase} bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90`;
 
     sidebar.innerHTML = '';
-    sidebar.className = "flex w-full md:w-64 flex-col border-r bg-muted/30 py-6 pl-2 pr-6 md:flex shrink-0";
+    sidebar.className = "flex w-full flex-col border-r bg-muted/30 py-6 pl-4 pr-4 md:flex shrink-0";
 
     const nav = document.createElement('nav');
     nav.className = "flex h-full flex-col gap-6";
@@ -48,7 +48,7 @@ export const initializeSidebar = (categories, actions) => {
     catSection.className = "space-y-4";
 
     const catHeader = document.createElement('h2');
-    catHeader.className = "px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+    catHeader.className = "px-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground/70 mb-2";
     catHeader.textContent = 'Categories';
     catSection.appendChild(catHeader);
 
@@ -77,7 +77,7 @@ export const initializeSidebar = (categories, actions) => {
     actionsSection.className = "space-y-4";
 
     const actionsHeader = document.createElement('h3');
-    actionsHeader.className = "px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+    actionsHeader.className = "px-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground/70 mb-2";
     actionsHeader.textContent = 'Actions';
     actionsSection.appendChild(actionsHeader);
 
@@ -108,7 +108,7 @@ export const initializeSidebar = (categories, actions) => {
     dataSection.className = "space-y-4";
 
     const dataHeader = document.createElement('h3');
-    dataHeader.className = "px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+    dataHeader.className = "px-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-muted-foreground/70 mb-2";
     dataHeader.textContent = 'Data Management';
     dataSection.appendChild(dataHeader);
 

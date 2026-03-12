@@ -179,8 +179,6 @@ export const getUser = async () => {
     }
 };
 
-// Data Sync Functions
-
 /**
  * Sync both bills and payment settings to cloud
  * @param {Array} localBills - Bills array to sync
@@ -192,12 +190,23 @@ export const syncUserData = async (localBills, localPaymentSettings = null) => {
     const user = await getUser();
     if (!user) return { error: { message: 'User not logged in' } };
 
+    // Get current user_data to resolve household_id
+    const { data: userData } = await supabase
+        .from('user_data')
+        .select('household_id')
+        .eq('user_id', user.id)
+        .single();
+
     const updateData = {
         user_id: user.id,
-        bills: localBills
+        bills: localBills,
+        last_sync: new Date().toISOString()
     };
 
-    // Include payment settings if provided
+    if (userData?.household_id) {
+        updateData.household_id = userData.household_id;
+    }
+
     if (localPaymentSettings) {
         updateData.paymentSettings = localPaymentSettings;
     }
@@ -245,13 +254,32 @@ export const fetchCloudBills = async () => {
     const user = await getUser();
     if (!user) return { error: { message: 'User not logged in' } };
 
-    const { data, error } = await supabase
+    // First, check if user belongs to a household
+    const { data: userData, error: userError } = await supabase
         .from('user_data')
-        .select('bills')
+        .select('bills, household_id')
         .eq('user_id', user.id)
         .single();
 
-    return { data: data ? data.bills : [], error };
+    if (userError && userError.code !== 'PGRST116') {
+        return { error: userError };
+    }
+
+    // If user has a household, fetch bills for that household instead
+    if (userData?.household_id) {
+        const { data: householdData, error: householdError } = await supabase
+            .from('user_data')
+            .select('bills')
+            .eq('household_id', userData.household_id)
+            .limit(1)
+            .single();
+        
+        if (!householdError && householdData) {
+            return { data: householdData.bills || [], error: null };
+        }
+    }
+
+    return { data: userData ? userData.bills : [], error: null };
 };
 
 /**
@@ -270,4 +298,66 @@ export const fetchCloudPaymentSettings = async () => {
         .single();
 
     return { data: data ? data.paymentSettings : null, error };
+};
+
+/**
+ * Create a new household
+ */
+export const createHousehold = async () => {
+    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    const user = await getUser();
+    if (!user) return { error: { message: 'User not logged in' } };
+
+    const householdId = crypto.randomUUID();
+    
+    const { data, error } = await supabase
+        .from('user_data')
+        .update({ household_id: householdId })
+        .eq('user_id', user.id);
+    
+    return { householdId, error };
+};
+
+/**
+ * Join an existing household
+ */
+export const joinHousehold = async (householdId) => {
+    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    const user = await getUser();
+    if (!user) return { error: { message: 'User not logged in' } };
+
+    // Verify household exists by checking if any user has it
+    const { data: existing, error: checkError } = await supabase
+        .from('user_data')
+        .select('user_id')
+        .eq('household_id', householdId)
+        .limit(1);
+
+    if (checkError || !existing || existing.length === 0) {
+        return { error: { message: 'Invalid Household ID' } };
+    }
+
+    const { data, error } = await supabase
+        .from('user_data')
+        .update({ household_id: householdId })
+        .eq('user_id', user.id);
+
+    return { data, error };
+};
+
+/**
+ * Get household status
+ */
+export const getHouseholdStatus = async () => {
+    if (!supabase) return null;
+    const user = await getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+        .from('user_data')
+        .select('household_id')
+        .eq('user_id', user.id)
+        .single();
+    
+    return data?.household_id || null;
 };

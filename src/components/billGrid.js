@@ -139,7 +139,15 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         // Amount Due
         const amountCell = document.createElement('td');
         amountCell.className = "p-4 align-middle font-medium font-mono";
-        amountCell.textContent = `$${(bill.amountDue || 0).toFixed(2)}`;
+        const splitIndicator = bill.split?.enabled 
+            ? `<div class="text-[10px] text-primary font-sans font-bold">SPLIT (${bill.split.payers.length})</div>` 
+            : '';
+        amountCell.innerHTML = `
+            <div class="flex flex-col">
+                <span>$${(bill.amountDue || 0).toFixed(2)}</span>
+                ${splitIndicator}
+            </div>
+        `;
         row.appendChild(amountCell);
 
         // Balance Input

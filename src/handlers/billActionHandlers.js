@@ -236,6 +236,14 @@ export function togglePaymentStatus(billId, isPaid) {
         updated.isPaid = isPaid;
         updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
 
+        // Handle splitting if enabled
+        if (updated.split?.enabled) {
+            updated.split.payers = updated.split.payers.map(p => ({
+                ...p,
+                isPaid: isPaid
+            }));
+        }
+
         // If marking as paid and bill is recurring, move to next payment cycle
         advanceRecurringBillIfNeeded(bill, updated);
 
@@ -434,6 +442,13 @@ export function getRemainingBalance(bill) {
         const totalDue = parseFloat(bill.balance || bill.amountDue || 0);
         if (totalDue < 0) return 0;
 
+        // If split is enabled, remaining balance is based on unpaid payers
+        if (bill.split?.enabled) {
+            return bill.split.payers
+                .filter(p => !p.isPaid)
+                .reduce((sum, p) => sum + p.amount, 0);
+        }
+
         const totalPaid = getTotalPaid(bill);
         return Math.max(0, totalDue - totalPaid);
     } catch (error) {
@@ -482,6 +497,15 @@ export function recordPayment(billId, paymentData) {
 
         updated.paymentHistory.push(payment);
         updated.lastPaymentDate = payment.date;
+
+        // Handle Split Payment Attribution
+        if (updated.split?.enabled && paymentData.payerId) {
+            const payer = updated.split.payers.find(p => p.id === paymentData.payerId);
+            if (payer) {
+                payer.isPaid = true;
+                logger.info('Split payment attributed to payer', { payerName: payer.name, amount: payment.amount });
+            }
+        }
 
         const remaining = getRemainingBalance(updated);
         updated.balance = remaining;
@@ -744,6 +768,18 @@ export function validateBill(billData) {
         const balanceValidation = validateAmount(billData.balance);
         if (!balanceValidation.isValid) {
             errors.push('Balance: ' + balanceValidation.error);
+        }
+    }
+
+    // Validate split data if provided
+    if (billData.split && billData.split.enabled) {
+        if (!Array.isArray(billData.split.payers) || billData.split.payers.length === 0) {
+            errors.push('Split bill must have at least one payer');
+        } else {
+            const splitTotal = billData.split.payers.reduce((sum, p) => sum + (p.amount || 0), 0);
+            if (Math.abs(splitTotal - billData.amountDue) > 0.01) {
+                errors.push('Total split amount must equal Amount Due');
+            }
         }
     }
 

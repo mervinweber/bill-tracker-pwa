@@ -159,13 +159,18 @@ export function checkAndSendDueBillReminders(bills = []) {
         ? settings.daysBefore
         : parseInt(settings.daysBefore, 10) || 1;
 
-    const eligible = buildEligibleBills(bills, daysBefore, today);
+    // Advanced: We check for bills due in 0, 1, or 2 days for proactive reminders
+    const eligible = buildEligibleBills(bills, Math.max(daysBefore, 2), today);
     if (eligible.length === 0) {
         return { sentCount: 0, reason: 'no-eligible-bills' };
     }
 
     const ledger = getReminderLedger();
-    const unsent = eligible.filter(bill => !ledger[reminderKey(bill)]);
+    const unsent = eligible.filter(bill => {
+        const daysUntil = computeDaysUntilDue(bill.dueDate, today);
+        const stageKey = `${reminderKey(bill)}|stage-${daysUntil}`;
+        return !ledger[stageKey];
+    });
 
     if (unsent.length === 0) {
         return { sentCount: 0, reason: 'already-sent' };
@@ -174,22 +179,42 @@ export function checkAndSendDueBillReminders(bills = []) {
     if (unsent.length === 1) {
         const bill = unsent[0];
         const daysUntil = computeDaysUntilDue(bill.dueDate, today);
-        const dueText = daysUntil === 0 ? 'due today' : `due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}`;
-        sendNotification('Bill reminder', `${bill.name} is ${dueText} ($${(bill.amountDue || 0).toFixed(2)}).`, 'bill-reminder-single');
+        let title = 'Bill Coming Up';
+        let body = `${bill.name} is due in ${daysUntil} day${daysUntil === 1 ? '' : 's'} ($${(bill.amountDue || 0).toFixed(2)}).`;
+        
+        if (daysUntil === 0) {
+            title = 'Bill Due Today';
+            body = `${bill.name} is due today! ($${(bill.amountDue || 0).toFixed(2)}).`;
+        }
+
+        const options = {
+            body,
+            tag: `bill-${bill.id}`,
+            data: { billId: bill.id, website: bill.website },
+            actions: bill.website ? [{ action: 'pay', title: 'Pay Now' }] : []
+        };
+
+        new Notification(title, options);
     } else {
         const nearest = unsent
             .slice()
             .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
-        sendNotification(
-            'Bill reminders',
-            `${unsent.length} unpaid bills are due soon. Next: ${nearest.name} on ${nearest.dueDate}.`,
-            'bill-reminder-summary'
+        
+        new Notification(
+            'Multiple Bills Upcoming',
+            {
+                body: `${unsent.length} upcoming bills. Next: ${nearest.name} ($${nearest.amountDue.toFixed(2)}).`,
+                tag: 'bill-summary',
+                data: { count: unsent.length }
+            }
         );
     }
 
     const timestamp = Date.now();
     unsent.forEach(bill => {
-        ledger[reminderKey(bill)] = timestamp;
+        const daysUntil = computeDaysUntilDue(bill.dueDate, today);
+        const stageKey = `${reminderKey(bill)}|stage-${daysUntil}`;
+        ledger[stageKey] = timestamp;
     });
     saveReminderLedger(ledger);
 

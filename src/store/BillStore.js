@@ -16,6 +16,9 @@
  * - notes: Additional notes (optional)
  * - lastPaymentDate: Date of last payment (optional)
  * - paymentHistory: Array of past payments (optional)
+ * - split: Object containing split details (optional)
+ *   - enabled: boolean
+ *   - payers: Array<{ id: string, name: string, amount: number, isPaid: boolean }>
  * 
  * @module BillStore
  * @requires dates

@@ -197,7 +197,7 @@ class AppOrchestrator {
             });
 
             initializeBillForm(this.categories, {
-                onSaveBill: () => this.handleSaveBill(),
+                onSaveBill: (billData) => this.handleSaveBill(billData),
                 onMarkPaid: (billId, isPaid) => this.handleMarkPaidFromModal(billId, isPaid)
             });
 
@@ -475,35 +475,54 @@ class AppOrchestrator {
         });
     }
 
-    handleSaveBill() {
+    handleSaveBill(billData = null) {
         try {
-            const id = document.getElementById('billId').value;
+            const id = billData?.id || document.getElementById('billId').value;
             const bills = billStore.getAll();
             const existingBill = id ? bills.find(b => b.id === id) : null;
 
-            let dueDateString = document.getElementById('billDueDate').value;
+            let dueDateString = billData?.dueDate || document.getElementById('billDueDate').value;
 
             // Only snap bill date to closest paycheck when CREATING new bills
-            // When editing existing bills, preserve the date as-is to allow editing past/unusual dates
             if (!existingBill) {
                 const billDueDate = new Date(dueDateString);
                 const snappedDate = paycheckManager.snapBillDateToPaycheck(billDueDate);
                 dueDateString = snappedDate.toISOString().split('T')[0];
             }
 
+            // Read split data if not provided in billData
+            let split = billData?.split;
+            if (!split) {
+                const splitEnabled = document.getElementById('billSplitEnabled')?.checked;
+                if (splitEnabled) {
+                    const payersList = document.getElementById('payersList');
+                    const payerRows = Array.from(payersList.querySelectorAll('div.flex'));
+                    const payers = payerRows.map(row => ({
+                        id: Math.random().toString(36).substr(2, 9),
+                        name: row.querySelector('.payer-name').value,
+                        amount: parseFloat(row.querySelector('.payer-amount').value) || 0,
+                        isPaid: false
+                    }));
+                    split = { enabled: true, payers };
+                } else {
+                    split = { enabled: false, payers: [] };
+                }
+            }
+
             const bill = {
                 id: id || Date.now().toString(),
-                category: document.getElementById('billCategory').value,
-                name: document.getElementById('billName').value,
+                category: billData?.category || document.getElementById('billCategory').value,
+                name: billData?.name || document.getElementById('billName').value,
                 dueDate: dueDateString,
-                amountDue: parseFloat(document.getElementById('billAmountDue').value),
-                balance: document.getElementById('billBalance').value
+                amountDue: billData?.amountDue || parseFloat(document.getElementById('billAmountDue').value),
+                balance: billData?.balance || (document.getElementById('billBalance').value
                     ? parseFloat(document.getElementById('billBalance').value)
-                    : parseFloat(document.getElementById('billAmountDue').value),
-                recurrence: document.getElementById('billRecurrence').value,
-                reminderEnabled: document.getElementById('billReminderEnabled').checked,
-                notes: document.getElementById('billNotes').value,
-                website: document.getElementById('billWebsite').value,
+                    : parseFloat(document.getElementById('billAmountDue').value)),
+                recurrence: billData?.recurrence || document.getElementById('billRecurrence').value,
+                reminderEnabled: billData?.reminderEnabled ?? document.getElementById('billReminderEnabled').checked,
+                notes: billData?.notes || document.getElementById('billNotes').value,
+                website: billData?.website || document.getElementById('billWebsite').value,
+                split: split,
                 isPaid: existingBill ? existingBill.isPaid || false : false,
                 lastPaymentDate: existingBill ? existingBill.lastPaymentDate || null : null,
                 paymentHistory: existingBill ? existingBill.paymentHistory || [] : []
