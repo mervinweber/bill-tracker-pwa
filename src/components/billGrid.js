@@ -181,7 +181,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         const actionsCell = document.createElement('td');
         actionsCell.className = "p-4 align-middle text-right";
         const actionGroup = document.createElement('div');
-        actionGroup.className = "flex items-center justify-end gap-1";
+        actionGroup.className = "flex items-center justify-end gap-2";
 
         const btnStyle = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8";
 

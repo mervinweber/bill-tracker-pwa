@@ -36,7 +36,7 @@ export const initializeSidebar = (categories, actions) => {
     const btnDanger = `${btnBase} bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90`;
 
     sidebar.innerHTML = '';
-    sidebar.className = "flex w-full flex-col border-r bg-muted/30 py-6 pl-4 pr-4 md:flex shrink-0";
+    sidebar.className = "flex w-full flex-col border-r bg-muted/30 py-6 pl-2 pr-4 md:flex shrink-0";
 
     const nav = document.createElement('nav');
     nav.className = "flex h-full flex-col gap-6";
@@ -88,7 +88,7 @@ export const initializeSidebar = (categories, actions) => {
     addBtn.id = 'addBillBtn';
     addBtn.className = `${btnPrimary} w-full gap-2 h-10`;
     addBtn.ariaLabel = 'Add a new bill';
-    addBtn.innerHTML = '<span>➕</span> Add Bill';
+    addBtn.innerHTML = '<span class="mr-3 text-base">➕</span> <span>Add Bill</span>';
     addBtn.addEventListener('click', actions.onOpenAddBill);
     actionsDiv.appendChild(addBtn);
 
@@ -96,7 +96,7 @@ export const initializeSidebar = (categories, actions) => {
     regenBtn.id = 'regenerateBillsBtn';
     regenBtn.className = `${btnSecondary} w-full gap-2 h-10`;
     regenBtn.ariaLabel = 'Regenerate all recurring bills for the next pay period';
-    regenBtn.innerHTML = '<span>🔄</span> Regenerate';
+    regenBtn.innerHTML = '<span class="mr-3 text-base">🔄</span> <span>Regenerate</span>';
     regenBtn.addEventListener('click', actions.onRegenerateBills);
     actionsDiv.appendChild(regenBtn);
 
@@ -119,7 +119,7 @@ export const initializeSidebar = (categories, actions) => {
     exportBtn.id = 'exportDataBtn';
     exportBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
     exportBtn.ariaLabel = 'Export bills data to JSON file';
-    exportBtn.innerHTML = '<span>⬇️</span> Export';
+    exportBtn.innerHTML = '<span class="mr-3 text-base">⬇️</span> <span>Export</span>';
     exportBtn.addEventListener('click', actions.onExportData);
     dataDiv.appendChild(exportBtn);
 
@@ -127,7 +127,7 @@ export const initializeSidebar = (categories, actions) => {
     importBtn.id = 'importDataBtn';
     importBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
     importBtn.ariaLabel = 'Import bills data from JSON file';
-    importBtn.innerHTML = '<span>⬆️</span> Import';
+    importBtn.innerHTML = '<span class="mr-3 text-base">⬆️</span> <span>Import</span>';
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -149,7 +149,7 @@ export const initializeSidebar = (categories, actions) => {
     settingsBtn.id = 'settingsBtn';
     settingsBtn.className = `${btnSecondary} w-full gap-2 h-9`;
     settingsBtn.ariaLabel = 'Open settings';
-    settingsBtn.innerHTML = '<span>⚙️</span> Settings';
+    settingsBtn.innerHTML = '<span class="mr-3 text-base">⚙️</span> <span>Settings</span>';
     settingsBtn.addEventListener('click', actions.onShowSettings);
     dataDiv.appendChild(settingsBtn);
 
@@ -157,7 +157,7 @@ export const initializeSidebar = (categories, actions) => {
     bulkPaidBtn.id = 'bulkMarkPaidBtn';
     bulkPaidBtn.className = `${btnSecondary} w-full gap-2 h-9`;
     bulkPaidBtn.ariaLabel = 'Mark all paid';
-    bulkPaidBtn.innerHTML = '<span>✅</span> Mark All Paid';
+    bulkPaidBtn.innerHTML = '<span class="mr-3 text-base">✅</span> <span>Mark All Paid</span>';
     bulkPaidBtn.addEventListener('click', actions.onBulkMarkPaid);
     dataDiv.appendChild(bulkPaidBtn);
 
@@ -165,7 +165,7 @@ export const initializeSidebar = (categories, actions) => {
     bulkDelBtn.id = 'bulkDeleteBtn';
     bulkDelBtn.className = `${btnDanger} w-full gap-2 h-9`;
     bulkDelBtn.ariaLabel = 'Delete all data';
-    bulkDelBtn.innerHTML = '<span>🗑️</span> Clear All';
+    bulkDelBtn.innerHTML = '<span class="mr-3 text-base">🗑️</span> <span>Clear All</span>';
     bulkDelBtn.addEventListener('click', actions.onBulkDelete);
     dataDiv.appendChild(bulkDelBtn);
 
@@ -227,7 +227,7 @@ export const initializeSidebar = (categories, actions) => {
 
         const logoutBtn = document.createElement('button');
         logoutBtn.className = `${btnOutline} w-full h-8 px-2 text-xs`;
-        logoutBtn.innerHTML = '<span>🚪</span> Logout';
+        logoutBtn.innerHTML = '<span class="mr-2">🚪</span> <span>Logout</span>';
         logoutBtn.addEventListener('click', actions.onLogout);
         authDiv.appendChild(logoutBtn);
 
@@ -235,7 +235,7 @@ export const initializeSidebar = (categories, actions) => {
     } else if (isSupabaseConfigured()) {
         const loginBtn = document.createElement('button');
         loginBtn.className = `${btnPrimary} w-full h-9 text-xs`;
-        loginBtn.innerHTML = '<span>☁️</span> Login to Sync';
+        loginBtn.innerHTML = '<span class="mr-2">☁️</span> <span>Login to Sync</span>';
         loginBtn.addEventListener('click', actions.onOpenAuth);
         bottomSection.appendChild(loginBtn);
     }
