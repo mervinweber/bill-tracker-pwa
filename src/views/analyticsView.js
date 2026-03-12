@@ -2,7 +2,7 @@
  * Analytics View Module
  * Handles analytics rendering with Chart.js
  */
-
+import Chart from 'chart.js/auto';
 import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
 import logger from '../utils/logger.js';
