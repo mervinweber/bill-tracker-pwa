@@ -277,6 +277,34 @@ This roadmap focuses on the remaining improvements needed for production readine
 
 ---
 
+### 2.6 Empty-State Layout Optimization
+
+**Current State**: The zero-data dashboard view leaves substantial unused horizontal and vertical space, especially on desktop.
+
+**What's Needed**:
+- Reduce KPI card vertical footprint when all metrics are zero
+- Add a dedicated actionable empty state in main content (Add Bill, Import, Settings)
+- Introduce a short first-run checklist (e.g., Add bill → Set reminders → Review upcoming)
+- Keep sidebar narrower on desktop to prioritize content area
+- Ensure overlays (confirmation/toast) remain visually prominent over dashboard cards
+
+**Suggested Files**:
+- `index.html`
+- `src/index.css`
+- `src/app.js`
+- `src/components/sidebar.js`
+
+**Est. Effort**: 2-4 hours
+
+**Acceptance Criteria**:
+- [ ] Empty-state CTA panel appears when bill count is 0
+- [ ] Dashboard card section is visually denser on desktop
+- [ ] Sidebar width is reduced without breaking navigation usability
+- [ ] Bulk action confirmations are consistently visible and centered
+- [ ] Mobile layout remains functional with no overlap/regression
+
+---
+
 ## Priority 3: Developer Experience (Medium Impact)
 
 ### 3.1 Contributing Guidelines
