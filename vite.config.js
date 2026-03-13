@@ -9,14 +9,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['src/vendor/supabase.js']
-        }
-      }
-    }
+    minify: 'terser'
   },
   preview: {
     port: 4173,
