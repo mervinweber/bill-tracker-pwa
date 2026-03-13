@@ -73,16 +73,29 @@ export function showErrorNotification(message, title = 'Error') {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: var(--danger-color);
-            color: white;
+            background: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
             padding: 15px 20px;
             border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
+            border: 1px solid hsl(var(--destructive));
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            z-index: 1100;
             max-width: 400px;
         `;
 
-        notification.querySelector('.notification-close').addEventListener('click', () => {
+        const closeButton = /** @type {HTMLButtonElement} */ (notification.querySelector('.notification-close'));
+        closeButton.style.cssText = `
+            margin-left: 10px;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0.9;
+        `;
+
+        closeButton.addEventListener('click', () => {
             notification.remove();
         });
 
@@ -114,12 +127,13 @@ export function showSuccessNotification(message) {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: var(--success-color);
-        color: white;
+        background: #059669;
+        color: #ffffff;
         padding: 15px 20px;
         border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
+        border: 1px solid #047857;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        z-index: 1100;
     `;
 
     document.body.appendChild(notification);
@@ -313,7 +327,7 @@ export function deleteBill(billId) {
 /**
  * Bulk delete bills
  */
-export function bulkDelete(billIds) {
+export function bulkDelete(billIds, skipConfirm = false) {
     try {
         logger.debug('bulkDelete called', { billIds });
         if (!billIds || billIds.length === 0) {
@@ -321,7 +335,7 @@ export function bulkDelete(billIds) {
             return false;
         }
 
-        if (!confirm(`Delete ${billIds.length} bills? This action cannot be undone.`)) {
+        if (!skipConfirm && !confirm(`Delete ${billIds.length} bills? This action cannot be undone.`)) {
             return false;
         }
 
@@ -346,7 +360,7 @@ export function bulkDelete(billIds) {
 /**
  * Bulk mark bills as paid
  */
-export function bulkMarkAsPaid(billIds) {
+export function bulkMarkAsPaid(billIds, skipConfirm = false) {
     try {
         logger.debug('bulkMarkAsPaid called', { billIds });
         if (!billIds || billIds.length === 0) {
@@ -354,7 +368,7 @@ export function bulkMarkAsPaid(billIds) {
             return false;
         }
 
-        if (!confirm(`Mark ${billIds.length} bills as paid?`)) {
+        if (!skipConfirm && !confirm(`Mark ${billIds.length} bills as paid?`)) {
             return false;
         }
 

@@ -86,6 +86,7 @@ export const initializeSidebar = (categories, actions) => {
 
     const addBtn = document.createElement('button');
     addBtn.id = 'addBillBtn';
+    addBtn.type = 'button';
     addBtn.className = `${btnPrimary} w-full gap-2 h-10`;
     addBtn.ariaLabel = 'Add a new bill';
     addBtn.innerHTML = '<span class="mr-3 text-base">➕</span> <span>Add Bill</span>';
@@ -94,6 +95,7 @@ export const initializeSidebar = (categories, actions) => {
 
     const regenBtn = document.createElement('button');
     regenBtn.id = 'regenerateBillsBtn';
+    regenBtn.type = 'button';
     regenBtn.className = `${btnSecondary} w-full gap-2 h-10`;
     regenBtn.ariaLabel = 'Regenerate all recurring bills for the next pay period';
     regenBtn.innerHTML = '<span class="mr-3 text-base">🔄</span> <span>Regenerate</span>';
@@ -117,6 +119,7 @@ export const initializeSidebar = (categories, actions) => {
 
     const exportBtn = document.createElement('button');
     exportBtn.id = 'exportDataBtn';
+    exportBtn.type = 'button';
     exportBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
     exportBtn.ariaLabel = 'Export bills data to JSON file';
     exportBtn.innerHTML = '<span class="mr-3 text-base">⬇️</span> <span>Export</span>';
@@ -125,6 +128,7 @@ export const initializeSidebar = (categories, actions) => {
 
     const importBtn = document.createElement('button');
     importBtn.id = 'importDataBtn';
+    importBtn.type = 'button';
     importBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
     importBtn.ariaLabel = 'Import bills data from JSON file';
     importBtn.innerHTML = '<span class="mr-3 text-base">⬆️</span> <span>Import</span>';
@@ -148,6 +152,7 @@ export const initializeSidebar = (categories, actions) => {
 
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'settingsBtn';
+    settingsBtn.type = 'button';
     settingsBtn.className = `${btnSecondary} w-full gap-2 h-9`;
     settingsBtn.ariaLabel = 'Open settings';
     settingsBtn.innerHTML = '<span class="mr-3 text-base">⚙️</span> <span>Settings</span>';
@@ -156,6 +161,7 @@ export const initializeSidebar = (categories, actions) => {
 
     const bulkPaidBtn = document.createElement('button');
     bulkPaidBtn.id = 'bulkMarkPaidBtn';
+    bulkPaidBtn.type = 'button';
     bulkPaidBtn.className = `${btnSecondary} w-full gap-2 h-9`;
     bulkPaidBtn.ariaLabel = 'Mark all paid';
     bulkPaidBtn.innerHTML = '<span class="mr-3 text-base">✅</span> <span>Mark All Paid</span>';
@@ -164,6 +170,7 @@ export const initializeSidebar = (categories, actions) => {
 
     const bulkDelBtn = document.createElement('button');
     bulkDelBtn.id = 'bulkDeleteBtn';
+    bulkDelBtn.type = 'button';
     bulkDelBtn.className = `${btnDanger} w-full gap-2 h-9`;
     bulkDelBtn.ariaLabel = 'Delete all data';
     bulkDelBtn.innerHTML = '<span class="mr-3 text-base">🗑️</span> <span>Clear All</span>';

@@ -980,16 +980,33 @@ class AppOrchestrator {
         }
     }
 
-    handleBulkDelete() {
+    async handleBulkDelete() {
         const bills = billStore.getAll();
+        if (bills.length === 0) {
+            billActionHandlers.showErrorNotification('There are no bills to clear.', 'Bulk Action');
+            return;
+        }
+
         const ids = bills.map(b => b.id);
-        if (bulkDelete(ids)) {
+        const confirmed = await this.showConfirmationModal({
+            title: 'Clear all bills?',
+            message: `This will permanently delete ${ids.length} bill${ids.length === 1 ? '' : 's'}. This action cannot be undone.`,
+            confirmText: 'Clear All',
+            confirmVariant: 'danger'
+        });
+
+        if (confirmed && bulkDelete(ids, true)) {
             this.rerender();
         }
     }
 
-    handleBulkMarkPaid() {
+    async handleBulkMarkPaid() {
         const bills = billStore.getAll();
+        if (bills.length === 0) {
+            billActionHandlers.showErrorNotification('There are no bills to update.', 'Bulk Action');
+            return;
+        }
+
         const state = appState.getState();
         const { viewMode, selectedPaycheck, selectedCategory, paymentFilter } = state;
         const payCheckDates = paycheckManager.payCheckDates;
@@ -999,8 +1016,18 @@ class AppOrchestrator {
         if (viewMode === 'all') {
             visibleBills = filterBillsByPeriod(bills, 'all', null, null, paymentFilter, payCheckDates);
         } else {
-            if (selectedPaycheck === null || selectedCategory === null) return;
-            visibleBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates);
+            if (selectedPaycheck === null || selectedCategory === null) {
+                visibleBills = bills;
+            } else {
+                visibleBills = filterBillsByPeriod(
+                    bills,
+                    viewMode,
+                    selectedPaycheck,
+                    selectedCategory,
+                    paymentFilter,
+                    payCheckDates
+                );
+            }
         }
 
 
@@ -1018,9 +1045,68 @@ class AppOrchestrator {
             return;
         }
 
-        if (bulkMarkAsPaid(ids)) {
+        const confirmed = await this.showConfirmationModal({
+            title: 'Mark bills as paid?',
+            message: `This will mark ${ids.length} visible unpaid bill${ids.length === 1 ? '' : 's'} as paid.`,
+            confirmText: 'Mark Paid',
+            confirmVariant: 'primary'
+        });
+
+        if (confirmed && bulkMarkAsPaid(ids, true)) {
             this.rerender();
         }
+    }
+
+    showConfirmationModal({
+        title,
+        message,
+        confirmText = 'Confirm',
+        confirmVariant = 'primary'
+    }) {
+        return new Promise((resolve) => {
+            const existingModal = document.getElementById('actionConfirmModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'actionConfirmModal';
+            modal.className = 'modal';
+
+            const confirmButtonClass = confirmVariant === 'danger'
+                ? 'confirm-btn confirm-btn-danger'
+                : 'confirm-btn confirm-btn-primary';
+
+            modal.innerHTML = `
+                <div class="modal-content modal-content-compact confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmDialogTitle">
+                    <div class="confirm-dialog-header">
+                        <h2 id="confirmDialogTitle" class="confirm-dialog-title">${title}</h2>
+                    </div>
+                    <p class="confirm-dialog-message">${message}</p>
+                    <div class="confirm-dialog-actions">
+                        <button type="button" class="confirm-btn confirm-btn-secondary" id="confirmDialogCancel">Cancel</button>
+                        <button type="button" class="${confirmButtonClass}" id="confirmDialogConfirm">${confirmText}</button>
+                    </div>
+                </div>
+            `;
+
+            const cleanup = (result) => {
+                modal.remove();
+                resolve(result);
+            };
+
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    cleanup(false);
+                }
+            });
+
+            document.body.appendChild(modal);
+
+            document.getElementById('confirmDialogCancel')?.addEventListener('click', () => cleanup(false));
+            document.getElementById('confirmDialogConfirm')?.addEventListener('click', () => cleanup(true));
+            document.getElementById('confirmDialogConfirm')?.focus();
+        });
     }
 
     handleToggleTheme() {
