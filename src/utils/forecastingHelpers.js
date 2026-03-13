@@ -139,7 +139,7 @@ export function getSpendingAlerts(bills, threshold = 25) {
         try {
             const dueDate = new Date(bill.dueDate);
             if (dueDate < now && !bill.isPaid) {
-                const dayOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
+                const dayOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
                 alerts.push({
                     type: 'overdue',
                     severity: dayOverdue > 7 ? 'critical' : 'warning',
@@ -163,7 +163,7 @@ export function getSpendingAlerts(bills, threshold = 25) {
         try {
             const dueDate = new Date(bill.dueDate);
             if (dueDate >= now && dueDate <= sevenDaysFromNow && !bill.isPaid) {
-                const daysToDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                const daysToDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                 alerts.push({
                     type: 'due_soon',
                     severity: daysToDue <= 3 ? 'warning' : 'info',

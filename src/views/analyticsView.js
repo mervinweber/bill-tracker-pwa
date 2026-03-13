@@ -19,6 +19,11 @@ let trendChart = null;
 
 /**
  * Render analytics view with charts
+ * @param {Object} [options]
+ * @param {Array} [options.bills]
+ * @param {string} [options.viewMode]
+ * @param {number|null} [options.selectedPaycheck]
+ * @param {Date[]} [options.payCheckDates]
  */
 export function renderAnalytics({ bills: providedBills, viewMode, selectedPaycheck, payCheckDates } = {}) {
     try {
@@ -253,7 +258,7 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
 
         // Draw Category Chart
-        const ctxCat = document.getElementById('categoryChart');
+        const ctxCat = /** @type {HTMLCanvasElement|null} */ (document.getElementById('categoryChart'));
         if (ctxCat) {
             categoryChart = new Chart(ctxCat.getContext('2d'), {
                 type: 'doughnut',
@@ -280,7 +285,7 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                                 color: textColor,
                                 usePointStyle: true,
                                 padding: 20,
-                                font: { size: 11, weight: '500' }
+                                font: { size: 11, weight: 500 }
                             }
                         },
                         tooltip: {
@@ -341,7 +346,7 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
         const trendValues = Object.values(trendData);
 
         // Draw Trend Chart
-        const ctxTrend = document.getElementById('trendChart');
+        const ctxTrend = /** @type {HTMLCanvasElement|null} */ (document.getElementById('trendChart'));
         if (ctxTrend) {
             trendChart = new Chart(ctxTrend.getContext('2d'), {
                 type: 'bar',
@@ -364,7 +369,8 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: { color: gridColor, drawBorder: false },
+                            grid: { color: gridColor },
+                            border: { display: false },
                             ticks: {
                                 color: textColor,
                                 font: { size: 10 },

@@ -191,7 +191,7 @@ export const getTotalPaid = (bill) => {
  * 
  * @function getRemainingBalance
  * @param {Object} bill - Bill object with balance/amountDue and paymentHistory
- * @param {number} bill.balance - Current balance (primary, checked first)
+ * @param {number} [bill.balance] - Current balance (primary, checked first; omit to fall back to amountDue)
  * @param {number} bill.amountDue - Amount originally due (fallback if balance missing)
  * @param {Array<Object>} [bill.paymentHistory] - Payment history for deduction
  * 
@@ -238,7 +238,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
         let filtered = [...bills];
         if (paymentFilter === 'unpaid') filtered = filtered.filter(b => !b.isPaid);
         if (paymentFilter === 'paid') filtered = filtered.filter(b => b.isPaid);
-        return filtered.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     }
 
     if (selectedPaycheck === null || selectedCategory === null || !payCheckDates || payCheckDates.length === 0) {

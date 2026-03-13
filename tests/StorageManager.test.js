@@ -11,6 +11,7 @@ global.localStorage = {
     get length() { return Object.keys(mockStorage).length; },
     key: (i) => Object.keys(mockStorage)[i] ?? null,
 };
+// @ts-ignore - minimal navigator mock required for StorageManager test isolation
 global.navigator = { storage: null };
 
 beforeEach(() => {

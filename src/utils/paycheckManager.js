@@ -209,7 +209,7 @@ class PaycheckManager {
             payDateClone.setHours(0, 0, 0, 0);
 
             if (payDateClone >= targetDate) {
-                const difference = payDateClone - targetDate;
+                const difference = payDateClone.getTime() - targetDate.getTime();
                 if (difference < minDifference) {
                     minDifference = difference;
                     closest = payDateClone;

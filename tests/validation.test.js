@@ -190,6 +190,7 @@ it('validatePaymentSettings rejects invalid frequency', () => {
 });
 
 it('validatePaymentSettings rejects missing startDate', () => {
+    // @ts-ignore - intentionally omitting startDate to verify validation catches missing required field
     expect(validatePaymentSettings({ frequency: 'bi-weekly', payPeriodsToShow: 6 }).isValid).toBe(false);
 });
 

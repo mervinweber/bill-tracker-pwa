@@ -34,7 +34,7 @@ const getUpcomingBills = (bills = []) => {
             dueDate.setHours(0, 0, 0, 0);
             return !bill.isPaid && dueDate >= today;
         })
-        .sort((a, b) => createLocalDate(a.dueDate) - createLocalDate(b.dueDate));
+        .sort((a, b) => createLocalDate(a.dueDate).getTime() - createLocalDate(b.dueDate).getTime());
 };
 
 export function initializeUpcomingBillsView() {
@@ -121,7 +121,7 @@ export function renderUpcomingBills({ bills }, actions) {
 
     upcomingContainer.querySelectorAll('.upcoming-bill-card').forEach((card) => {
         const billId = card.getAttribute('data-bill-id');
-        const dueDateInput = card.querySelector('.upcoming-date-input');
+        const dueDateInput = /** @type {HTMLInputElement|null} */ (card.querySelector('.upcoming-date-input'));
         const updateDateBtn = card.querySelector('[data-action="update-date"]');
         const editBtn = card.querySelector('[data-action="edit-bill"]');
         const paidBtn = card.querySelector('[data-action="mark-paid"]');

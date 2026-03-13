@@ -2,7 +2,7 @@ import { it, expect } from 'vitest';
 
 // Test helper implementations of the same logic as mobileGestures.js
 const isTouchDevice = () => {
-    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 };
 
 const isMobileViewport = () => window.innerWidth < 768;

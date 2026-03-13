@@ -30,4 +30,4 @@ jobs:
         run: node scripts/validate_service_worker_cache.mjs
 
       - name: Run test suite
-        run: bash -lc 'for f in tests/*.test.js; do echo "\n== $f =="; node "$f" || exit 1; done'
+        run: npm test

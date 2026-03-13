@@ -38,10 +38,10 @@ Thanks for contributing.
 
 Run relevant tests before opening a PR.
 
-### Run all Node-based test files
+### Run full test suite
 
 ```bash
-bash -lc 'for f in tests/*.test.js; do echo "\n== $f =="; node "$f" || exit 1; done'
+npm test
 ```
 
 ### Run browser-based test runner
