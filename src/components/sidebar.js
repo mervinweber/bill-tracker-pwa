@@ -135,8 +135,9 @@ export const initializeSidebar = (categories, actions) => {
     fileInput.accept = '.json';
     fileInput.className = "sr-only";
     fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            actions.onImportData(e.target.files[0]);
+        const input = /** @type {HTMLInputElement} */ (e.target);
+        if (input.files.length > 0) {
+            actions.onImportData(input.files[0]);
             fileInput.value = '';
         }
     });
@@ -193,7 +194,7 @@ export const initializeSidebar = (categories, actions) => {
     themeInput.className = "peer sr-only";
     themeInput.checked = savedTheme === 'dark';
     themeInput.addEventListener('change', (e) => {
-        if (e.target.checked) {
+        if (/** @type {HTMLInputElement} */ (e.target).checked) {
             document.body.classList.add('dark');
             localStorage.setItem('theme', 'dark');
         } else {
@@ -245,14 +246,15 @@ export const initializeSidebar = (categories, actions) => {
 
     // Interaction Logic
     const categoryBtns = nav.querySelectorAll('.category-btn');
-    categoryBtns.forEach((btn) => {
+    categoryBtns.forEach((btnEl) => {
+        const btn = /** @type {HTMLButtonElement} */ (btnEl);
         const activeClass = "bg-accent text-accent-foreground font-semibold";
 
         btn.addEventListener('click', (e) => {
             categoryBtns.forEach(b => {
                 b.classList.remove(...activeClass.split(' '));
                 b.setAttribute('aria-checked', 'false');
-                b.tabIndex = -1;
+                /** @type {HTMLButtonElement} */ (b).tabIndex = -1;
             });
             btn.classList.add(...activeClass.split(' '));
             btn.setAttribute('aria-checked', 'true');
@@ -261,17 +263,17 @@ export const initializeSidebar = (categories, actions) => {
         });
 
         // Keyboard navigation
-        btn.addEventListener('keydown', (e) => {
+        btn.addEventListener('keydown', (/** @type {KeyboardEvent} */ e) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 const nextLi = btn.closest('li').nextElementSibling;
-                const nextBtn = nextLi ? nextLi.querySelector('.category-btn') : categoryBtns[0];
+                const nextBtn = /** @type {HTMLButtonElement} */ (nextLi ? nextLi.querySelector('.category-btn') : categoryBtns[0]);
                 nextBtn.focus();
                 nextBtn.click();
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 const prevLi = btn.closest('li').previousElementSibling;
-                const prevBtn = prevLi ? prevLi.querySelector('.category-btn') : categoryBtns[categoryBtns.length - 1];
+                const prevBtn = /** @type {HTMLButtonElement} */ (prevLi ? prevLi.querySelector('.category-btn') : categoryBtns[categoryBtns.length - 1]);
                 prevBtn.focus();
                 prevBtn.click();
             }

@@ -279,5 +279,5 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
         filtered = filtered.filter(bill => bill.isPaid);
     }
 
-    return filtered.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 };

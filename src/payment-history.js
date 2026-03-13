@@ -64,25 +64,27 @@ function openRecordPayment(billId) {
     const bill = window.bills.find(b => b.id === billId);
     if (!bill) return;
 
-    document.getElementById('paymentBillId').value = billId;
-    document.getElementById('paymentAmount').value = window.getRemainingBalance(bill).toFixed(2);
-    document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+    const g = (id) => /** @type {any} */ (document.getElementById(id));
+    g('paymentBillId').value = billId;
+    g('paymentAmount').value = window.getRemainingBalance(bill).toFixed(2);
+    g('paymentDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('recordPaymentModal').style.display = 'block';
 }
 
 function closeRecordPayment() {
     document.getElementById('recordPaymentModal').style.display = 'none';
-    document.getElementById('recordPaymentForm').reset();
+    /** @type {HTMLFormElement} */ (document.getElementById('recordPaymentForm')).reset();
 }
 
 function savePayment() {
-    const billId = document.getElementById('paymentBillId').value;
+    const g = (id) => /** @type {any} */ (document.getElementById(id));
+    const billId = g('paymentBillId').value;
     const paymentData = {
-        amount: document.getElementById('paymentAmount').value,
-        date: document.getElementById('paymentDate').value,
-        method: document.getElementById('paymentMethod').value,
-        confirmationNumber: document.getElementById('paymentConfirmation').value,
-        notes: document.getElementById('paymentNotes').value
+        amount: g('paymentAmount').value,
+        date: g('paymentDate').value,
+        method: g('paymentMethod').value,
+        confirmationNumber: g('paymentConfirmation').value,
+        notes: g('paymentNotes').value
     };
 
     window.recordPayment(billId, paymentData);

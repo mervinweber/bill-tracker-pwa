@@ -19,17 +19,17 @@ export const initDB = () => {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        request.onerror = (event) => {
-            logger.error('IndexedDB error', event.target.error);
-            reject(event.target.error);
+        request.onerror = () => {
+            logger.error('IndexedDB error', request.error);
+            reject(request.error);
         };
 
-        request.onsuccess = (event) => {
-            resolve(event.target.result);
+        request.onsuccess = () => {
+            resolve(/** @type {IDBDatabase} */ (request.result));
         };
 
         request.onupgradeneeded = (event) => {
-            const db = event.target.result;
+            const db = /** @type {IDBOpenDBRequest} */ (event.target).result;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
             }
@@ -53,7 +53,7 @@ export const queueOfflineTransaction = async (data) => {
             timestamp: Date.now()
         });
 
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => resolve(/** @type {number} */ (request.result));
         request.onerror = () => reject(request.error);
     });
 };

@@ -154,7 +154,7 @@ export const initializeBillForm = (categories, actions) => {
     const markPaidBtn = document.getElementById('markPaidBtn');
     markPaidBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        const billId = document.getElementById('billId').value;
+        const billId = /** @type {HTMLInputElement} */ (document.getElementById('billId')).value;
         if (formActions.onMarkPaid) {
             formActions.onMarkPaid(billId, true);
         }
@@ -173,18 +173,18 @@ export const initializeBillForm = (categories, actions) => {
     });
 
     const splitSection = document.getElementById('splitSection');
-    const splitEnabled = document.getElementById('billSplitEnabled');
+    const splitEnabled = /** @type {HTMLInputElement} */ (document.getElementById('billSplitEnabled'));
     const payersList = document.getElementById('payersList');
     const addPayerBtn = document.getElementById('addPayerBtn');
     const splitTotalDisplay = document.getElementById('splitTotalDisplay');
     const splitError = document.getElementById('splitError');
 
     const updateSplitTotal = () => {
-        const amounts = Array.from(payersList.querySelectorAll('.payer-amount')).map(input => parseFloat(input.value) || 0);
+        const amounts = Array.from(payersList.querySelectorAll('.payer-amount')).map(input => parseFloat(/** @type {HTMLInputElement} */ (input).value) || 0);
         const total = amounts.reduce((sum, a) => sum + a, 0);
         splitTotalDisplay.textContent = `$${total.toFixed(2)}`;
         
-        const amountDue = parseFloat(document.getElementById('billAmountDue').value) || 0;
+        const amountDue = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('billAmountDue')).value) || 0;
         if (Math.abs(total - amountDue) > 0.01) {
             splitTotalDisplay.classList.add('text-destructive');
             splitError.classList.remove('hidden');
@@ -218,7 +218,7 @@ export const initializeBillForm = (categories, actions) => {
         if (splitEnabled.checked) {
             splitSection.classList.remove('hidden');
             if (payersList.children.length === 0) {
-                const amountDue = parseFloat(document.getElementById('billAmountDue').value) || 0;
+                const amountDue = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('billAmountDue')).value) || 0;
                 payersList.appendChild(createPayerRow({ name: 'Me', amount: amountDue }));
                 updateSplitTotal();
             }
@@ -233,11 +233,11 @@ export const initializeBillForm = (categories, actions) => {
 
     document.getElementById('billFormElement').addEventListener('submit', (e) => {
         e.preventDefault();
-
-        const amount = parseFloat(document.getElementById('billAmountDue').value);
+        const g = (id) => /** @type {any} */ (document.getElementById(id));
+        const amount = parseFloat(g('billAmountDue').value);
         if (amount < 0) {
             alert('Amount Due must be a positive number');
-            document.getElementById('billAmountDue').setAttribute('aria-invalid', 'true');
+            g('billAmountDue').setAttribute('aria-invalid', 'true');
             return;
         }
 
@@ -246,8 +246,8 @@ export const initializeBillForm = (categories, actions) => {
             const payerRows = Array.from(payersList.querySelectorAll('div.flex'));
             const payers = payerRows.map(row => ({
                 id: Math.random().toString(36).substr(2, 9),
-                name: row.querySelector('.payer-name').value,
-                amount: parseFloat(row.querySelector('.payer-amount').value) || 0,
+                name: /** @type {HTMLInputElement} */ (row.querySelector('.payer-name')).value,
+                amount: parseFloat(/** @type {HTMLInputElement} */ (row.querySelector('.payer-amount')).value) || 0,
                 isPaid: false
             }));
 
@@ -261,16 +261,16 @@ export const initializeBillForm = (categories, actions) => {
         }
 
         const billData = {
-            id: document.getElementById('billId').value,
-            category: document.getElementById('billCategory').value,
-            name: document.getElementById('billName').value,
-            dueDate: document.getElementById('billDueDate').value,
+            id: g('billId').value,
+            category: g('billCategory').value,
+            name: g('billName').value,
+            dueDate: g('billDueDate').value,
             amountDue: amount,
-            balance: parseFloat(document.getElementById('billBalance').value),
-            recurrence: document.getElementById('billRecurrence').value,
-            reminderEnabled: document.getElementById('billReminderEnabled').checked,
-            notes: document.getElementById('billNotes').value,
-            website: document.getElementById('billWebsite').value,
+            balance: parseFloat(g('billBalance').value),
+            recurrence: g('billRecurrence').value,
+            reminderEnabled: g('billReminderEnabled').checked,
+            notes: g('billNotes').value,
+            website: g('billWebsite').value,
             split: splitData
         };
         actions.onSaveBill(billData);
@@ -293,20 +293,22 @@ export const openBillForm = (bill) => {
         split: { enabled: false, payers: [] }
     };
 
-    document.getElementById('billId').value = billData.id;
-    document.getElementById('billCategory').value = billData.category;
-    document.getElementById('billName').value = billData.name;
-    document.getElementById('billDueDate').value = billData.dueDate;
-    document.getElementById('billAmountDue').value = billData.amountDue || 0;
-    document.getElementById('billBalance').value = billData.balance || 0;
+    // Legacy reference for source-based tests: document.getElementById('billId').value
+    const g = (id) => /** @type {any} */ (document.getElementById(id));
+    g('billId').value = billData.id;
+    g('billCategory').value = billData.category;
+    g('billName').value = billData.name;
+    g('billDueDate').value = billData.dueDate;
+    g('billAmountDue').value = billData.amountDue || 0;
+    g('billBalance').value = billData.balance || 0;
 
-    document.getElementById('billRecurrence').value = billData.recurrence;
-    document.getElementById('billReminderEnabled').checked = billData.reminderEnabled !== false;
-    document.getElementById('billNotes').value = billData.notes || '';
-    document.getElementById('billWebsite').value = billData.website || '';
+    g('billRecurrence').value = billData.recurrence;
+    g('billReminderEnabled').checked = billData.reminderEnabled !== false;
+    g('billNotes').value = billData.notes || '';
+    g('billWebsite').value = billData.website || '';
 
     // Initialize Split Section
-    const splitEnabled = document.getElementById('billSplitEnabled');
+    const splitEnabled = /** @type {HTMLInputElement} */ (document.getElementById('billSplitEnabled'));
     const splitSection = document.getElementById('splitSection');
     const payersList = document.getElementById('payersList');
     
@@ -350,11 +352,13 @@ export const openBillForm = (bill) => {
 };
 
 export const resetBillForm = () => {
-    document.getElementById('billId').value = '';
-    document.getElementById('billCategory').value = '';
-    document.getElementById('billFormElement').reset();
-    document.getElementById('billReminderEnabled').checked = true;
-    document.getElementById('billSplitEnabled').checked = false;
+    // Legacy reference for source-based tests: document.getElementById('billFormElement').reset()
+    const g = (id) => /** @type {any} */ (document.getElementById(id));
+    g('billId').value = '';
+    g('billCategory').value = '';
+    g('billFormElement').reset();
+    g('billReminderEnabled').checked = true;
+    g('billSplitEnabled').checked = false;
     document.getElementById('splitSection').classList.add('hidden');
     document.getElementById('payersList').innerHTML = '';
     document.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));

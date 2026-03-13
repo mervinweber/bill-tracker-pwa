@@ -158,7 +158,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         balanceInput.type = 'number';
         balanceInput.step = '0.01';
         balanceInput.value = (bill.balance || 0).toFixed(2);
-        balanceInput.addEventListener('change', (e) => actions.onUpdateBalance(bill.id, parseFloat(e.target.value)));
+        balanceInput.addEventListener('change', (e) => actions.onUpdateBalance(bill.id, parseFloat(/** @type {HTMLInputElement} */ (e.target).value)));
         balanceCell.appendChild(balanceInput);
         row.appendChild(balanceCell);
 
@@ -172,7 +172,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         checkbox.type = 'checkbox';
         checkbox.checked = isPaid;
         checkbox.className = "h-4 w-4 rounded border-input text-primary focus:ring-primary";
-        checkbox.addEventListener('change', (e) => actions.onTogglePayment(bill.id, e.target.checked));
+        checkbox.addEventListener('change', (e) => actions.onTogglePayment(bill.id, /** @type {HTMLInputElement} */ (e.target).checked));
         toggleDiv.appendChild(checkbox);
         statusCell.appendChild(toggleDiv);
         row.appendChild(statusCell);

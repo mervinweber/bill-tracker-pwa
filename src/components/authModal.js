@@ -88,8 +88,8 @@ export const initializeAuthModal = (actions) => {
     const closeBtn = document.getElementById('closeAuthModal');
     const loginBtn = document.getElementById('loginBtn');
     const signUpBtn = document.getElementById('signUpBtn');
-    const emailInput = document.getElementById('authEmail');
-    const passwordInput = document.getElementById('authPassword');
+    const emailInput = /** @type {HTMLInputElement} */ (document.getElementById('authEmail'));
+    const passwordInput = /** @type {HTMLInputElement} */ (document.getElementById('authPassword'));
 
     const close = () => {
         modal.classList.remove('visible', 'animate-in', 'fade-in-0');
@@ -168,8 +168,8 @@ export const closeAuthModal = () => {
     modal.classList.remove('visible', 'animate-in', 'fade-in-0');
     setTimeout(() => {
         modal.style.display = 'none';
-        document.getElementById('authEmail').value = '';
-        document.getElementById('authPassword').value = '';
+        /** @type {HTMLInputElement} */ (document.getElementById('authEmail')).value = '';
+        /** @type {HTMLInputElement} */ (document.getElementById('authPassword')).value = '';
         setAuthMessage('');
     }, 200);
 };

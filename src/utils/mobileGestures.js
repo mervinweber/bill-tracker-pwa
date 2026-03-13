@@ -11,12 +11,12 @@ const gestureHandlers = new Map();
 /**
  * Initialize swipe gesture on element
  * @param {HTMLElement} element - Element to attach swipe listeners
- * @param {Object} options - Swipe configuration
- * @param {number} options.threshold - Minimum pixels to move for swipe (default 50)
- * @param {Function} options.onSwipeLeft - Callback when swiped left
- * @param {Function} options.onSwipeRight - Callback when swiped right
- * @param {Function} options.onSwipeUp - Callback when swiped up (optional)
- * @param {Function} options.onSwipeDown - Callback when swiped down (optional)
+ * @param {Object} [options] - Swipe configuration
+ * @param {number} [options.threshold] - Minimum pixels to move for swipe (default 50)
+ * @param {Function} [options.onSwipeLeft] - Callback when swiped left
+ * @param {Function} [options.onSwipeRight] - Callback when swiped right
+ * @param {Function} [options.onSwipeUp] - Callback when swiped up (optional)
+ * @param {Function} [options.onSwipeDown] - Callback when swiped down (optional)
  * @returns {Function} Cleanup function to remove listeners
  */
 export function initializeSwipeGesture(element, options = {}) {
@@ -81,9 +81,9 @@ export function initializeSwipeGesture(element, options = {}) {
 /**
  * Initialize long-press gesture on element
  * @param {HTMLElement} element - Element to attach long-press listener
- * @param {Object} options - Long-press configuration
- * @param {number} options.duration - Duration in ms to trigger long-press (default 500)
- * @param {Function} options.onLongPress - Callback when long-pressed
+ * @param {Object} [options] - Long-press configuration
+ * @param {number} [options.duration] - Duration in ms to trigger long-press (default 500)
+ * @param {Function} [options.onLongPress] - Callback when long-pressed
  * @returns {Function} Cleanup function to remove listeners
  */
 export function initializeLongPress(element, options = {}) {
@@ -268,7 +268,7 @@ export function initializeSwipeDelete(itemElement, onDelete, threshold = 80) {
         if (diff > 0) {
             // Swipe left - show delete area
             itemElement.style.transform = `translateX(-${Math.min(diff, threshold)}px)`;
-            itemElement.style.opacity = Math.max(0.7, 1 - diff / threshold / 2);
+            itemElement.style.opacity = String(Math.max(0.7, 1 - diff / threshold / 2));
         }
     };
 

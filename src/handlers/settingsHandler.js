@@ -274,14 +274,14 @@ export function showSettingsModal(categoriesList) {
         // Querying from form works fine.
         form.querySelectorAll('.delete-cat-btn').forEach(btn => {
             btn.addEventListener('click', e => {
-                const catToDelete = e.target.closest('button').dataset.cat;
+                const catToDelete = /** @type {HTMLElement} */ (e.target).closest('button').dataset.cat;
                 handleDeleteCategory(catToDelete, categoriesList, modal);
             });
         });
 
         form.querySelectorAll('.edit-cat-btn').forEach(btn => {
             btn.addEventListener('click', e => {
-                const oldName = e.target.closest('button').dataset.cat;
+                const oldName = /** @type {HTMLElement} */ (e.target).closest('button').dataset.cat;
                 handleEditCategory(oldName, categoriesList);
             });
         });
@@ -304,7 +304,7 @@ export function showSettingsModal(categoriesList) {
         });
 
         document.getElementById('joinHouseholdBtn').addEventListener('click', async () => {
-            const householdId = document.getElementById('joinHouseholdInput').value.trim();
+        const householdId = /** @type {HTMLInputElement} */ (document.getElementById('joinHouseholdInput')).value.trim();
             if (!householdId) {
                 billActionHandlers.showErrorNotification('Please enter a Household ID', 'Invalid Input');
                 return;
@@ -332,7 +332,7 @@ export function showSettingsModal(categoriesList) {
  */
 function handleAddNewCategory(categoriesList, settingsModal) {
     try {
-        const input = document.getElementById('newCategoryInput');
+        const input = /** @type {HTMLInputElement} */ (document.getElementById('newCategoryInput'));
         const name = input.value.trim();
 
         if (!name) {
@@ -632,10 +632,10 @@ function showDeleteCategoryConflictModal(categoryName, billCount, categoriesList
 
         form.addEventListener('submit', e => {
             e.preventDefault();
-            const action = form.querySelector('input[name="deleteAction"]:checked').value;
+            const action = /** @type {HTMLInputElement} */ (form.querySelector('input[name="deleteAction"]:checked')).value;
 
             if (action === 'move') {
-                const targetCat = document.getElementById('targetCategory').value;
+                const targetCat = /** @type {HTMLInputElement} */ (document.getElementById('targetCategory')).value;
                 const currentBills = billStore.getAll();
                 currentBills.forEach(bill => {
                     if (bill.category === categoryName) {
@@ -713,13 +713,14 @@ async function handleSettingsSave(e, modal) {
 
     try {
         const existingSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, {});
-        const startDate = document.getElementById('settingsStartDate').value;
-        const frequency = document.getElementById('settingsFrequency').value;
-        const weeks = parseInt(document.getElementById('settingsWeeks').value);
-        const amountInput = document.getElementById('settingsAmount').value;
+        const f = (id) => /** @type {any} */ (document.getElementById(id));
+        const startDate = f('settingsStartDate').value;
+        const frequency = f('settingsFrequency').value;
+        const weeks = parseInt(f('settingsWeeks').value);
+        const amountInput = f('settingsAmount').value;
         const amount = amountInput !== '' ? parseFloat(amountInput) : null;
-        const notificationsEnabledInput = document.getElementById('settingsNotificationsEnabled');
-        const reminderDaysInput = document.getElementById('settingsReminderDays');
+        const notificationsEnabledInput = /** @type {HTMLInputElement|null} */ (document.getElementById('settingsNotificationsEnabled'));
+        const reminderDaysInput = /** @type {HTMLInputElement|null} */ (document.getElementById('settingsReminderDays'));
 
         let notificationsEnabled = !!notificationsEnabledInput?.checked;
         const reminderDays = parseInt(reminderDaysInput?.value ?? '1', 10);

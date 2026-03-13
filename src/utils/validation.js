@@ -437,6 +437,7 @@ export function validatePaymentSettings(settings) {
     }
 
     // Validate optional paycheck amount
+    // @ts-ignore - intentional loose comparison: amount may be number or empty string from form input
     if (settings.amount !== undefined && settings.amount !== null && settings.amount !== '') {
         if (typeof settings.amount !== 'number' || Number.isNaN(settings.amount)) {
             errors.push('Paycheck amount must be a valid number');

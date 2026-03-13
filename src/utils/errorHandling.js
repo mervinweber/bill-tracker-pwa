@@ -210,7 +210,7 @@ export function formatErrorMessage(error) {
  * Attempt operation with graceful fallback
  * @param {Function} operation - Primary operation to attempt
  * @param {Function} fallback - Fallback operation if primary fails
- * @returns {*} Result of successful operation
+ * @returns {Promise<*>} Result of successful operation
  */
 export async function withFallback(operation, fallback) {
     try {

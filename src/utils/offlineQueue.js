@@ -383,7 +383,7 @@ export function getQueueStatistics() {
         totalRetries += op.retries || 0;
     });
 
-    stats.averageRetries = queue.length > 0 ? (totalRetries / queue.length).toFixed(2) : 0;
+    stats.averageRetries = queue.length > 0 ? Number((totalRetries / queue.length).toFixed(2)) : 0;
 
     return stats;
 }

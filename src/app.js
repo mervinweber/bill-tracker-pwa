@@ -113,8 +113,6 @@ class AppOrchestrator {
                 onFilterChange: (filter) => this.handleFilterChange(filter),
                 onAllBillsSelect: () => this.handleAllBillsSelect(),
                 onUpcomingBillsSelect: () => this.handleUpcomingBillsSelect(),
-                onToggleTheme: () => this.handleToggleTheme(),
-                onShowSettings: () => this.handleShowSettings(),
                 onDisplayModeSelect: (mode) => this.handleDisplayModeSelect(mode),
                 onToggleCarriedForward: (show) => this.handleToggleCarriedForward(show)
             });
@@ -477,11 +475,12 @@ class AppOrchestrator {
 
     handleSaveBill(billData = null) {
         try {
-            const id = billData?.id || document.getElementById('billId').value;
+            const g = (id) => /** @type {any} */ (document.getElementById(id));
+            const id = billData?.id || g('billId').value;
             const bills = billStore.getAll();
             const existingBill = id ? bills.find(b => b.id === id) : null;
 
-            let dueDateString = billData?.dueDate || document.getElementById('billDueDate').value;
+            let dueDateString = billData?.dueDate || g('billDueDate').value;
 
             // Only snap bill date to closest paycheck when CREATING new bills
             if (!existingBill) {
@@ -493,9 +492,9 @@ class AppOrchestrator {
             // Read split data if not provided in billData
             let split = billData?.split;
             if (!split) {
-                const splitEnabled = document.getElementById('billSplitEnabled')?.checked;
+                const splitEnabled = g('billSplitEnabled')?.checked;
                 if (splitEnabled) {
-                    const payersList = document.getElementById('payersList');
+                    const payersList = g('payersList');
                     const payerRows = Array.from(payersList.querySelectorAll('div.flex'));
                     const payers = payerRows.map(row => ({
                         id: Math.random().toString(36).substr(2, 9),
@@ -511,17 +510,17 @@ class AppOrchestrator {
 
             const bill = {
                 id: id || Date.now().toString(),
-                category: billData?.category || document.getElementById('billCategory').value,
-                name: billData?.name || document.getElementById('billName').value,
+                category: billData?.category || g('billCategory').value,
+                name: billData?.name || g('billName').value,
                 dueDate: dueDateString,
-                amountDue: billData?.amountDue || parseFloat(document.getElementById('billAmountDue').value),
-                balance: billData?.balance || (document.getElementById('billBalance').value
-                    ? parseFloat(document.getElementById('billBalance').value)
-                    : parseFloat(document.getElementById('billAmountDue').value)),
-                recurrence: billData?.recurrence || document.getElementById('billRecurrence').value,
-                reminderEnabled: billData?.reminderEnabled ?? document.getElementById('billReminderEnabled').checked,
-                notes: billData?.notes || document.getElementById('billNotes').value,
-                website: billData?.website || document.getElementById('billWebsite').value,
+                amountDue: billData?.amountDue || parseFloat(g('billAmountDue').value),
+                balance: billData?.balance || (g('billBalance').value
+                    ? parseFloat(g('billBalance').value)
+                    : parseFloat(g('billAmountDue').value)),
+                recurrence: billData?.recurrence || g('billRecurrence').value,
+                reminderEnabled: billData?.reminderEnabled ?? g('billReminderEnabled').checked,
+                notes: billData?.notes || g('billNotes').value,
+                website: billData?.website || g('billWebsite').value,
                 split: split,
                 isPaid: existingBill ? existingBill.isPaid || false : false,
                 lastPaymentDate: existingBill ? existingBill.lastPaymentDate || null : null,
@@ -563,8 +562,8 @@ class AppOrchestrator {
             }
 
             closeBillForm();
-            document.getElementById('billFormElement').reset();
-            document.getElementById('billId').value = '';
+            g('billFormElement').reset();
+            g('billId').value = '';
 
             billActionHandlers.showSuccessNotification(
                 `Bill "${bill.name}" ${id ? 'updated' : 'created'} successfully`
@@ -694,19 +693,20 @@ class AppOrchestrator {
             strategyHint.textContent = '';
         }
 
-        singleCycleOption.checked = true;
-        document.getElementById('paymentBillName').textContent = bill.name;
-        document.getElementById('paymentRemainingAmount').textContent =
+        /** @type {HTMLInputElement} */ (singleCycleOption).checked = true;
+        const f = (id) => /** @type {any} */ (document.getElementById(id));
+        f('paymentBillName').textContent = bill.name;
+        f('paymentRemainingAmount').textContent =
             `$${billActionHandlers.getRemainingBalance(bill).toFixed(2)}`;
-        document.getElementById('paymentBillId').value = billId;
-        document.getElementById('paymentAmount').value = billActionHandlers
+        f('paymentBillId').value = billId;
+        f('paymentAmount').value = billActionHandlers
             .getRemainingBalance(bill)
             .toFixed(2);
-        document.getElementById('paymentDate').value = new Date()
+        f('paymentDate').value = new Date()
             .toISOString()
             .split('T')[0];
-        document.getElementById('paymentOptionalDetails').open = false;
-        document.getElementById('recordPaymentModal').style.display = 'block';
+        f('paymentOptionalDetails').open = false;
+        f('recordPaymentModal').style.display = 'block';
     }
 
     handleViewHistory(billId) {
@@ -718,7 +718,7 @@ class AppOrchestrator {
         const totalPaid = billActionHandlers.getTotalPaid(bill);
         const remaining = billActionHandlers.getRemainingBalance(bill);
         const payments = (bill.paymentHistory || []).sort(
-            (a, b) => new Date(b.date) - new Date(a.date)
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
 
         const historyContent = document.getElementById('historyContent');
@@ -1043,6 +1043,7 @@ class AppOrchestrator {
     initializePaymentModals() {
         const container = document.getElementById('paymentModals');
         if (!container) return;
+        const g = (id) => /** @type {any} */ (document.getElementById(id));
 
         container.innerHTML = `
             <div id="recordPaymentModal" class="modal">
@@ -1104,20 +1105,20 @@ class AppOrchestrator {
 
         const submitPayment = (billId, paymentData) => {
             if (billActionHandlers.recordPayment(billId, paymentData)) {
-                document.getElementById('recordPaymentModal').style.display = 'none';
-                document.getElementById('recordPaymentForm').reset();
+                g('recordPaymentModal').style.display = 'none';
+                g('recordPaymentForm').reset();
                 this.rerender();
             }
         };
 
         document.getElementById('quickPayFullBtn').addEventListener('click', () => {
-            const billId = document.getElementById('paymentBillId').value;
-            const amount = document.getElementById('paymentAmount').value;
-            const date = document.getElementById('paymentDate').value;
-            const method = document.getElementById('paymentMethod').value;
-            const confirmationNumber = document.getElementById('paymentConfirmation').value;
+            const billId = g('paymentBillId').value;
+            const amount = g('paymentAmount').value;
+            const date = g('paymentDate').value;
+            const method = g('paymentMethod').value;
+            const confirmationNumber = g('paymentConfirmation').value;
             const recurrenceStrategy =
-                document.querySelector('input[name="paymentRecurrenceStrategy"]:checked')?.value ||
+                /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="paymentRecurrenceStrategy"]:checked'))?.value ||
                 'single-cycle';
 
             submitPayment(billId, {
@@ -1129,16 +1130,16 @@ class AppOrchestrator {
             });
         });
 
-        document.getElementById('recordPaymentForm').addEventListener('submit', e => {
+        g('recordPaymentForm').addEventListener('submit', e => {
             e.preventDefault();
-            const billId = document.getElementById('paymentBillId').value;
+            const billId = g('paymentBillId').value;
             const paymentData = {
-                amount: document.getElementById('paymentAmount').value,
-                date: document.getElementById('paymentDate').value,
-                method: document.getElementById('paymentMethod').value,
-                confirmationNumber: document.getElementById('paymentConfirmation').value,
+                amount: g('paymentAmount').value,
+                date: g('paymentDate').value,
+                method: g('paymentMethod').value,
+                confirmationNumber: g('paymentConfirmation').value,
                 recurrenceStrategy:
-                    document.querySelector('input[name="paymentRecurrenceStrategy"]:checked')?.value ||
+                    /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="paymentRecurrenceStrategy"]:checked'))?.value ||
                     'single-cycle'
             };
 

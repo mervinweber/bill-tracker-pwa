@@ -183,7 +183,7 @@ function getMostRecentPaymentDate(bill) {
         return bill.lastPaymentDate || null;
     }
 
-    const sortedDates = [...historyDates].sort((a, b) => new Date(b) - new Date(a));
+    const sortedDates = [...historyDates].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     return sortedDates[0] || bill.lastPaymentDate || null;
 }
 
@@ -644,7 +644,7 @@ export function importData(file) {
 
             reader.onload = (e) => {
                 try {
-                    const data = safeJSONParse(e.target.result, null);
+                    const data = safeJSONParse(/** @type {string} */ (e.target.result), null);
 
                     if (!data) {
                         throw new Error('Invalid JSON format in file');
