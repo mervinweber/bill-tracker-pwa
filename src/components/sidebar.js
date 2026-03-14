@@ -240,10 +240,11 @@ export const initializeSidebar = (categories, actions) => {
         authDiv.appendChild(logoutBtn);
 
         bottomSection.appendChild(authDiv);
-    } else if (isSupabaseConfigured()) {
+    } else {
         const loginBtn = document.createElement('button');
+        loginBtn.type = 'button';
         loginBtn.className = `${btnPrimary} w-full h-9 text-xs`;
-        loginBtn.innerHTML = '<span class="mr-2">☁️</span> <span>Login to Sync</span>';
+        loginBtn.innerHTML = `<span class="mr-2">☁️</span> <span>${isSupabaseConfigured() ? 'Login to Sync' : 'Sign In'}</span>`;
         loginBtn.addEventListener('click', actions.onOpenAuth);
         bottomSection.appendChild(loginBtn);
     }

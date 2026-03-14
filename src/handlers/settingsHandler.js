@@ -41,18 +41,19 @@ export function showSettingsModal(categoriesList) {
         modal.className = 'modal';
 
         const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
+        modalContent.className = 'modal-content settings-modal-content';
 
         const title = document.createElement('h2');
+        title.className = 'settings-modal-title';
         title.textContent = '⚙️ Settings';
 
         const subtitle = document.createElement('p');
-        subtitle.style.color = '#666';
-        subtitle.style.marginBottom = '20px';
+        subtitle.className = 'settings-modal-subtitle';
         subtitle.textContent = 'Update your payment configuration';
 
         const form = document.createElement('form');
         form.id = 'settingsForm';
+        form.className = 'settings-form';
 
         // Static Form Fields
         form.innerHTML = `
@@ -81,16 +82,16 @@ export function showSettingsModal(categoriesList) {
             <div class="form-group">
                 <label><strong>Paycheck Amount (optional):</strong></label>
                 <input type="number" id="settingsAmount" min="0" step="0.01" value="${typeof settings.amount === 'number' ? settings.amount : ''}" placeholder="e.g. 2500">
-                <small style="display:block; margin-top: 6px; color: #666;">Used for upcoming bill coverage calculations.</small>
+                <small class="settings-help-text">Used for upcoming bill coverage calculations.</small>
             </div>
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+            <hr class="settings-divider">
             <h3>Reminders</h3>
             <div class="form-group">
-                <label style="display: inline-flex; align-items: center; gap: 8px;">
+                <label class="settings-inline-label">
                     <input type="checkbox" id="settingsNotificationsEnabled" ${notificationSettings.enabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
                     <strong>Enable bill due reminders</strong>
                 </label>
-                <div style="margin-top: 6px; color: #666; font-size: 13px;">
+                <div class="settings-help-text" style="margin-top: 6px;">
                     ${isNotificationSupported()
                         ? 'Shows browser reminders when unpaid bills are due soon.'
                         : 'This browser does not support notifications.'}
@@ -106,37 +107,37 @@ export function showSettingsModal(categoriesList) {
                     <option value="7" ${notificationSettings.daysBefore === 7 ? 'selected' : ''}>7 days before</option>
                 </select>
             </div>
-            <div class="form-group" style="display: flex; gap: 10px; align-items: center;">
+            <div class="form-group settings-inline-group">
                 <button type="button" id="sendTestReminderBtn" class="view-btn" ${isNotificationSupported() ? '' : 'disabled'}>
                     🔔 Send Test Reminder
                 </button>
-                <span style="color: #666; font-size: 13px;">Use this to verify browser notifications are working.</span>
+                <span class="settings-help-text">Use this to verify browser notifications are working.</span>
             </div>
             <div class="form-group">
                 <label><strong>Reminder History (most recent first):</strong></label>
-                <div id="reminderHistoryList" style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;"></div>
+                <div id="reminderHistoryList" class="settings-history-list"></div>
             </div>
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+            <hr class="settings-divider">
             <h3>Household Sharing</h3>
-            <div id="householdSection" class="form-group" style="background: rgba(var(--primary-rgb), 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+            <div id="householdSection" class="form-group settings-household-section">
+                <p class="settings-help-text" style="margin-bottom: 15px;">
                     Share your bill data with a partner. Both users will see and update the same bill list in real-time.
                 </p>
-                <div id="householdStatusContainer" style="display: flex; flex-direction: column; gap: 12px;">
-                    <button type="button" id="createHouseholdBtn" class="view-btn" style="background-color: var(--primary-color); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                <div id="householdStatusContainer" class="settings-household-stack">
+                    <button type="button" id="createHouseholdBtn" class="view-btn settings-primary-btn">
                         🏠 Create Shared Household
                     </button>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                        <input type="text" id="joinHouseholdInput" placeholder="Paste Household ID here" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
-                        <button type="button" id="joinHouseholdBtn" class="view-btn" style="padding: 8px 15px; background: white; border: 1px solid var(--border-color); border-radius: 4px;">Join</button>
+                    <div class="settings-join-row">
+                        <input type="text" id="joinHouseholdInput" placeholder="Paste Household ID here">
+                        <button type="button" id="joinHouseholdBtn" class="view-btn settings-secondary-btn">Join</button>
                     </div>
                 </div>
             </div>
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+            <hr class="settings-divider">
             <h3>Manage Categories</h3>
             <div class="form-group">
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="newCategoryInput" placeholder="New Category Name" style="flex: 1;">
+                <div class="settings-join-row">
+                    <input type="text" id="newCategoryInput" placeholder="New Category Name">
                     <button type="button" id="addNewCategoryBtn" class="view-btn">Add</button>
                 </div>
             </div>
@@ -144,7 +145,7 @@ export function showSettingsModal(categoriesList) {
 
         // Category List Container
         const catListContainer = document.createElement('div');
-        catListContainer.className = 'category-list';
+        catListContainer.className = 'category-list settings-category-list';
         catListContainer.style.maxHeight = '200px';
         catListContainer.style.overflowY = 'auto';
         catListContainer.style.border = '1px solid var(--border-color)';
@@ -194,15 +195,12 @@ export function showSettingsModal(categoriesList) {
 
         // Buttons
         const buttonGroup = document.createElement('div');
-        buttonGroup.style.marginTop = '20px';
-        buttonGroup.style.display = 'flex';
-        buttonGroup.style.gap = '10px';
-        buttonGroup.style.flexWrap = 'wrap';
+        buttonGroup.className = 'settings-button-group';
 
         const cleanupBtn = document.createElement('button');
         cleanupBtn.type = 'button';
         cleanupBtn.id = 'cleanupCategoriesBtn';
-        cleanupBtn.className = 'view-btn';
+        cleanupBtn.className = 'view-btn settings-accent-btn';
         cleanupBtn.style.flex = '1';
         cleanupBtn.style.minWidth = '150px';
         cleanupBtn.style.backgroundColor = '#9b59b6';
@@ -212,7 +210,7 @@ export function showSettingsModal(categoriesList) {
 
         const saveBtn = document.createElement('button');
         saveBtn.type = 'submit';
-        saveBtn.className = 'submit-btn';
+        saveBtn.className = 'submit-btn settings-primary-btn';
         saveBtn.style.flex = '1';
         saveBtn.style.minWidth = '100px';
         saveBtn.textContent = 'Save Settings';
@@ -221,7 +219,7 @@ export function showSettingsModal(categoriesList) {
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.id = 'closeSettingsBtn';
-        cancelBtn.className = 'cancel-btn';
+        cancelBtn.className = 'cancel-btn settings-secondary-btn';
         cancelBtn.style.flex = '1';
         cancelBtn.style.minWidth = '100px';
         cancelBtn.textContent = 'Cancel';

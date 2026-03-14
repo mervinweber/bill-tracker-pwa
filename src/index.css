@@ -196,6 +196,172 @@
     line-height: 1;
 }
 
+/* Settings modal theme alignment */
+#settingsModal .settings-modal-content {
+    width: min(760px, 100%);
+}
+
+#settingsModal .settings-modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: hsl(var(--foreground));
+}
+
+#settingsModal .settings-modal-subtitle {
+    margin: 0.4rem 0 1rem;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.95rem;
+}
+
+#settingsModal .settings-form h3 {
+    margin: 1rem 0 0.6rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+#settingsModal .settings-form .form-group {
+    margin-bottom: 0.85rem;
+}
+
+#settingsModal .settings-form label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    color: hsl(var(--muted-foreground));
+}
+
+#settingsModal .settings-inline-label {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0;
+}
+
+#settingsModal .settings-help-text {
+    display: block;
+    color: hsl(var(--muted-foreground)) !important;
+    font-size: 0.8rem !important;
+}
+
+#settingsModal .settings-divider {
+    margin: 1rem 0;
+    border: none;
+    border-top: 1px solid hsl(var(--border)) !important;
+}
+
+#settingsModal .settings-form input,
+#settingsModal .settings-form select,
+#settingsModal .settings-form textarea {
+    width: 100%;
+    border: 1px solid hsl(var(--input));
+    border-radius: 0.5rem;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    padding: 0.55rem 0.7rem;
+    font-size: 0.88rem;
+}
+
+#settingsModal .settings-form input:focus,
+#settingsModal .settings-form select:focus,
+#settingsModal .settings-form textarea:focus {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsla(var(--ring), 0.25);
+}
+
+#settingsModal .settings-inline-group {
+    display: flex !important;
+    gap: 0.65rem !important;
+    align-items: center !important;
+    flex-wrap: wrap;
+}
+
+#settingsModal .settings-history-list {
+    max-height: 140px;
+    overflow-y: auto;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 0.5rem;
+    padding: 0.55rem;
+    background: hsl(var(--muted) / 0.3);
+}
+
+#settingsModal .settings-household-section {
+    background: hsl(var(--muted) / 0.45) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 0.65rem !important;
+    padding: 0.9rem !important;
+}
+
+#settingsModal .settings-household-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+#settingsModal .settings-join-row {
+    display: flex !important;
+    gap: 0.6rem !important;
+    align-items: center !important;
+}
+
+#settingsModal .settings-join-row input {
+    flex: 1;
+}
+
+#settingsModal .settings-category-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 0.55rem;
+    padding: 0.55rem;
+}
+
+#settingsModal .settings-button-group {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
+#settingsModal .view-btn,
+#settingsModal .submit-btn,
+#settingsModal .cancel-btn,
+#settingsModal .settings-btn {
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.8rem;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#settingsModal .settings-primary-btn,
+#settingsModal .submit-btn.settings-primary-btn {
+    background: hsl(var(--primary)) !important;
+    border-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+}
+
+#settingsModal .settings-secondary-btn,
+#settingsModal .cancel-btn.settings-secondary-btn {
+    background: hsl(var(--secondary)) !important;
+    border-color: hsl(var(--border)) !important;
+    color: hsl(var(--secondary-foreground)) !important;
+}
+
+#settingsModal .settings-accent-btn {
+    background: hsl(var(--accent) / 0.85) !important;
+    color: hsl(var(--accent-foreground)) !important;
+}
+
+#settingsModal .settings-btn.delete-cat-btn {
+    background: hsl(var(--destructive)) !important;
+    border-color: hsl(var(--destructive)) !important;
+    color: hsl(var(--destructive-foreground)) !important;
+}
+
 /* Screen reader only */
 .sr-only {
     position: absolute;
