@@ -154,7 +154,7 @@ export const initializeSidebar = (categories, actions) => {
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'settingsBtn';
     settingsBtn.type = 'button';
-    settingsBtn.className = `${btnSecondary} ${dataBtnClass}`;
+    settingsBtn.className = `${btnOutline} ${dataBtnClass}`;
     settingsBtn.ariaLabel = 'Open settings';
     settingsBtn.innerHTML = `<span class="${dataIconClass}">⚙️</span> <span>Settings</span>`;
     settingsBtn.addEventListener('click', () => actions.onShowSettings());
@@ -164,7 +164,7 @@ export const initializeSidebar = (categories, actions) => {
     if (!userEmail) {
         const loginBtn = document.createElement('button');
         loginBtn.type = 'button';
-        loginBtn.className = `${btnPrimary} ${dataBtnClass}`;
+        loginBtn.className = `${btnOutline} ${dataBtnClass}`;
         loginBtn.innerHTML = `<span class="${dataIconClass}">☁️</span> <span>Sign In</span>`;
         loginBtn.addEventListener('click', () => actions.onOpenAuth());
         dataDiv.appendChild(loginBtn);
@@ -173,7 +173,7 @@ export const initializeSidebar = (categories, actions) => {
     const bulkPaidBtn = document.createElement('button');
     bulkPaidBtn.id = 'bulkMarkPaidBtn';
     bulkPaidBtn.type = 'button';
-    bulkPaidBtn.className = `${btnSecondary} ${dataBtnClass}`;
+    bulkPaidBtn.className = `${btnOutline} ${dataBtnClass}`;
     bulkPaidBtn.ariaLabel = 'Mark all paid';
     bulkPaidBtn.innerHTML = `<span class="${dataIconClass}">✅</span> <span>Mark All Paid</span>`;
     bulkPaidBtn.addEventListener('click', () => actions.onBulkMarkPaid());
