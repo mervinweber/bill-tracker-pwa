@@ -10,6 +10,7 @@
  * @param {Function} actions.onImportData - Called when user selects a file to import (receives File object)
  * @param {Function} actions.onLogout - Called when user clicks "Logout" button
  * @param {Function} actions.onOpenAuth - Called when user clicks "Login" button
+ * @param {Function} actions.onShowSettings - Called when user clicks "Settings" button
  * @param {Function} actions.onBulkDelete - Called when user clicks "Clear All Data" button
  * @param {Function} actions.onBulkMarkPaid - Called when user clicks "Mark All Paid" button
  * @returns {void}
@@ -20,8 +21,6 @@
  *   - User authentication info and login/logout controls
  *   - Full WCAG 2.1 Level AA accessibility including aria-labels, keyboard nav, and semantic structure
  */
-
-import { isSupabaseConfigured } from '../services/supabase.js';
 
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
@@ -90,7 +89,7 @@ export const initializeSidebar = (categories, actions) => {
     addBtn.className = `${btnPrimary} w-full gap-2 h-10`;
     addBtn.ariaLabel = 'Add a new bill';
     addBtn.innerHTML = '<span class="mr-3 text-base">➕</span> <span>Add Bill</span>';
-    addBtn.addEventListener('click', actions.onOpenAddBill);
+    addBtn.addEventListener('click', () => actions.onOpenAddBill());
     actionsDiv.appendChild(addBtn);
 
     const regenBtn = document.createElement('button');
@@ -99,7 +98,7 @@ export const initializeSidebar = (categories, actions) => {
     regenBtn.className = `${btnSecondary} w-full gap-2 h-10`;
     regenBtn.ariaLabel = 'Regenerate all recurring bills for the next pay period';
     regenBtn.innerHTML = '<span class="mr-3 text-base">🔄</span> <span>Regenerate</span>';
-    regenBtn.addEventListener('click', actions.onRegenerateBills);
+    regenBtn.addEventListener('click', () => actions.onRegenerateBills());
     actionsDiv.appendChild(regenBtn);
 
     actionsSection.appendChild(actionsDiv);
@@ -116,22 +115,24 @@ export const initializeSidebar = (categories, actions) => {
 
     const dataDiv = document.createElement('div');
     dataDiv.className = "flex flex-col gap-2";
+    const dataBtnClass = "w-full gap-2 h-9 text-sm";
+    const dataIconClass = "mr-2 text-sm leading-none";
 
     const exportBtn = document.createElement('button');
     exportBtn.id = 'exportDataBtn';
     exportBtn.type = 'button';
-    exportBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
+    exportBtn.className = `${btnOutline} ${dataBtnClass} border-dashed`;
     exportBtn.ariaLabel = 'Export bills data to JSON file';
-    exportBtn.innerHTML = '<span class="mr-3 text-base">⬇️</span> <span>Export</span>';
-    exportBtn.addEventListener('click', actions.onExportData);
+    exportBtn.innerHTML = `<span class="${dataIconClass}">⬇️</span> <span>Export</span>`;
+    exportBtn.addEventListener('click', () => actions.onExportData());
     dataDiv.appendChild(exportBtn);
 
     const importBtn = document.createElement('button');
     importBtn.id = 'importDataBtn';
     importBtn.type = 'button';
-    importBtn.className = `${btnOutline} w-full gap-2 h-9 border-dashed`;
+    importBtn.className = `${btnOutline} ${dataBtnClass} border-dashed`;
     importBtn.ariaLabel = 'Import bills data from JSON file';
-    importBtn.innerHTML = '<span class="mr-3 text-base">⬆️</span> <span>Import</span>';
+    importBtn.innerHTML = `<span class="${dataIconClass}">⬆️</span> <span>Import</span>`;
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -153,28 +154,38 @@ export const initializeSidebar = (categories, actions) => {
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'settingsBtn';
     settingsBtn.type = 'button';
-    settingsBtn.className = `${btnSecondary} w-full gap-2 h-9`;
+    settingsBtn.className = `${btnSecondary} ${dataBtnClass}`;
     settingsBtn.ariaLabel = 'Open settings';
-    settingsBtn.innerHTML = '<span class="mr-3 text-base">⚙️</span> <span>Settings</span>';
-    settingsBtn.addEventListener('click', actions.onShowSettings);
+    settingsBtn.innerHTML = `<span class="${dataIconClass}">⚙️</span> <span>Settings</span>`;
+    settingsBtn.addEventListener('click', () => actions.onShowSettings());
     dataDiv.appendChild(settingsBtn);
+
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) {
+        const loginBtn = document.createElement('button');
+        loginBtn.type = 'button';
+        loginBtn.className = `${btnPrimary} ${dataBtnClass}`;
+        loginBtn.innerHTML = `<span class="${dataIconClass}">☁️</span> <span>Sign In</span>`;
+        loginBtn.addEventListener('click', () => actions.onOpenAuth());
+        dataDiv.appendChild(loginBtn);
+    }
 
     const bulkPaidBtn = document.createElement('button');
     bulkPaidBtn.id = 'bulkMarkPaidBtn';
     bulkPaidBtn.type = 'button';
-    bulkPaidBtn.className = `${btnSecondary} w-full gap-2 h-9`;
+    bulkPaidBtn.className = `${btnSecondary} ${dataBtnClass}`;
     bulkPaidBtn.ariaLabel = 'Mark all paid';
-    bulkPaidBtn.innerHTML = '<span class="mr-3 text-base">✅</span> <span>Mark All Paid</span>';
-    bulkPaidBtn.addEventListener('click', actions.onBulkMarkPaid);
+    bulkPaidBtn.innerHTML = `<span class="${dataIconClass}">✅</span> <span>Mark All Paid</span>`;
+    bulkPaidBtn.addEventListener('click', () => actions.onBulkMarkPaid());
     dataDiv.appendChild(bulkPaidBtn);
 
     const bulkDelBtn = document.createElement('button');
     bulkDelBtn.id = 'bulkDeleteBtn';
     bulkDelBtn.type = 'button';
-    bulkDelBtn.className = `${btnDanger} w-full gap-2 h-9`;
+    bulkDelBtn.className = `${btnDanger} ${dataBtnClass}`;
     bulkDelBtn.ariaLabel = 'Delete all data';
-    bulkDelBtn.innerHTML = '<span class="mr-3 text-base">🗑️</span> <span>Clear All</span>';
-    bulkDelBtn.addEventListener('click', actions.onBulkDelete);
+    bulkDelBtn.innerHTML = `<span class="${dataIconClass}">🗑️</span> <span>Clear All</span>`;
+    bulkDelBtn.addEventListener('click', () => actions.onBulkDelete());
     dataDiv.appendChild(bulkDelBtn);
 
     dataSection.appendChild(dataDiv);
@@ -218,7 +229,6 @@ export const initializeSidebar = (categories, actions) => {
     themeDiv.appendChild(themeSwitch);
     bottomSection.appendChild(themeDiv);
 
-    const userEmail = localStorage.getItem('userEmail');
     if (userEmail) {
         const authDiv = document.createElement('div');
         authDiv.className = "rounded-lg bg-muted/50 p-3 space-y-3";
@@ -236,17 +246,10 @@ export const initializeSidebar = (categories, actions) => {
         const logoutBtn = document.createElement('button');
         logoutBtn.className = `${btnOutline} w-full h-8 px-2 text-xs`;
         logoutBtn.innerHTML = '<span class="mr-2">🚪</span> <span>Logout</span>';
-        logoutBtn.addEventListener('click', actions.onLogout);
+        logoutBtn.addEventListener('click', () => actions.onLogout());
         authDiv.appendChild(logoutBtn);
 
         bottomSection.appendChild(authDiv);
-    } else {
-        const loginBtn = document.createElement('button');
-        loginBtn.type = 'button';
-        loginBtn.className = `${btnPrimary} w-full h-9 text-xs`;
-        loginBtn.innerHTML = `<span class="mr-2">☁️</span> <span>${isSupabaseConfigured() ? 'Login to Sync' : 'Sign In'}</span>`;
-        loginBtn.addEventListener('click', actions.onOpenAuth);
-        bottomSection.appendChild(loginBtn);
     }
 
     nav.appendChild(bottomSection);
