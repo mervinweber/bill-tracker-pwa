@@ -654,6 +654,11 @@ export function importData(file) {
                 throw new Error('Please select a valid JSON file.');
             }
 
+            const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+            if (file.size > MAX_FILE_SIZE) {
+                throw new Error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed size is 5 MB.`);
+            }
+
             const reader = new FileReader();
 
             reader.onload = (e) => {
