@@ -381,8 +381,67 @@ class AppOrchestrator {
                     );
                 } else {
                     if (billGrid) billGrid.style.display = 'block';
-                    if (dashboard) dashboard.style.display = 'block';
 
+                    // Zero-bill empty state — skip dashboard, show getting-started panel
+                    if (bills.length === 0) {
+                        if (dashboard) dashboard.style.display = 'none';
+                        billGrid.className = 'flex flex-col gap-4 p-4 sm:p-6';
+                        billGrid.innerHTML = `
+                            <div class="flex flex-col items-center justify-center gap-6 py-14 px-6 max-w-lg mx-auto w-full">
+                                <div class="rounded-full bg-muted p-5 text-4xl" aria-hidden="true">📋</div>
+                                <div class="text-center space-y-1">
+                                    <h2 class="text-xl font-semibold text-foreground">Welcome to Bill Tracker</h2>
+                                    <p class="text-sm text-muted-foreground">You haven't added any bills yet. Follow these steps to get started.</p>
+                                </div>
+                                <div class="w-full space-y-4 rounded-xl border bg-card p-5 shadow-sm">
+                                    <div class="flex items-start gap-3">
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-foreground">Add your first bill</p>
+                                            <p class="text-xs text-muted-foreground mt-0.5">Enter a bill name, amount, and due date to start tracking.</p>
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-border"></div>
+                                    <div class="flex items-start gap-3">
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">2</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-foreground">Enable reminders</p>
+                                            <p class="text-xs text-muted-foreground mt-0.5">Turn on notifications so you're alerted before payments are due.</p>
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-border"></div>
+                                    <div class="flex items-start gap-3">
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">3</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-foreground">Review upcoming bills</p>
+                                            <p class="text-xs text-muted-foreground mt-0.5">Use the Upcoming view to see what's due each pay period.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-3 w-full sm:justify-center">
+                                    <button id="emptyStateAddBill" type="button"
+                                        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-6 bg-primary text-primary-foreground shadow hover:bg-primary/90">
+                                        + Add Your First Bill
+                                    </button>
+                                    <label for="emptyStateImport"
+                                        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-6 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground cursor-pointer">
+                                        📥 Import from Backup
+                                    </label>
+                                    <input id="emptyStateImport" type="file" accept=".json" class="sr-only" />
+                                </div>
+                            </div>
+                        `;
+                        const addBtn = document.getElementById('emptyStateAddBill');
+                        const importInput = /** @type {HTMLInputElement|null} */ (document.getElementById('emptyStateImport'));
+                        if (addBtn) addBtn.addEventListener('click', () => this.handleOpenAddBill());
+                        if (importInput) importInput.addEventListener('change', (e) => {
+                            const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
+                            if (file) this.handleImportData(file);
+                        });
+                        return;
+                    }
+
+                    if (dashboard) dashboard.style.display = 'block';
                     renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward);
 
                     renderBillGrid(

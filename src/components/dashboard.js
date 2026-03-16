@@ -93,6 +93,30 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         return dueDate < today && !b.isPaid;
     });
 
+    const allZero = totalBills === 0 && totalAmountDue === 0 && unpaidBills.length === 0 && overdueBills.length === 0;
+
+    // Compact layout when no data matches the current filter
+    if (allZero) {
+        dashboard.className = "w-full pt-3 pb-1";
+        dashboard.innerHTML = `
+            <div class="flex flex-wrap gap-2 sm:gap-3 mb-1">
+                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
+                    <span>📋</span><span class="font-medium">Total Bills</span><span class="font-bold text-foreground">0</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
+                    <span>💰</span><span class="font-medium">Total Due</span><span class="font-bold text-foreground">$0.00</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
+                    <span>⚠️</span><span class="font-medium">Unpaid</span><span class="font-bold text-foreground">0</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
+                    <span>🔴</span><span class="font-medium">Overdue</span><span class="font-bold text-foreground">0</span>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
     dashboard.className = "w-full pt-4 pb-2";
     dashboard.innerHTML = `
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4 mb-2">
