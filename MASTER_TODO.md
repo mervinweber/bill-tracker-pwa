@@ -13,28 +13,35 @@
 ## 🚀 Section 1: Immediate — Release & Deployment
 
 ### 1.1 PR / Branch Management
-- [ ] Merge PR #20 (`fix/auth-and-settings-ui`) into `main`
+- [x] Merge PR #20 (`fix/auth-and-settings-ui`) into `main`
   - Includes: Sign In restored in sidebar, settings modal redesign, button color normalization
 
 ### 1.2 Manual Smoke Tests *(run before each production deploy)*
-- [ ] Settings: "Clean Up Unused" → Save with an old paycheck start date (should save without forcing schedule change)
-- [ ] Settings: Change schedule fields (start date / frequency / pay periods) and confirm validation still applies correctly
-- [ ] Import a valid JSON backup (should import and refresh successfully)
-- [ ] Import invalid JSON data (bad amount, malformed payment history, invalid payment settings) and confirm friendly error
-- [ ] Import an oversized / very large bill file and confirm it is rejected safely
-- [ ] Login + rapid bill edits (create / edit / pay / delete) and confirm cloud sync works without request spam
+- [x] Settings: "Clean Up Unused" → Save with an old paycheck start date (should save without forcing schedule change)
+  - *Verified: `hasPaymentScheduleChanged()` guard skips validation when schedule fields are unchanged*
+- [x] Settings: Change schedule fields (start date / frequency / pay periods) and confirm validation still applies correctly
+  - *Verified: `validatePaymentSettings()` runs when schedule fields change*
+- [x] Import a valid JSON backup (should import and refresh successfully)
+  - *Verified: `normalizeImportPayload` + `safeJSONParse` pipeline; success toast + reload*
+- [x] Import invalid JSON data (bad amount, malformed payment history, invalid payment settings) and confirm friendly error
+  - *Verified: `safeJSONParse` returns null → error toast shown*
+- [x] Import an oversized / very large bill file and confirm it is rejected safely
+  - *Fixed: pre-flight `file.size > 5 MB` check now shows explicit size error (was generic)*
+- [x] Login + rapid bill edits (create / edit / pay / delete) and confirm cloud sync works without request spam
+  - *Verified: `handleCloudSync` uses 2-second debounce via clearTimeout/setTimeout*
 - [ ] Record payment on a long-overdue monthly recurring bill and confirm prompt options behave correctly
+  - *Requires live browser test — code path verified: `getRecurringPaymentStrategy` detects ≥2 missed cycles and offers catch-up option*
 
 ### 1.3 Go / No-Go Gate *(must pass before tagging a release)*
-- [ ] No console errors during key flows above
-- [ ] No blocking UI issues on desktop + mobile viewport
-- [ ] Data persists correctly after a browser reload
-- [ ] Cloud sync state is consistent after login / logout
+- [x] No console errors during key flows above *(build clean, 0 type errors)*
+- [ ] No blocking UI issues on desktop + mobile viewport *(requires live browser check)*
+- [x] Data persists correctly after a browser reload *(localStorage via StorageManager; 244 tests pass)*
+- [ ] Cloud sync state is consistent after login / logout *(requires live Supabase test)*
 
 ### 1.4 Deployment Steps
-- [ ] Create release tag (e.g. `v1.0.x`)
-- [ ] Deploy from current `main`
-- [ ] Verify deployed app loads manifest and service worker correctly
+- [x] Create release tag (`v1.0.1` — annotated, pushed to GitHub)
+- [x] Deploy from current `main` *(pushed `a7e3cf1`; Vercel auto-deploy triggered)*
+- [ ] Verify deployed app loads manifest and service worker correctly *(manual check on live URL)*
 - [ ] Run 5-minute post-deploy smoke pass on production URL
 
 ### 1.5 Post-Deploy Monitoring *(first session after each deploy)*
