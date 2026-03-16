@@ -54,6 +54,11 @@ import { safeJSONParse } from './utils/validation.js';
 import { checkAndSendDueBillReminders } from './utils/notifications.js';
 import { recordAuditEvent } from './utils/auditTracker.js';
 import {
+    syncBillsFromCloud,
+    syncLocalDataToCloudIfNeeded,
+    syncPaymentSettingsFromCloud
+} from './utils/cloudSyncManager.js';
+import {
     LOGIN_LOCKOUT_RULES,
     clearLoginAttemptState,
     formatRetryAfter,
@@ -153,53 +158,35 @@ class AppOrchestrator {
                 logger.info('User logged in', { email: user.email });
                 StorageManager.set(STORAGE_KEYS.USER_EMAIL, user.email);
                 try {
-                    // Fetch payment settings from cloud
-                    const { data: cloudPaymentSettings, error: settingsError } = await fetchCloudPaymentSettings();
-                    if (cloudPaymentSettings && typeof cloudPaymentSettings === 'object') {
-                        logger.info('Found payment settings in cloud. Syncing locally.');
-                        StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, cloudPaymentSettings);
-                        // Reload paycheckManager to use cloud settings
-                        paycheckManager.paymentSettings = cloudPaymentSettings;
-                        paycheckManager.generatePaycheckDates();
-                    } else {
-                        logger.info('No payment settings found in cloud');
-                    }
+                    const { cloudPaymentSettings } = await syncPaymentSettingsFromCloud({
+                        fetchCloudPaymentSettings,
+                        storageManager: StorageManager,
+                        storageKeys: STORAGE_KEYS,
+                        paycheckManager,
+                        logger
+                    });
 
-                    // Fetch bills from cloud
-                    const { data: cloudBills, error } = await fetchCloudBills();
-                    if (cloudBills && Array.isArray(cloudBills) && cloudBills.length > 0) {
-                        logger.info(`Found ${cloudBills.length} bills in cloud. Updating local store.`);
-                        billStore.setBills(cloudBills);
-                        // Ensure persisted to localStorage
-                        StorageManager.set(STORAGE_KEYS.BILLS, cloudBills);
-                    } else if (error) {
-                        logger.warn('Cloud fetch error', { error: error.message });
-                        billActionHandlers.showErrorNotification('Could not fetch bills from cloud', 'Sync Warning');
-                    } else {
-                        logger.info('No bills found in cloud.');
-                    }
+                    const { cloudBills } = await syncBillsFromCloud({
+                        fetchCloudBills,
+                        billStore,
+                        storageManager: StorageManager,
+                        storageKeys: STORAGE_KEYS,
+                        logger,
+                        onFetchError: () => {
+                            billActionHandlers.showErrorNotification('Could not fetch bills from cloud', 'Sync Warning');
+                        }
+                    });
 
-                    // If cloud is empty but we have local data, sync them to cloud
-                    const localBills = billStore.getAll();
-                    const localPaymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
-                    if ((!cloudBills || cloudBills.length === 0) && localBills.length > 0) {
-                        logger.info(`Syncing ${localBills.length} local bills to cloud...`);
-                        const { error: syncError } = await syncUserData(localBills, localPaymentSettings);
-                        if (syncError) {
-                            logger.error('Failed to sync local data to cloud', syncError);
-                        } else {
-                            logger.info('Local data synced to cloud successfully');
-                        }
-                    } else if (!cloudPaymentSettings && localPaymentSettings) {
-                        // Sync local payment settings to cloud even if bills exist
-                        logger.info('Syncing local payment settings to cloud...');
-                        const { error: syncError } = await syncPaymentSettings(localPaymentSettings);
-                        if (syncError) {
-                            logger.error('Failed to sync payment settings', syncError);
-                        } else {
-                            logger.info('Payment settings synced to cloud');
-                        }
-                    }
+                    await syncLocalDataToCloudIfNeeded({
+                        cloudBills,
+                        cloudPaymentSettings,
+                        billStore,
+                        storageManager: StorageManager,
+                        storageKeys: STORAGE_KEYS,
+                        syncUserData,
+                        syncPaymentSettings,
+                        logger
+                    });
                 } catch (error) {
                     logger.error('Unexpected error during cloud sync on app init', error);
                 }
@@ -995,48 +982,39 @@ class AppOrchestrator {
             billActionHandlers.showSuccessNotification('Logged in successfully');
 
             // Sync/Fetch on login
-            let syncDone = false;
             try {
-                // Fetch payment settings from cloud first
-                const { data: cloudPaymentSettings } = await fetchCloudPaymentSettings();
-                if (cloudPaymentSettings && typeof cloudPaymentSettings === 'object') {
-                    logger.info('Fetched payment settings from cloud');
-                    StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, cloudPaymentSettings);
-                    // Update paycheckManager with cloud settings
-                    paycheckManager.paymentSettings = cloudPaymentSettings;
-                    paycheckManager.generatePaycheckDates();
-                    syncDone = true;
-                }
+                const { cloudPaymentSettings } = await syncPaymentSettingsFromCloud({
+                    fetchCloudPaymentSettings,
+                    storageManager: StorageManager,
+                    storageKeys: STORAGE_KEYS,
+                    paycheckManager,
+                    logger
+                });
 
-                // Fetch bills from cloud
-                const { data: bills, error: fetchError } = await fetchCloudBills();
-                if (bills && bills.length > 0) {
-                    logger.info(`Fetched ${bills.length} bills from cloud on login`);
-                    billStore.setBills(bills);
-                    // Ensure bills are saved to localStorage before reload
-                    try {
-                        StorageManager.set(STORAGE_KEYS.BILLS, bills);
-                        logger.info('Bills saved to localStorage');
-                    } catch (e) {
-                        logger.error('Failed to save bills to localStorage', e);
-                        billActionHandlers.showErrorNotification('Warning: Could not persist bills locally', 'Storage Error');
+                const { cloudBills } = await syncBillsFromCloud({
+                    fetchCloudBills,
+                    billStore,
+                    storageManager: StorageManager,
+                    storageKeys: STORAGE_KEYS,
+                    logger,
+                    onFetchError: () => {
+                        billActionHandlers.showErrorNotification('Could not fetch bills from cloud', 'Sync Error');
                     }
-                    syncDone = true;
-                } else if (billStore.getAll().length > 0) {
-                    // If cloud empty but local has data, upload local with payment settings
-                    logger.info(`No cloud bills found, syncing ${billStore.getAll().length} local bills...`);
-                    const localPaymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
-                    const { error: syncError } = await syncUserData(billStore.getAll(), localPaymentSettings);
-                    if (syncError) {
-                        logger.error('Failed to sync local data', syncError);
+                });
+
+                await syncLocalDataToCloudIfNeeded({
+                    cloudBills,
+                    cloudPaymentSettings,
+                    billStore,
+                    storageManager: StorageManager,
+                    storageKeys: STORAGE_KEYS,
+                    syncUserData,
+                    syncPaymentSettings,
+                    logger,
+                    onSyncError: () => {
                         billActionHandlers.showErrorNotification('Could not sync data to cloud', 'Sync Error');
-                    } else {
-                        logger.info('Local data synced to cloud');
                     }
-                    syncDone = true;
-                } else {
-                    logger.info('No bills found in cloud or locally');
-                }
+                });
             } catch (err) {
                 logger.error('Error syncing data on login', err);
                 billActionHandlers.showErrorNotification('Error syncing data from cloud', 'Sync Error');

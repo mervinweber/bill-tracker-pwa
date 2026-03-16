@@ -8,6 +8,18 @@
 > **Last Updated**: March 16, 2026
 > All 100%-complete items have been removed. Items below require action.
 
+## ✅ User Steps You Need To Complete
+
+### Security (Turnstile + Supabase)
+- [ ] Add `VITE_TURNSTILE_SITE_KEY` to your environment (`.env.local` for local and hosting provider env vars for production)
+- [ ] In Supabase Dashboard, enable Auth CAPTCHA and configure Cloudflare Turnstile keys
+- [ ] Verify challenge enforcement on live login with wrong password attempts (after 3 failures challenge appears; after 5 failures lockout remains)
+
+### Manual Production Checks
+- [ ] Verify deployed app loads manifest + service worker correctly
+- [ ] Run 5-minute post-deploy smoke pass on production URL
+- [ ] Verify cloud sync state after login/logout with a real Supabase account
+
 ---
 
 ## 🚀 Section 1: Immediate — Release & Deployment
@@ -90,9 +102,9 @@
 - [ ] Add / extend tests to cover all recurrence types through the new utility
 
 ### 3.5 Extract Cloud Sync Patterns
-- [ ] Create `src/utils/cloudSyncManager.js`
-- [ ] Extract `syncPaymentSettingsFromCloud()` and `syncBillsFromCloud()` from the repeated patterns in `app.js`
-- [ ] Replace all duplicate sync blocks in `app.js` with the new manager
+- [x] Create `src/utils/cloudSyncManager.js`
+- [x] Extract `syncPaymentSettingsFromCloud()` and `syncBillsFromCloud()` from the repeated patterns in `app.js`
+- [x] Replace all duplicate sync blocks in `app.js` with the new manager
 - [ ] Add tests for sync and merge scenarios
 
 ### 3.6 Refactor Monolithic app.js
