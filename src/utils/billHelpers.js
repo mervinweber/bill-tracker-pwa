@@ -1,5 +1,13 @@
-import { createLocalDate } from './dates.js';
+import {
+    createLocalDate,
+    formatLocalDate,
+    calculateNextDueDate,
+    getMissedMonthlyCycles,
+    getNextNonOverdueMonthlyDate
+} from './dates.js';
 import { paycheckManager } from './paycheckManager.js';
+
+export { calculateNextDueDate };
 
 /**
  * Bill Helper Utilities
@@ -10,50 +18,7 @@ import { paycheckManager } from './paycheckManager.js';
  * @module billHelpers
  */
 
-/**
- * Calculate the next due date based on recurrence pattern
- * 
- * @function calculateNextDueDate
- * @param {Date} currentDate - Starting date for calculation
- * @param {string} recurrence - Recurrence frequency
- *   Options: 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly', 'One-time'
- * 
- * @returns {Date|null} Next due date as Date object.
- *   Returns null for 'One-time' or invalid patterns.
- * 
- * @description Calculates next occurrence by advancing date:
- *   - Weekly: 7 days forward
- *   - Bi-weekly: 14 days forward
- *   - Monthly: 1 month forward
- *   - Yearly: 1 year forward
- *   - One-time: null (no recurrence)
- * 
- * @example
- * const nextDue = calculateNextDueDate(new Date(2024, 11, 15), 'Monthly');
- * // Returns: 2025-01-15
- */
-export const calculateNextDueDate = (currentDate, recurrence) => {
-    const nextDate = new Date(currentDate);
-
-    switch (recurrence) {
-        case 'Weekly':
-            nextDate.setDate(nextDate.getDate() + 7);
-            break;
-        case 'Bi-weekly':
-            nextDate.setDate(nextDate.getDate() + 14);
-            break;
-        case 'Monthly':
-            nextDate.setMonth(nextDate.getMonth() + 1);
-            break;
-        case 'Yearly':
-            nextDate.setFullYear(nextDate.getFullYear() + 1);
-            break;
-        default: // 'One-time'
-            return null;
-    }
-
-    return nextDate;
-};
+// calculateNextDueDate is re-exported from dates.js (see top of file)
 
 /**
  * Generate bill instances for recurring bills across pay periods
@@ -281,3 +246,33 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
 
     return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 };
+
+/**
+ * Advance a recurring bill to its next due date after payment.
+ *
+ * Shared utility used by togglePaymentStatus and recordPayment to avoid
+ * duplicating cycle-advance logic in billActionHandlers.
+ *
+ * @param {Object} bill - Original bill object (read-only reference)
+ * @param {Object} updated - Mutable bill copy; `dueDate` is mutated in place
+ * @param {Object} [options={}] - Strategy options
+ * @param {string} [options.strategy='single-cycle'] - Advance strategy:
+ *   'single-cycle' advances by one recurrence interval;
+ *   'catch-up-to-current' jumps past all overdue monthly cycles.
+ * @param {Date} [options.referenceDate] - Reference date for catch-up strategy (defaults to today)
+ * @returns {void}
+ */
+export function advanceBillToNextCycle(bill, updated, options = {}) {
+    if (!updated.isPaid || !bill.recurrence || bill.recurrence === 'One-time') {
+        return;
+    }
+    const currentDueDate = createLocalDate(bill.dueDate);
+    const catchUpToCurrent =
+        bill.recurrence === 'Monthly' && options.strategy === 'catch-up-to-current';
+    const nextDueDate = catchUpToCurrent
+        ? getNextNonOverdueMonthlyDate(currentDueDate, options.referenceDate || new Date())
+        : calculateNextDueDate(currentDueDate, bill.recurrence);
+    if (nextDueDate) {
+        updated.dueDate = formatLocalDate(nextDueDate);
+    }
+}

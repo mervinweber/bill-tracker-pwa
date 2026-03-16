@@ -93,13 +93,13 @@
 - [ ] Confirm caching works correctly in a production build after consolidation
 
 ### 3.3 Remove Deprecated Module
-- [ ] Remove `src/utils/storage.js` (deprecated — `getBills()` / `saveBills()` bypass BillStore)
-- [ ] Search for remaining imports of `storage.js` and update them to use BillStore directly
+- [x] Remove `src/utils/storage.js` (deprecated — `getBills()` / `saveBills()` bypass BillStore)
+- [x] Search for remaining imports of `storage.js` and update them to use BillStore directly
 
 ### 3.4 Eliminate Duplicate Bill Cycling Logic
-- [ ] Extract duplicated cycling block from `togglePaymentStatus()` and `recordPayment()` into a shared `advanceBillToNextCycle(bill)` utility in `src/utils/billHelpers.js`
-- [ ] Update both call sites to use the shared utility
-- [ ] Add / extend tests to cover all recurrence types through the new utility
+- [x] Extract duplicated cycling block from `togglePaymentStatus()` and `recordPayment()` into a shared `advanceBillToNextCycle(bill)` utility in `src/utils/billHelpers.js`
+- [x] Update both call sites to use the shared utility
+- [x] Add / extend tests to cover all recurrence types through the new utility
 
 ### 3.5 Extract Cloud Sync Patterns
 - [x] Create `src/utils/cloudSyncManager.js`
@@ -116,13 +116,13 @@
 - [ ] Confirm no functionality is lost; all tests still pass
 
 ### 3.7 Input Validation
-- [ ] Add `validatePaymentSettings()` to `src/utils/validation.js`
+- [x] Add `validatePaymentSettings()` to `src/utils/validation.js`
   - Validate `startDate` (must be a valid date, not unreasonably far in future)
   - Validate `frequency` (must be: weekly | bi-weekly | monthly)
   - Validate `payPeriodsToShow` (positive integer)
-- [ ] Wire validation in `settingsHandler.js` before calling `paycheckManager.updateSettings()`
-- [ ] Show clear per-field error if validation fails
-- [ ] Add unit tests for the validator
+- [x] Wire validation in `settingsHandler.js` before calling `paycheckManager.updateSettings()`
+- [x] Show clear per-field error if validation fails
+- [x] Add unit tests for the validator
 
 ### 3.8 Centralize App Constants
 - [ ] Create `src/config/constants.js` and move all magic numbers and app-wide constants:

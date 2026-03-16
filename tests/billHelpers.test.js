@@ -1,5 +1,5 @@
-import { it, expect } from 'vitest';
-import { calculateNextDueDate, getRemainingBalance } from '../src/utils/billHelpers.js';
+import { it, expect, describe } from 'vitest';
+import { calculateNextDueDate, getRemainingBalance, advanceBillToNextCycle } from '../src/utils/billHelpers.js';
 
 it('calculateNextDueDate - Monthly', () => {
     const date = new Date('2025-01-01');
@@ -42,4 +42,66 @@ it('getRemainingBalance - Fully Paid', () => {
     };
     const balance = getRemainingBalance(bill);
     expect(balance).toBe(0);
+});
+
+describe('advanceBillToNextCycle', () => {
+    it('does nothing when bill is unpaid', () => {
+        const bill = { dueDate: '2025-01-15', recurrence: 'Monthly' };
+        const updated = { ...bill, isPaid: false };
+        advanceBillToNextCycle(bill, updated);
+        expect(updated.dueDate).toBe('2025-01-15');
+    });
+
+    it('does nothing for one-time bill', () => {
+        const bill = { dueDate: '2025-01-15', recurrence: 'One-time' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated);
+        expect(updated.dueDate).toBe('2025-01-15');
+    });
+
+    it('advances monthly bill by one month (single-cycle)', () => {
+        const bill = { dueDate: '2025-01-15', recurrence: 'Monthly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated);
+        expect(updated.dueDate).toBe('2025-02-15');
+    });
+
+    it('advances weekly bill by 7 days', () => {
+        const bill = { dueDate: '2025-01-15', recurrence: 'Weekly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated);
+        expect(updated.dueDate).toBe('2025-01-22');
+    });
+
+    it('advances bi-weekly bill by 14 days', () => {
+        const bill = { dueDate: '2025-01-15', recurrence: 'Bi-weekly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated);
+        expect(updated.dueDate).toBe('2025-01-29');
+    });
+
+    it('advances yearly bill by one year', () => {
+        const bill = { dueDate: '2025-01-15', recurrence: 'Yearly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated);
+        expect(updated.dueDate).toBe('2026-01-15');
+    });
+
+    it('catch-up strategy advances past overdue monthly cycles', () => {
+        const bill = { dueDate: '2024-10-15', recurrence: 'Monthly' };
+        const updated = { ...bill, isPaid: true };
+        // Reference date of 2025-01-20 means Oct/Nov/Dec are overdue; next non-overdue is Feb
+        advanceBillToNextCycle(bill, updated, {
+            strategy: 'catch-up-to-current',
+            referenceDate: new Date('2025-01-20')
+        });
+        expect(updated.dueDate > '2025-01-15').toBe(true);
+    });
+
+    it('single-cycle strategy ignores overdue status and advances by one month', () => {
+        const bill = { dueDate: '2024-10-15', recurrence: 'Monthly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated, { strategy: 'single-cycle' });
+        expect(updated.dueDate).toBe('2024-11-15');
+    });
 });

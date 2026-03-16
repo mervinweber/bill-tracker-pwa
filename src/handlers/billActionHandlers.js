@@ -33,11 +33,9 @@ import {
 import { normalizeImportPayload } from '../utils/importHelpers.js';
 import {
     createLocalDate,
-    formatLocalDate,
-    calculateNextDueDate,
-    getMissedMonthlyCycles,
-    getNextNonOverdueMonthlyDate
+    getMissedMonthlyCycles
 } from '../utils/dates.js';
+import { advanceBillToNextCycle } from '../utils/billHelpers.js';
 import logger from '../utils/logger.js';
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
@@ -145,28 +143,6 @@ export function showSuccessNotification(message) {
     }, 3000);
 }
 
-function advanceRecurringBillIfNeeded(bill, updated, options = {}) {
-    if (updated.isPaid && bill.recurrence && bill.recurrence !== 'One-time') {
-        const currentDueDate = createLocalDate(bill.dueDate);
-        const catchUpToCurrent =
-            bill.recurrence === 'Monthly' && options.strategy === 'catch-up-to-current';
-
-        const nextDueDate = catchUpToCurrent
-            ? getNextNonOverdueMonthlyDate(currentDueDate, options.referenceDate || new Date())
-            : calculateNextDueDate(currentDueDate, bill.recurrence);
-
-        if (nextDueDate) {
-            updated.dueDate = formatLocalDate(nextDueDate);
-            logger.info('Recurring bill moved to next cycle', {
-                from: bill.dueDate,
-                to: updated.dueDate,
-                billId: bill.id,
-                strategy: catchUpToCurrent ? 'catch-up-to-current' : 'single-cycle'
-            });
-        }
-    }
-}
-
 function getRecurringPaymentStrategy(bill, updated, paymentDate, preferredStrategy = 'single-cycle') {
     if (!updated.isPaid || bill.recurrence !== 'Monthly') {
         return 'single-cycle';
@@ -259,7 +235,7 @@ export function togglePaymentStatus(billId, isPaid) {
         }
 
         // If marking as paid and bill is recurring, move to next payment cycle
-        advanceRecurringBillIfNeeded(bill, updated);
+        advanceBillToNextCycle(bill, updated);
 
         billStore.update(updated);
         recordAuditEvent('bill.payment_status.toggled', {
@@ -532,7 +508,7 @@ export function recordPayment(billId, paymentData) {
             payment.date,
             paymentData.recurrenceStrategy
         );
-        advanceRecurringBillIfNeeded(bill, updated, {
+        advanceBillToNextCycle(bill, updated, {
             strategy: recurrenceStrategy,
             referenceDate: createLocalDate(payment.date)
         });
