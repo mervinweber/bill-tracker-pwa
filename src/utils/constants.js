@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
     CUSTOM_CATEGORIES: 'customCategories',
     SELECTED_CATEGORY: 'selectedCategory',
     USER_EMAIL: 'userEmail',
+    LOGIN_ATTEMPT_STATE: 'authLoginAttemptState',
     AUDIT_LOG: 'auditLog',
     THEME: 'theme',
     NOTIFICATION_SETTINGS: 'notificationSettings',

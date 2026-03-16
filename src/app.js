@@ -53,6 +53,24 @@ import {
 import { safeJSONParse } from './utils/validation.js';
 import { checkAndSendDueBillReminders } from './utils/notifications.js';
 import { recordAuditEvent } from './utils/auditTracker.js';
+import {
+    LOGIN_LOCKOUT_RULES,
+    clearLoginAttemptState,
+    formatRetryAfter,
+    getLoginAttemptStatus,
+    recordFailedLoginAttempt
+} from './utils/loginAttemptGuard.js';
+
+const isCredentialFailure = (error) => {
+    const message = (error?.message || '').toLowerCase();
+    const code = (error?.code || '').toLowerCase();
+    const status = error?.status;
+
+    if (code.includes('invalid_credentials')) return true;
+    if (message.includes('invalid login credentials')) return true;
+    if (message.includes('invalid credentials')) return true;
+    return status === 400 || status === 401;
+};
 
 class AppOrchestrator {
     constructor() {
@@ -907,16 +925,58 @@ class AppOrchestrator {
     }
 
     async handleLogin(email, password) {
+        const preCheck = getLoginAttemptStatus(email);
+        if (preCheck.isLocked) {
+            const retryText = formatRetryAfter(preCheck.retryAfterMs);
+            setAuthMessage(
+                `Too many failed attempts. Please wait ${retryText} before trying again.`,
+                true
+            );
+            recordAuditEvent('auth.login.blocked', {
+                entityType: 'auth',
+                summary: 'Login blocked by local lockout guard',
+                metadata: {
+                    email,
+                    retryAfterMs: preCheck.retryAfterMs,
+                    maxAttempts: LOGIN_LOCKOUT_RULES.maxAttempts
+                }
+            });
+            return;
+        }
+
         setAuthMessage('Signing in...', false);
         const { data, error } = await signIn(email, password);
         if (error) {
-            setAuthMessage(error.message, true);
+            if (isCredentialFailure(error)) {
+                const postFailure = recordFailedLoginAttempt(email);
+                if (postFailure.isLocked) {
+                    const retryText = formatRetryAfter(postFailure.retryAfterMs);
+                    setAuthMessage(
+                        `Account temporarily locked after ${LOGIN_LOCKOUT_RULES.maxAttempts} failed attempts. Try again in ${retryText}.`,
+                        true
+                    );
+                } else {
+                    setAuthMessage(
+                        `${error.message} (${postFailure.remainingAttempts} attempt(s) remaining before temporary lockout)`,
+                        true
+                    );
+                }
+            } else {
+                setAuthMessage(error.message, true);
+            }
+
             recordAuditEvent('auth.login.failed', {
                 entityType: 'auth',
                 summary: 'Login attempt failed',
-                metadata: { message: error.message }
+                metadata: {
+                    email,
+                    message: error.message,
+                    trackedByLockoutGuard: isCredentialFailure(error)
+                }
             });
         } else {
+            clearLoginAttemptState(email);
+
             // Save user email to localStorage so Sidebar can read it on reload
             if (data.user && data.user.email) {
                 StorageManager.set(STORAGE_KEYS.USER_EMAIL, data.user.email);
