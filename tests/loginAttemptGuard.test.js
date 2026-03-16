@@ -25,7 +25,20 @@ it('allows login before max attempts', () => {
     const status = getLoginAttemptStatus(email, { nowMs: 1000, maxAttempts: 5 });
 
     expect(status.isLocked).toBe(false);
+    expect(status.requiresCaptcha).toBe(false);
     expect(status.remainingAttempts).toBe(5);
+});
+
+it('requires captcha after third failed attempt without locking account', () => {
+    const email = 'user@example.com';
+
+    recordFailedLoginAttempt(email, { nowMs: 1000, maxAttempts: 5, captchaAfterAttempts: 3, lockoutMs: 60000 });
+    recordFailedLoginAttempt(email, { nowMs: 2000, maxAttempts: 5, captchaAfterAttempts: 3, lockoutMs: 60000 });
+    const status = recordFailedLoginAttempt(email, { nowMs: 3000, maxAttempts: 5, captchaAfterAttempts: 3, lockoutMs: 60000 });
+
+    expect(status.requiresCaptcha).toBe(true);
+    expect(status.isLocked).toBe(false);
+    expect(status.remainingAttempts).toBe(2);
 });
 
 it('locks account on fifth failed credential attempt', () => {
@@ -38,6 +51,7 @@ it('locks account on fifth failed credential attempt', () => {
     const status = recordFailedLoginAttempt(email, { nowMs: 5000, maxAttempts: 5, lockoutMs: 60000 });
 
     expect(status.isLocked).toBe(true);
+    expect(status.requiresCaptcha).toBe(true);
     expect(status.remainingAttempts).toBe(0);
     expect(status.lockoutUntil).toBe(65000);
 });

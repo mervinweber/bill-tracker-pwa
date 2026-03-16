@@ -94,11 +94,16 @@ export const signUp = async (email, password) => {
     return { data, error };
 };
 
-export const signIn = async (email, password) => {
+export const signIn = async (email, password, options = {}) => {
     if (!supabase) return { error: { message: 'Supabase not initialized' } };
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: options.captchaToken
+            ? {
+                captchaToken: options.captchaToken
+            }
+            : undefined,
     });
 
     if (!error && data?.user) {

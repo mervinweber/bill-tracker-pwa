@@ -8,12 +8,152 @@
  */
 
 import logger from '../utils/logger.js';
+import {
+    isTurnstileConfigured,
+    removeTurnstileWidget,
+    renderTurnstileWidget,
+    resetTurnstileWidget
+} from '../utils/turnstile.js';
+
+let authChallengeState = {
+    widgetId: null,
+    turnstileToken: '',
+    expectedAnswer: null,
+    fallbackEnabled: false
+};
+
+const buildFallbackChallenge = () => {
+    const left = Math.floor(Math.random() * 8) + 2;
+    const right = Math.floor(Math.random() * 8) + 2;
+    const operations = ['+', '-'];
+    const operation = operations[Math.floor(Math.random() * operations.length)];
+
+    if (operation === '-') {
+        const bigger = Math.max(left, right);
+        const smaller = Math.min(left, right);
+        return {
+            prompt: `${bigger} - ${smaller}`,
+            answer: String(bigger - smaller)
+        };
+    }
+
+    return {
+        prompt: `${left} + ${right}`,
+        answer: String(left + right)
+    };
+};
+
+const clearAuthChallengeUi = () => {
+    const section = document.getElementById('authChallengeSection');
+    const fallbackInput = /** @type {HTMLInputElement|null} */ (document.getElementById('authChallengeAnswer'));
+    const fallbackPrompt = document.getElementById('authChallengePrompt');
+    const fallbackHint = document.getElementById('authChallengeHint');
+    const widgetContainer = document.getElementById('authTurnstileContainer');
+
+    if (section) section.classList.add('hidden');
+    if (fallbackInput) fallbackInput.value = '';
+    if (fallbackPrompt) fallbackPrompt.textContent = '';
+    if (fallbackHint) fallbackHint.textContent = '';
+    if (widgetContainer) widgetContainer.innerHTML = '';
+
+    if (authChallengeState.widgetId !== null) {
+        removeTurnstileWidget(authChallengeState.widgetId);
+    }
+
+    authChallengeState = {
+        widgetId: null,
+        turnstileToken: '',
+        expectedAnswer: null,
+        fallbackEnabled: false
+    };
+};
+
+const ensureFallbackChallenge = () => {
+    const fallbackPrompt = document.getElementById('authChallengePrompt');
+    const fallbackHint = document.getElementById('authChallengeHint');
+    const { prompt, answer } = buildFallbackChallenge();
+
+    authChallengeState.expectedAnswer = answer;
+    authChallengeState.fallbackEnabled = true;
+
+    if (fallbackPrompt) {
+        fallbackPrompt.textContent = `Solve to continue: ${prompt}`;
+    }
+    if (fallbackHint) {
+        fallbackHint.textContent = 'This lightweight challenge reduces automated login traffic when provider-backed CAPTCHA is not configured.';
+    }
+};
+
+const showAuthChallenge = async () => {
+    const section = document.getElementById('authChallengeSection');
+    const widgetContainer = document.getElementById('authTurnstileContainer');
+    const fallbackBlock = document.getElementById('authFallbackChallenge');
+
+    if (!section || !widgetContainer || !fallbackBlock) return;
+    section.classList.remove('hidden');
+
+    if (isTurnstileConfigured()) {
+        fallbackBlock.classList.add('hidden');
+
+        if (authChallengeState.widgetId === null) {
+            try {
+                authChallengeState.widgetId = await renderTurnstileWidget(widgetContainer, {
+                    onSuccess: (token) => {
+                        authChallengeState.turnstileToken = token;
+                    },
+                    onExpired: () => {
+                        authChallengeState.turnstileToken = '';
+                    },
+                    onError: () => {
+                        authChallengeState.turnstileToken = '';
+                    }
+                });
+            } catch (error) {
+                logger.warn('Turnstile unavailable; falling back to local challenge', error);
+                fallbackBlock.classList.remove('hidden');
+                ensureFallbackChallenge();
+            }
+        }
+        return;
+    }
+
+    fallbackBlock.classList.remove('hidden');
+    if (!authChallengeState.expectedAnswer) {
+        ensureFallbackChallenge();
+    }
+};
+
+const validateAuthChallenge = () => {
+    if (isTurnstileConfigured() && !authChallengeState.fallbackEnabled) {
+        return {
+            valid: Boolean(authChallengeState.turnstileToken),
+            message: 'Please complete the CAPTCHA challenge before trying again.',
+            captchaToken: authChallengeState.turnstileToken
+        };
+    }
+
+    const fallbackInput = /** @type {HTMLInputElement|null} */ (document.getElementById('authChallengeAnswer'));
+    const value = fallbackInput?.value?.trim() || '';
+    const valid = Boolean(authChallengeState.expectedAnswer) && value === authChallengeState.expectedAnswer;
+
+    if (!valid) {
+        ensureFallbackChallenge();
+        if (fallbackInput) fallbackInput.value = '';
+    }
+
+    return {
+        valid,
+        message: 'Please solve the verification challenge before trying again.',
+        captchaToken: null
+    };
+};
 
 /**
  * Initialize authentication modal with login and signup handlers
  * 
  * @function initializeAuthModal
  * @param {Object} actions - Action handlers object
+ * @param {Function} [actions.getLoginGuardStatus] - Optional callback returning current login guard state for an email
  * @param {Function} actions.onLogin - Callback for login button click
  * @param {Function} actions.onSignUp - Callback for signup button click
  * @param {Function} actions.onResetPassword - Callback for password reset link click
@@ -57,6 +197,19 @@ export const initializeAuthModal = (actions) => {
 
                     <div id="authMessage" class="hidden rounded-md bg-destructive/15 p-3 text-xs text-destructive"></div>
 
+                    <div id="authChallengeSection" class="hidden rounded-md border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-950 space-y-3">
+                        <div>
+                            <p class="font-semibold">Additional verification required</p>
+                            <p class="mt-1 text-amber-900/80">After repeated failed login attempts, complete the challenge below before another sign-in request is sent.</p>
+                        </div>
+                        <div id="authTurnstileContainer"></div>
+                        <div id="authFallbackChallenge" class="hidden space-y-2">
+                            <p id="authChallengePrompt" class="font-medium"></p>
+                            <input type="text" id="authChallengeAnswer" placeholder="Enter answer" class="${inputBase}">
+                            <p id="authChallengeHint" class="text-[11px] text-amber-900/70"></p>
+                        </div>
+                    </div>
+
                     <div class="flex flex-col gap-2 pt-2">
                         <button id="loginBtn" class="${btnPrimary} w-full relative group">
                             <span class="group-[.loading]:invisible">Log In</span>
@@ -90,12 +243,23 @@ export const initializeAuthModal = (actions) => {
     const signUpBtn = document.getElementById('signUpBtn');
     const emailInput = /** @type {HTMLInputElement} */ (document.getElementById('authEmail'));
     const passwordInput = /** @type {HTMLInputElement} */ (document.getElementById('authPassword'));
+    const challengeAnswerInput = /** @type {HTMLInputElement} */ (document.getElementById('authChallengeAnswer'));
+
+    const refreshChallengeState = async () => {
+        const status = actions.getLoginGuardStatus?.(emailInput.value.trim());
+        if (status?.requiresCaptcha && !status.isLocked) {
+            await showAuthChallenge();
+        } else {
+            clearAuthChallengeUi();
+        }
+    };
 
     const close = () => {
         modal.classList.remove('visible', 'animate-in', 'fade-in-0');
         setTimeout(() => {
             modal.style.display = 'none';
             setAuthMessage('');
+            clearAuthChallengeUi();
         }, 200);
     };
 
@@ -116,6 +280,39 @@ export const initializeAuthModal = (actions) => {
             return;
         }
 
+        const status = actions.getLoginGuardStatus?.(email);
+        if (status?.requiresCaptcha && !status.isLocked) {
+            await showAuthChallenge();
+            const challengeResult = validateAuthChallenge();
+            if (!challengeResult.valid) {
+                setAuthMessage(challengeResult.message, true);
+                return;
+            }
+
+            btn.classList.add('loading');
+            btn.disabled = true;
+            setAuthMessage('');
+
+            try {
+                await callback(email, password, {
+                    captchaToken: challengeResult.captchaToken
+                });
+            } catch (error) {
+                logger.error('Auth modal action failed', error);
+                setAuthMessage(error.message || 'An error occurred', true);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+
+                if (isTurnstileConfigured() && authChallengeState.widgetId !== null) {
+                    authChallengeState.turnstileToken = '';
+                    resetTurnstileWidget(authChallengeState.widgetId);
+                }
+                await refreshChallengeState();
+            }
+            return;
+        }
+
         btn.classList.add('loading');
         btn.disabled = true;
         setAuthMessage('');
@@ -128,6 +325,7 @@ export const initializeAuthModal = (actions) => {
         } finally {
             btn.classList.remove('loading');
             btn.disabled = false;
+            await refreshChallengeState();
         }
     };
 
@@ -145,6 +343,16 @@ export const initializeAuthModal = (actions) => {
     };
 
     passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleAuthAction(loginBtn, actions.onLogin);
+        }
+    });
+
+    emailInput.addEventListener('input', () => {
+        refreshChallengeState();
+    });
+
+    challengeAnswerInput?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             handleAuthAction(loginBtn, actions.onLogin);
         }
@@ -170,7 +378,10 @@ export const closeAuthModal = () => {
         modal.style.display = 'none';
         /** @type {HTMLInputElement} */ (document.getElementById('authEmail')).value = '';
         /** @type {HTMLInputElement} */ (document.getElementById('authPassword')).value = '';
+        const challengeAnswer = /** @type {HTMLInputElement|null} */ (document.getElementById('authChallengeAnswer'));
+        if (challengeAnswer) challengeAnswer.value = '';
         setAuthMessage('');
+        clearAuthChallengeUi();
     }, 200);
 };
 

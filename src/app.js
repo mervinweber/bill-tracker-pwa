@@ -218,7 +218,8 @@ class AppOrchestrator {
             });
 
             initializeAuthModal({
-                onLogin: (email, password) => this.handleLogin(email, password),
+                getLoginGuardStatus: (email) => getLoginAttemptStatus(email),
+                onLogin: (email, password, options) => this.handleLogin(email, password, options),
                 onSignUp: (email, password) => this.handleSignUp(email, password),
                 onResetPassword: (email) => this.handleResetPassword(email)
             });
@@ -924,7 +925,7 @@ class AppOrchestrator {
         billActionHandlers.importData(file);
     }
 
-    async handleLogin(email, password) {
+    async handleLogin(email, password, options = {}) {
         const preCheck = getLoginAttemptStatus(email);
         if (preCheck.isLocked) {
             const retryText = formatRetryAfter(preCheck.retryAfterMs);
@@ -945,7 +946,7 @@ class AppOrchestrator {
         }
 
         setAuthMessage('Signing in...', false);
-        const { data, error } = await signIn(email, password);
+    const { data, error } = await signIn(email, password, options);
         if (error) {
             if (isCredentialFailure(error)) {
                 const postFailure = recordFailedLoginAttempt(email);

@@ -3,6 +3,7 @@ import { STORAGE_KEYS } from './constants.js';
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_LOCKOUT_MS = 15 * 60 * 1000;
+const DEFAULT_CAPTCHA_AFTER_ATTEMPTS = 3;
 
 const normalizeEmail = (email) => {
     if (typeof email !== 'string') return '';
@@ -38,6 +39,7 @@ const ensureUnlockedIfExpired = (entry, nowMs) => {
 
 export const getLoginAttemptStatus = (email, options = {}) => {
     const maxAttempts = options.maxAttempts || DEFAULT_MAX_ATTEMPTS;
+    const captchaAfterAttempts = options.captchaAfterAttempts || DEFAULT_CAPTCHA_AFTER_ATTEMPTS;
     const nowMs = options.nowMs || Date.now();
 
     const state = loadState();
@@ -52,6 +54,7 @@ export const getLoginAttemptStatus = (email, options = {}) => {
     const isLocked = normalizedEntry.lockoutUntil > nowMs;
     return {
         isLocked,
+        requiresCaptcha: normalizedEntry.failedAttempts >= captchaAfterAttempts,
         failedAttempts: normalizedEntry.failedAttempts,
         remainingAttempts: Math.max(0, maxAttempts - normalizedEntry.failedAttempts),
         lockoutUntil: normalizedEntry.lockoutUntil,
@@ -61,6 +64,7 @@ export const getLoginAttemptStatus = (email, options = {}) => {
 
 export const recordFailedLoginAttempt = (email, options = {}) => {
     const maxAttempts = options.maxAttempts || DEFAULT_MAX_ATTEMPTS;
+    const captchaAfterAttempts = options.captchaAfterAttempts || DEFAULT_CAPTCHA_AFTER_ATTEMPTS;
     const lockoutMs = options.lockoutMs || DEFAULT_LOCKOUT_MS;
     const nowMs = options.nowMs || Date.now();
 
@@ -70,6 +74,7 @@ export const recordFailedLoginAttempt = (email, options = {}) => {
     if (!key) {
         return {
             isLocked: false,
+            requiresCaptcha: false,
             failedAttempts: 0,
             remainingAttempts: maxAttempts,
             lockoutUntil: 0,
@@ -91,6 +96,7 @@ export const recordFailedLoginAttempt = (email, options = {}) => {
 
     return {
         isLocked: nextEntry.lockoutUntil > nowMs,
+        requiresCaptcha: nextEntry.failedAttempts >= captchaAfterAttempts,
         failedAttempts: nextEntry.failedAttempts,
         remainingAttempts: Math.max(0, maxAttempts - nextEntry.failedAttempts),
         lockoutUntil: nextEntry.lockoutUntil,
@@ -124,6 +130,7 @@ export const formatRetryAfter = (retryAfterMs) => {
 };
 
 export const LOGIN_LOCKOUT_RULES = {
+    captchaAfterAttempts: DEFAULT_CAPTCHA_AFTER_ATTEMPTS,
     maxAttempts: DEFAULT_MAX_ATTEMPTS,
     lockoutMs: DEFAULT_LOCKOUT_MS
 };
