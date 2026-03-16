@@ -86,10 +86,10 @@
 - [ ] Verify app still works in private browsing mode after migration
 
 ### 3.2 Service Worker Consolidation — High
-- [ ] Audit differences between `src/service-worker.js` and `public/service-worker.js` (path mappings differ)
-- [ ] Make `src/service-worker.js` the single source of truth
-- [ ] Remove / deprecate the redundant `src/serviceWorker.js` (registration-only, 12 lines)
-- [ ] Update build config to copy the canonical service worker to `public/` during build
+- [x] Audit differences between `src/service-worker.js` and `public/service-worker.js` (path mappings differ)
+- [x] Make `src/service-worker.js` the single source of truth
+- [x] Remove / deprecate the redundant `src/serviceWorker.js` (registration-only, 12 lines)
+- [x] Update build config to copy the canonical service worker to `public/` during build
 - [ ] Confirm caching works correctly in a production build after consolidation
 
 ### 3.3 Remove Deprecated Module
@@ -105,7 +105,7 @@
 - [x] Create `src/utils/cloudSyncManager.js`
 - [x] Extract `syncPaymentSettingsFromCloud()` and `syncBillsFromCloud()` from the repeated patterns in `app.js`
 - [x] Replace all duplicate sync blocks in `app.js` with the new manager
-- [ ] Add tests for sync and merge scenarios
+- [x] Add tests for sync and merge scenarios
 
 ### 3.6 Refactor Monolithic app.js
 - [ ] Extract modal-creation logic → `src/app/initializeModals.js`
