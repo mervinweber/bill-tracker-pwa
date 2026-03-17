@@ -19,8 +19,6 @@ import { initializeDashboard, renderDashboard } from './components/dashboard.js'
 import { initializeBillForm, openBillForm, closeBillForm } from './components/billForm.js';
 import { initializeAuthModal, openAuthModal } from './components/authModal.js';
 
-import { initializeCalendarView, renderCalendar } from './views/calendarView.js';
-import { initializeAnalyticsView, renderAnalytics, cleanupCharts } from './views/analyticsView.js';
 import { initializeUpcomingBillsView, renderUpcomingBills } from './views/upcomingBillsView.js';
 
 import {
@@ -77,6 +75,11 @@ class AppOrchestrator {
         this.initialized = false;
         this.isSyncing = false;
         this.cleanupResponsiveDetection = null;
+        this.calendarViewModule = null;
+        this.analyticsViewModule = null;
+        this.calendarViewInitialized = false;
+        this.analyticsViewInitialized = false;
+        this.viewRenderToken = 0;
     }
 
     /**
@@ -132,9 +135,7 @@ class AppOrchestrator {
             // Get paycheck labels
             const paycheckLabels = paycheckManager.getPaycheckLabels();
 
-            // Initialize all views
-            initializeCalendarView();
-            initializeAnalyticsView();
+            // Initialize baseline views
             initializeUpcomingBillsView();
 
             // Initialize components with callbacks
@@ -267,7 +268,73 @@ class AppOrchestrator {
         }
 
         cleanupBillGrid();
-        cleanupCharts();
+        if (this.analyticsViewModule?.cleanupCharts) {
+            this.analyticsViewModule.cleanupCharts();
+        }
+    }
+
+    async loadCalendarViewModule() {
+        if (!this.calendarViewModule) {
+            this.calendarViewModule = await import('./views/calendarView.js');
+        }
+
+        if (!this.calendarViewInitialized) {
+            this.calendarViewModule.initializeCalendarView();
+            this.calendarViewInitialized = true;
+        }
+
+        return this.calendarViewModule;
+    }
+
+    async loadAnalyticsViewModule() {
+        if (!this.analyticsViewModule) {
+            this.analyticsViewModule = await import('./views/analyticsView.js');
+        }
+
+        if (!this.analyticsViewInitialized) {
+            this.analyticsViewModule.initializeAnalyticsView();
+            this.analyticsViewInitialized = true;
+        }
+
+        return this.analyticsViewModule;
+    }
+
+    async renderCalendarView(renderToken) {
+        try {
+            const { renderCalendar } = await this.loadCalendarViewModule();
+            if (renderToken !== this.viewRenderToken) return;
+
+            const calendarView = document.getElementById('calendarView');
+            if (calendarView) {
+                calendarView.style.display = 'block';
+            }
+            renderCalendar();
+        } catch (error) {
+            logger.error('Error loading calendar view', error);
+            billActionHandlers.showErrorNotification('Could not load calendar view', 'View Error');
+        }
+    }
+
+    async renderAnalyticsView({ bills, viewMode, selectedPaycheck, payCheckDates }, renderToken) {
+        try {
+            const { renderAnalytics } = await this.loadAnalyticsViewModule();
+            if (renderToken !== this.viewRenderToken) return;
+
+            const analyticsView = document.getElementById('analyticsView');
+            if (analyticsView) {
+                analyticsView.style.display = 'block';
+            }
+
+            renderAnalytics({
+                bills,
+                viewMode,
+                selectedPaycheck,
+                payCheckDates
+            });
+        } catch (error) {
+            logger.error('Error loading analytics view', error);
+            billActionHandlers.showErrorNotification('Could not load analytics view', 'View Error');
+        }
     }
 
     handleDueBillReminders() {
@@ -347,6 +414,7 @@ class AppOrchestrator {
         try {
             const state = appState.getState();
             const bills = billStore.getAll();
+            const renderToken = ++this.viewRenderToken;
 
             // Update header UI
             updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward);
@@ -365,17 +433,19 @@ class AppOrchestrator {
             if (upcomingBillsView) upcomingBillsView.style.display = 'none';
             if (dashboard) dashboard.style.display = 'none';
 
+            if (state.displayMode !== 'analytics' && this.analyticsViewModule?.cleanupCharts) {
+                this.analyticsViewModule.cleanupCharts();
+            }
+
             if (state.displayMode === 'calendar') {
-                if (calendarView) calendarView.style.display = 'block';
-                renderCalendar();
+                this.renderCalendarView(renderToken);
             } else if (state.displayMode === 'analytics') {
-                if (analyticsView) analyticsView.style.display = 'block';
-                renderAnalytics({
+                this.renderAnalyticsView({
                     bills,
                     viewMode: state.viewMode,
                     selectedPaycheck: state.selectedPaycheck,
                     payCheckDates: paycheckManager.payCheckDates
-                });
+                }, renderToken);
             } else {
                 // List view (default)
                 if (state.viewMode === 'upcoming') {

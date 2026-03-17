@@ -11,6 +11,7 @@ import { syncPaymentSettings, getUser, createHousehold, joinHousehold, getHouseh
 import StorageManager from '../utils/StorageManager.js';
 import logger from '../utils/logger.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
+import { SETTINGS_SAVE_DEBOUNCE_MS, PAGE_RELOAD_DELAY_MS } from '../config/constants.js';
 import {
     getNotificationSettings,
     getReminderHistory,
@@ -20,6 +21,32 @@ import {
 } from '../utils/notifications.js';
 import { hasPaymentScheduleChanged } from '../utils/settingsHelpers.js';
 import { recordAuditEvent } from '../utils/auditTracker.js';
+
+let settingsSyncDebounceTimer = null;
+
+function debouncedSyncPaymentSettings(newSettings) {
+    if (settingsSyncDebounceTimer) {
+        clearTimeout(settingsSyncDebounceTimer);
+    }
+
+    settingsSyncDebounceTimer = setTimeout(async () => {
+        const user = await getUser();
+        if (!user) return;
+
+        try {
+            const { error } = await syncPaymentSettings(newSettings);
+            if (error) {
+                logger.error('Failed to sync payment settings to cloud', error);
+                billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
+            } else {
+                logger.info('Payment settings synced to cloud');
+            }
+        } catch (syncErr) {
+            logger.error('Error syncing payment settings', syncErr);
+            billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
+        }
+    }, SETTINGS_SAVE_DEBOUNCE_MS);
+}
 
 /**
  * Show settings modal
@@ -789,28 +816,12 @@ async function handleSettingsSave(e, modal) {
             }
         });
 
-        // Sync to cloud if user is logged in
-        (async () => {
-            const user = await getUser();
-            if (user) {
-                try {
-                    const { error } = await syncPaymentSettings(newSettings);
-                    if (error) {
-                        logger.error('Failed to sync payment settings to cloud', error);
-                        billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
-                    } else {
-                        logger.info('Payment settings synced to cloud');
-                    }
-                } catch (syncErr) {
-                    logger.error('Error syncing payment settings', syncErr);
-                    billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
-                }
-            }
-        })();
+        // Debounce cloud sync to avoid rapid duplicate requests from repeated saves.
+        debouncedSyncPaymentSettings(newSettings);
 
         billActionHandlers.showSuccessNotification('Settings saved. Reloading application...');
         modal.remove();
-        setTimeout(() => window.location.reload(), 1000);
+        setTimeout(() => window.location.reload(), PAGE_RELOAD_DELAY_MS);
     } catch (error) {
         logger.error('Error saving settings', error);
         billActionHandlers.showErrorNotification(error.message, 'Save Failed');

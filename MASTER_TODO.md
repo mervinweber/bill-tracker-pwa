@@ -195,12 +195,12 @@
 ## 🛠️ Section 6: Engineering / Performance
 
 ### 6.1 Lazy Load Heavy Views
-- [ ] Implement dynamic `import()` for `src/views/calendarView.js` (only load when Calendar tab opens)
-- [ ] Implement dynamic `import()` for `src/views/analyticsView.js` (only load when Analytics tab opens)
-- [ ] Verify bundle size decreases and initial load time improves
+- [x] Implement dynamic `import()` for `src/views/calendarView.js` (only load when Calendar tab opens)
+- [x] Implement dynamic `import()` for `src/views/analyticsView.js` (only load when Analytics tab opens)
+- [x] Verify bundle size decreases and initial load time improves
 
 ### 6.2 Debounce Settings Save
-- [ ] Wrap the Supabase sync call in `settingsHandler.js` with a debounce (≥ 1 000 ms) to prevent rapid sequential requests when user clicks Save multiple times quickly
+- [x] Wrap the Supabase sync call in `settingsHandler.js` with a debounce (≥ 1 000 ms) to prevent rapid sequential requests when user clicks Save multiple times quickly
 
 ### 6.3 Calendar View Incremental Rendering
-- [ ] Investigate replacing full DOM rebuild in `calendarView.js` with targeted updates (patch only changed days rather than calling full `renderCalendar()` on every state change)
+- [x] Investigate replacing full DOM rebuild in `calendarView.js` with targeted updates (patch only changed days rather than calling full `renderCalendar()` on every state change)

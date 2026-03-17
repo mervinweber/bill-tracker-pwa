@@ -7,6 +7,89 @@ import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
 import logger from '../utils/logger.js';
 
+let renderedMonthKey = null;
+let dayCellMap = new Map();
+
+function getMonthKey(year, month) {
+    return `${year}-${month}`;
+}
+
+function getDateString(year, month, day) {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function isOverdueDate(dateStr, today) {
+    return new Date(dateStr) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+}
+
+function buildDayBadges(billsDue, dateStr, today) {
+    const container = document.createElement('div');
+    container.className = 'space-y-1 mt-1';
+
+    billsDue.forEach((bill) => {
+        const isPaid = bill.isPaid;
+        const isOverdue = !isPaid && isOverdueDate(dateStr, today);
+        const statusClasses = isPaid
+            ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
+            : isOverdue
+                ? 'bg-destructive/15 text-destructive border-destructive/30'
+                : 'bg-primary/10 text-primary border-primary/20';
+
+        const badge = document.createElement('div');
+        badge.className = `px-1.5 py-0.5 rounded border text-[10px] font-semibold truncate cursor-pointer transition-transform hover:scale-[1.02] ${statusClasses}`;
+        badge.title = `${bill.name} - $${(bill.amountDue || 0).toFixed(2)}`;
+        badge.textContent = bill.name;
+        badge.addEventListener('click', () => window.editBillGlobal?.(bill.id));
+        container.appendChild(badge);
+    });
+
+    return container;
+}
+
+function updateCalendarDayCells(year, month) {
+    const today = new Date();
+    const currentBills = billStore.getAll();
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const cell = dayCellMap.get(day);
+        if (!cell) continue;
+
+        const dateStr = getDateString(year, month, day);
+        const billsDue = currentBills.filter((bill) => bill.dueDate === dateStr);
+
+        const oldList = cell.querySelector('.space-y-1.mt-1');
+        if (oldList) oldList.remove();
+
+        const billsMarkup = buildDayBadges(billsDue, dateStr, today);
+        cell.appendChild(billsMarkup);
+    }
+}
+
+function attachMonthNavigationHandlers(currentCalendarDate) {
+    const prevBtn = document.getElementById('prevMonth');
+    const nextBtn = document.getElementById('nextMonth');
+
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            const newDate = new Date(currentCalendarDate);
+            newDate.setMonth(newDate.getMonth() - 1);
+            appState.setCurrentCalendarDate(newDate);
+            renderCalendar();
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            const newDate = new Date(currentCalendarDate);
+            newDate.setMonth(newDate.getMonth() + 1);
+            appState.setCurrentCalendarDate(newDate);
+            renderCalendar();
+        };
+    }
+}
+
 /**
  * Render calendar view
  */
@@ -21,6 +104,13 @@ export function renderCalendar() {
         const currentCalendarDate = appState.getState('currentCalendarDate');
         const year = currentCalendarDate.getFullYear();
         const month = currentCalendarDate.getMonth();
+        const monthKey = getMonthKey(year, month);
+
+        // Incremental path: if month has not changed, only patch day-cell bill content.
+        if (renderedMonthKey === monthKey && dayCellMap.size > 0) {
+            updateCalendarDayCells(year, month);
+            return;
+        }
 
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
@@ -68,47 +158,16 @@ export function renderCalendar() {
 
         // Current month days
         const today = new Date();
-        const currentBills = billStore.getAll();
 
         for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isToday =
                 today.getDate() === day &&
                 today.getMonth() === month &&
                 today.getFullYear() === year;
 
-            const billsDue = currentBills.filter(b => b.dueDate === dateStr);
-
-            let billsHtml = '<div class="space-y-1 mt-1">';
-            billsDue.forEach(b => {
-                const isPaid = b.isPaid;
-                const isOverdue =
-                    !isPaid &&
-                    new Date(dateStr) <
-                    new Date(
-                        today.getFullYear(),
-                        today.getMonth(),
-                        today.getDate()
-                    );
-                const statusClasses = isPaid
-                    ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
-                    : isOverdue
-                        ? 'bg-destructive/15 text-destructive border-destructive/30'
-                        : 'bg-primary/10 text-primary border-primary/20';
-
-                billsHtml += `
-                    <div class="px-1.5 py-0.5 rounded border text-[10px] font-semibold truncate cursor-pointer transition-transform hover:scale-[1.02] ${statusClasses}" 
-                         title="${b.name} - $${(b.amountDue || 0).toFixed(2)}" 
-                         onclick="window.editBillGlobal('${b.id}')">
-                        ${b.name}
-                    </div>`;
-            });
-            billsHtml += '</div>';
-
             html += `
-                <div class="relative bg-background p-2 min-h-[100px] hover:bg-accent/5 transition-colors ${isToday ? 'ring-2 ring-primary ring-inset z-10' : ''}">
+                <div class="relative bg-background p-2 min-h-[100px] hover:bg-accent/5 transition-colors ${isToday ? 'ring-2 ring-primary ring-inset z-10' : ''}" data-day="${day}">
                     <span class="text-xs font-bold ${isToday ? 'text-primary' : 'text-muted-foreground'}">${day}</span>
-                    ${billsHtml}
                 </div>`;
         }
 
@@ -124,20 +183,18 @@ export function renderCalendar() {
         html += '</div>';
         calendarView.innerHTML = html;
 
-        // Attach event listeners
-        document.getElementById('prevMonth').addEventListener('click', () => {
-            const newDate = new Date(currentCalendarDate);
-            newDate.setMonth(newDate.getMonth() - 1);
-            appState.setCurrentCalendarDate(newDate);
-            renderCalendar();
+        renderedMonthKey = monthKey;
+        dayCellMap = new Map();
+
+        calendarView.querySelectorAll('[data-day]').forEach((cell) => {
+            const day = Number.parseInt(cell.getAttribute('data-day') || '', 10);
+            if (Number.isFinite(day)) {
+                dayCellMap.set(day, cell);
+            }
         });
 
-        document.getElementById('nextMonth').addEventListener('click', () => {
-            const newDate = new Date(currentCalendarDate);
-            newDate.setMonth(newDate.getMonth() + 1);
-            appState.setCurrentCalendarDate(newDate);
-            renderCalendar();
-        });
+        updateCalendarDayCells(year, month);
+        attachMonthNavigationHandlers(currentCalendarDate);
     } catch (error) {
         logger.error('Error rendering calendar', error);
         const calendarView = document.getElementById('calendarView');
@@ -167,6 +224,10 @@ export function initializeCalendarView() {
             calendarDiv.className = 'p-4 sm:p-6 transition-all duration-300';
             main.appendChild(calendarDiv);
         }
+
+        // Ensure stale cached mapping is cleared if view is re-initialized.
+        renderedMonthKey = null;
+        dayCellMap = new Map();
     } catch (error) {
         logger.error('Error initializing calendar view', error);
     }
