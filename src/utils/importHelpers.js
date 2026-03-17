@@ -9,6 +9,7 @@ import {
     isValidURL,
     validatePaymentSettings
 } from './validation.js';
+import { createAppError } from '../errors/errorCodes.js';
 
 export const MAX_IMPORT_BILLS = 2000;
 
@@ -78,19 +79,22 @@ export function normalizeImportPayload(data, options = {}) {
         : defaultCategories;
 
     if (!data || typeof data !== 'object') {
-        throw new Error('Invalid JSON format in file');
+        throw createAppError('IMPORT_INVALID_JSON');
     }
 
     if (!Array.isArray(data.bills)) {
-        throw new Error('Invalid file format: bills must be an array.');
+        throw createAppError('IMPORT_INVALID_BILLS_ARRAY');
     }
 
     if (data.bills.length === 0) {
-        throw new Error('File contains no bills to import.');
+        throw createAppError('IMPORT_EMPTY_BILLS');
     }
 
     if (data.bills.length > MAX_IMPORT_BILLS) {
-        throw new Error(`Import file exceeds ${MAX_IMPORT_BILLS} bills. Please split into smaller files.`);
+        throw createAppError(
+            'IMPORT_TOO_MANY_BILLS',
+            `Import file exceeds ${MAX_IMPORT_BILLS} bills. Please split into smaller files.`
+        );
     }
 
     const importErrors = [];
@@ -168,13 +172,14 @@ export function normalizeImportPayload(data, options = {}) {
 
     if (importErrors.length > 0) {
         const preview = importErrors.slice(0, 5).join('; ');
-        throw new Error(
+        throw createAppError(
+            'IMPORT_INVALID_BILL_ENTRIES',
             `Import contains invalid bill entries. ${preview}${importErrors.length > 5 ? `; and ${importErrors.length - 5} more` : ''}`
         );
     }
 
     if (processedBills.length === 0) {
-        throw new Error('No valid bills found to import.');
+        throw createAppError('IMPORT_NO_VALID_BILLS');
     }
 
     const billCategories = [...new Set(processedBills.map(b => b.category))].filter(c => c && c.trim() !== '');

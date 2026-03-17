@@ -1,6 +1,7 @@
 
 import logger from '../utils/logger.js';
 import { USER_CACHE_TTL_MS, SUPABASE_HEALTH_CHECK_TIMEOUT_MS, TOKEN_EXPIRY_WARNING_MS } from '../config/constants.js';
+import { createAppErrorObject } from '../errors/errorCodes.js';
 // Secrets are read from .env file (Vite)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
@@ -86,7 +87,7 @@ export const isSupabaseConfigured = () => {
 
 // Auth Functions
 export const signUp = async (email, password) => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -95,7 +96,7 @@ export const signUp = async (email, password) => {
 };
 
 export const signIn = async (email, password, options = {}) => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -115,7 +116,7 @@ export const signIn = async (email, password, options = {}) => {
 };
 
 export const signInWithGoogle = async () => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -126,7 +127,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const signOut = async () => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     isIntentionalSignOut = true;
     try {
         const { error } = await supabase.auth.signOut();
@@ -141,7 +142,7 @@ export const resetPassword = async (email) => {
     logger.info('Attempting password reset');
     if (!supabase) {
         logger.error('Supabase not initialized for resetPassword');
-        return { error: { message: 'Supabase not initialized' } };
+        return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     }
     try {
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -195,10 +196,10 @@ export const getUser = async () => {
  * @param {Object} localPaymentSettings - Payment settings to sync
  */
 export const syncUserData = async (localBills, localPaymentSettings = null) => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
 
     const user = await getUser();
-    if (!user) return { error: { message: 'User not logged in' } };
+    if (!user) return { error: createAppErrorObject('SUPABASE_AUTH_REQUIRED') };
 
     // Get current user_data to resolve household_id
     const { data: userData } = await supabase
@@ -240,10 +241,10 @@ export const syncBills = async (localBills) => {
  * @param {Object} paymentSettings - Payment settings to sync
  */
 export const syncPaymentSettings = async (paymentSettings) => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
 
     const user = await getUser();
-    if (!user) return { error: { message: 'User not logged in' } };
+    if (!user) return { error: createAppErrorObject('SUPABASE_AUTH_REQUIRED') };
 
     const { data, error } = await supabase
         .from('user_data')
@@ -259,10 +260,10 @@ export const syncPaymentSettings = async (paymentSettings) => {
  * Fetch bills from cloud
  */
 export const fetchCloudBills = async () => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
 
     const user = await getUser();
-    if (!user) return { error: { message: 'User not logged in' } };
+    if (!user) return { error: createAppErrorObject('SUPABASE_AUTH_REQUIRED') };
 
     // First, check if user belongs to a household
     const { data: userData, error: userError } = await supabase
@@ -296,10 +297,10 @@ export const fetchCloudBills = async () => {
  * Fetch payment settings from cloud
  */
 export const fetchCloudPaymentSettings = async () => {
-    if (!supabase) return { data: null, error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { data: null, error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
 
     const user = await getUser();
-    if (!user) return { data: null, error: { message: 'User not logged in' } };
+    if (!user) return { data: null, error: createAppErrorObject('SUPABASE_AUTH_REQUIRED') };
 
     const { data, error } = await supabase
         .from('user_data')
@@ -314,9 +315,9 @@ export const fetchCloudPaymentSettings = async () => {
  * Create a new household
  */
 export const createHousehold = async () => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     const user = await getUser();
-    if (!user) return { error: { message: 'User not logged in' } };
+    if (!user) return { error: createAppErrorObject('SUPABASE_AUTH_REQUIRED') };
 
     const householdId = crypto.randomUUID();
     
@@ -332,9 +333,9 @@ export const createHousehold = async () => {
  * Join an existing household
  */
 export const joinHousehold = async (householdId) => {
-    if (!supabase) return { error: { message: 'Supabase not initialized' } };
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     const user = await getUser();
-    if (!user) return { error: { message: 'User not logged in' } };
+    if (!user) return { error: createAppErrorObject('SUPABASE_AUTH_REQUIRED') };
 
     // Verify household exists by checking if any user has it
     const { data: existing, error: checkError } = await supabase
@@ -344,7 +345,7 @@ export const joinHousehold = async (householdId) => {
         .limit(1);
 
     if (checkError || !existing || existing.length === 0) {
-        return { error: { message: 'Invalid Household ID' } };
+        return { error: createAppErrorObject('SUPABASE_INVALID_HOUSEHOLD_ID') };
     }
 
     const { data, error } = await supabase

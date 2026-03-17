@@ -41,6 +41,7 @@ import logger from '../utils/logger.js';
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
 import { recordAuditEvent } from '../utils/auditTracker.js';
+import { createAppError, ERROR_CODES } from '../errors/errorCodes.js';
 
 /**
  * Display error notification to user with formatted message
@@ -624,16 +625,19 @@ export function importData(file) {
     return new Promise((resolve, reject) => {
         try {
             if (!file) {
-                throw new Error('No file selected.');
+                throw createAppError('IMPORT_NO_FILE_SELECTED');
             }
 
             if (!file.name.endsWith('.json')) {
-                throw new Error('Please select a valid JSON file.');
+                throw createAppError('IMPORT_INVALID_FILE_TYPE');
             }
 
             const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
             if (file.size > MAX_FILE_SIZE) {
-                throw new Error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed size is 5 MB.`);
+                throw createAppError(
+                    'IMPORT_FILE_TOO_LARGE',
+                    `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed size is 5 MB.`
+                );
             }
 
             const reader = new FileReader();
@@ -643,7 +647,7 @@ export function importData(file) {
                     const data = safeJSONParse(/** @type {string} */ (e.target.result), null);
 
                     if (!data) {
-                        throw new Error('Invalid JSON format in file');
+                        throw createAppError('IMPORT_INVALID_JSON');
                     }
                     const defaultCategories = ['Rent', 'Utilities', 'Groceries', 'Transportation', 'Insurance', 'Entertainment'];
                     const existingCategories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, defaultCategories);
@@ -691,10 +695,10 @@ export function importData(file) {
             };
 
             reader.onerror = () => {
-                const errorMsg = 'Error reading file. Please try again.';
+                const errorMsg = ERROR_CODES.IMPORT_FILE_READ_FAILED.message;
                 logger.error(errorMsg);
                 showErrorNotification(errorMsg, 'Import Failed');
-                reject(new Error(errorMsg));
+                reject(createAppError('IMPORT_FILE_READ_FAILED'));
             };
 
             reader.readAsText(file);
