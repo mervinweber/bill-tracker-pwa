@@ -1,9 +1,9 @@
 # Bill Tracker PWA — Master Todo List
 
-> Consolidated from: `checklist.md`, `REFACTORING_CHECKLIST.md`, `PRODUCTION_CHECKLIST.md`,
-> `IMPROVEMENT_ROADMAP.md`, `NEXT_STEPS_REVIEW.md`, `CODE_REVIEW.md`,
-> `CODE_REVIEW_IMPROVEMENTS.md`, `FEATURE_REQUEST_CODE_QUALITY.md`,
-> `PHASE_1_2_IMPROVEMENTS.md`, `VERCEL_DEPLOYMENT_CHECKLIST.md`
+> Consolidated from: `docs/archive/session-reports/checklist.md`, `docs/archive/legacy-planning/REFACTORING_CHECKLIST.md`, `PRODUCTION_CHECKLIST.md`,
+> `IMPROVEMENT_ROADMAP.md`, `docs/archive/legacy-planning/NEXT_STEPS_REVIEW.md`, `docs/archive/legacy-planning/CODE_REVIEW.md`,
+> `docs/archive/legacy-planning/CODE_REVIEW_IMPROVEMENTS.md`, `docs/archive/legacy-planning/FEATURE_REQUEST_CODE_QUALITY.md`,
+> `docs/archive/legacy-planning/PHASE_1_2_IMPROVEMENTS.md`, `VERCEL_DEPLOYMENT_CHECKLIST.md`
 >
 > **Last Updated**: March 16, 2026
 > All 100%-complete items have been removed. Items below require action.
@@ -155,35 +155,35 @@
 ## 📚 Section 5: Documentation Gaps
 
 ### 5.1 Architecture Decision Records *(IMPROVEMENT_ROADMAP.md § 2.1)*
-- [ ] Create `docs/adr/` directory
-- [ ] Write `001-modular-architecture.md` — why modular over monolithic, trade-offs
-- [ ] Write `002-singleton-pattern.md` — rationale for AppState singleton
-- [ ] Write `003-listener-pattern-for-reactivity.md` — subscriber pattern decision
+- [x] Create `docs/adr/` directory
+- [x] Write `docs/adr/001-modular-architecture.md` — why modular over monolithic, trade-offs
+- [x] Write `docs/adr/002-singleton-pattern.md` — rationale for AppState singleton
+- [x] Write `docs/adr/003-listener-pattern-for-reactivity.md` — subscriber pattern decision
 
 ### 5.2 Error Handling Patterns Guide *(IMPROVEMENT_ROADMAP.md § 2.4)*
-- [ ] Create `ERROR_HANDLING_GUIDE.md`
-- [ ] Document error hierarchy / classification
-- [ ] Provide handler template for adding new error handlers
-- [ ] Document user-facing error message strategy and testing strategies
+- [x] Create `docs/guides/ERROR_HANDLING_GUIDE.md`
+- [x] Document error hierarchy / classification
+- [x] Provide handler template for adding new error handlers
+- [x] Document user-facing error message strategy and testing strategies
 
 ### 5.3 Centralized Error Codes *(CODE_REVIEW.md § 6.1 / FEATURE_REQUEST § US-7.1)*
-- [ ] Create `src/errors/errorCodes.js` defining all error scenarios
+- [x] Create `src/errors/errorCodes.js` defining all error scenarios
   (`STORAGE_QUOTA_EXCEEDED`, `INVALID_PAYMENT_SETTINGS`, `SUPABASE_AUTH_FAILED`, etc.)
-- [ ] Each error code includes: `code`, `message`, `recoverable` flag
+- [x] Each error code includes: `code`, `message`, `recoverable` flag
 - [ ] Update error handling throughout to use error codes
-- [ ] Document all codes in `ERROR_HANDLING_GUIDE.md`
+- [x] Document all codes in `docs/guides/ERROR_HANDLING_GUIDE.md`
 
 ### 5.4 API Integration Guide *(IMPROVEMENT_ROADMAP.md § 2.5)*
-- [ ] Create `API_INTEGRATION_GUIDE.md`
-- [ ] Document Supabase setup, data sync strategy, authentication flow
-- [ ] Cover offline fallback strategy and API error handling
-- [ ] Include testing examples for API integrations
+- [x] Create `docs/guides/API_INTEGRATION_GUIDE.md`
+- [x] Document Supabase setup, data sync strategy, authentication flow
+- [x] Cover offline fallback strategy and API error handling
+- [x] Include testing examples for API integrations
 
 ### 5.5 Local Development Workflow *(IMPROVEMENT_ROADMAP.md § 3.2)*
-- [ ] Create `LOCAL_WORKFLOW.md`
-- [ ] Document step-by-step feature development workflow
-- [ ] List all dev/test/build commands with explanations
-- [ ] Document common debugging strategies and known issues
+- [x] Create `docs/guides/LOCAL_WORKFLOW.md`
+- [x] Document step-by-step feature development workflow
+- [x] List all dev/test/build commands with explanations
+- [x] Document common debugging strategies and known issues
 
 ### 5.6 Complete JSDoc / Type Documentation *(FEATURE_REQUEST § US-7.2)*
 - [ ] Add `@typedef` for complex domain objects: `Bill`, `PaymentSettings`, `Category`, `SyncOperation`

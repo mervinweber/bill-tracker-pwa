@@ -171,17 +171,25 @@ To enable Cloud Sync, you need to provide your own free Supabase credentials.
 
 ## 📚 Documentation
 
-For detailed information about the project, see:
+For detailed information about the project, start with:
+
+- **[docs/README.md](docs/README.md)** - Active documentation index and archive map
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete architecture overview and design patterns
 - **[DEVELOPER_SETUP.md](DEVELOPER_SETUP.md)** - Development environment setup guide
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution workflow and pull request checklist
 - **[COMPONENT_API.md](COMPONENT_API.md)** - Unified component and view API reference
 - **[STATE_MANAGEMENT_GUIDE.md](STATE_MANAGEMENT_GUIDE.md)** - State patterns, data flow, and best practices
-- **[REFACTORING_COMPLETE.md](REFACTORING_COMPLETE.md)** - Phase 4 refactoring summary
+- **[docs/adr/001-modular-architecture.md](docs/adr/001-modular-architecture.md)** - Architecture decision record for modularization
+- **[docs/guides/API_INTEGRATION_GUIDE.md](docs/guides/API_INTEGRATION_GUIDE.md)** - Supabase auth/sync and offline fallback flow
+- **[docs/guides/ERROR_HANDLING_GUIDE.md](docs/guides/ERROR_HANDLING_GUIDE.md)** - Error taxonomy, handler template, and messaging strategy
+- **[docs/guides/LOCAL_WORKFLOW.md](docs/guides/LOCAL_WORKFLOW.md)** - Day-to-day dev/test/build workflow
+- **[docs/guides/JSON_IMPORT_PROCESS_FLOW.md](docs/guides/JSON_IMPORT_PROCESS_FLOW.md)** - JSON import validation and process flow
 - **[IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md)** - Future enhancements and technical debt
 - **[SECURITY.md](SECURITY.md)** - Security best practices and guidelines
 - **[BILLSTORE_REFERENCE.md](BILLSTORE_REFERENCE.md)** - BillStore API reference
+
+Legacy planning/session summary docs are preserved in **[docs/archive](docs/archive)** and removed from the project root to reduce user confusion.
 
 ## ✅ Completed Features (2025-2026)
 
@@ -223,6 +231,8 @@ See [IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md) for the complete roadmap. K
 ## 📦 Data Import/Export
 
 ### JSON Import Specification
+
+For validation and lifecycle details, see **[docs/guides/JSON_IMPORT_PROCESS_FLOW.md](docs/guides/JSON_IMPORT_PROCESS_FLOW.md)**.
 
 You can bulk import bills by uploading a JSON file. The system automatically handles unique ID generation.
 
