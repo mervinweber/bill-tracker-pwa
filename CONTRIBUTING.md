@@ -87,6 +87,12 @@ When adding logging statements, **never log sensitive user data** that could exp
 - Flags/booleans indicating success/failure: `{ hasError: true }` (without the error details)
 - Context identifiers that are not personally identifiable: `{ billId: 'bill_123' }`
 
+### Logging PR Checklist
+- [ ] No emails, tokens, auth headers, or raw payment payloads in new logs
+- [ ] No full request/response bodies logged for auth, sync, or import flows
+- [ ] Error logs use sanitized summaries instead of dumping full nested objects
+- [ ] Debug logs are removable or guarded before release
+
 ### Example Refactors:
 
 **Before (sensitive):**

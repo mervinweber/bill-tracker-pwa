@@ -21,6 +21,7 @@ import {
 } from '../utils/notifications.js';
 import { hasPaymentScheduleChanged } from '../utils/settingsHelpers.js';
 import { recordAuditEvent } from '../utils/auditTracker.js';
+import { createAppError, ERROR_CODES } from '../errors/errorCodes.js';
 
 let settingsSyncDebounceTimer = null;
 
@@ -37,13 +38,13 @@ function debouncedSyncPaymentSettings(newSettings) {
             const { error } = await syncPaymentSettings(newSettings);
             if (error) {
                 logger.error('Failed to sync payment settings to cloud', error);
-                billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
+                billActionHandlers.showErrorNotification(ERROR_CODES.SUPABASE_SYNC_FAILED.message, 'Sync Warning');
             } else {
                 logger.info('Payment settings synced to cloud');
             }
         } catch (syncErr) {
             logger.error('Error syncing payment settings', syncErr);
-            billActionHandlers.showErrorNotification('Settings saved locally but cloud sync failed', 'Sync Warning');
+            billActionHandlers.showErrorNotification(ERROR_CODES.SUPABASE_SYNC_FAILED.message, 'Sync Warning');
         }
     }, SETTINGS_SAVE_DEBOUNCE_MS);
 }
@@ -60,7 +61,7 @@ export function showSettingsModal(categoriesList) {
         logger.info('Payment settings retrieved');
 
         if (!settings.startDate) {
-            throw new Error('Payment settings not configured. Please run setup again.');
+            throw createAppError('SETTINGS_NOT_CONFIGURED');
         }
 
         const modal = document.createElement('div');
@@ -331,7 +332,7 @@ export function showSettingsModal(categoriesList) {
         document.getElementById('joinHouseholdBtn').addEventListener('click', async () => {
         const householdId = /** @type {HTMLInputElement} */ (document.getElementById('joinHouseholdInput')).value.trim();
             if (!householdId) {
-                billActionHandlers.showErrorNotification('Please enter a Household ID', 'Invalid Input');
+                billActionHandlers.showErrorNotification(ERROR_CODES.SETTINGS_HOUSEHOLD_ID_REQUIRED.message, 'Invalid Input');
                 return;
             }
 
@@ -342,7 +343,7 @@ export function showSettingsModal(categoriesList) {
                     billActionHandlers.showErrorNotification(error.message, 'Join Failed');
                 } else {
                     billActionHandlers.showSuccessNotification('Successfully joined household! Reloading...');
-                    setTimeout(() => window.location.reload(), 1500);
+                    setTimeout(() => window.location.reload(), PAGE_RELOAD_DELAY_MS);
                 }
             }
         });
@@ -361,17 +362,17 @@ function handleAddNewCategory(categoriesList, settingsModal) {
         const name = input.value.trim();
 
         if (!name) {
-            billActionHandlers.showErrorNotification('Please enter a category name', 'Invalid Input');
+            billActionHandlers.showErrorNotification(ERROR_CODES.SETTINGS_CATEGORY_NAME_REQUIRED.message, 'Invalid Input');
             return;
         }
 
         if (name.length > 50) {
-            billActionHandlers.showErrorNotification('Category name must be 50 characters or less', 'Invalid Input');
+            billActionHandlers.showErrorNotification(ERROR_CODES.SETTINGS_CATEGORY_NAME_TOO_LONG.message, 'Invalid Input');
             return;
         }
 
         if (categoriesList.includes(name)) {
-            billActionHandlers.showErrorNotification('This category already exists!', 'Duplicate Category');
+            billActionHandlers.showErrorNotification(ERROR_CODES.SETTINGS_DUPLICATE_CATEGORY.message, 'Duplicate Category');
             return;
         }
 
@@ -426,13 +427,13 @@ function renderReminderHistoryList() {
 async function handleSendTestReminder() {
     try {
         if (!isNotificationSupported()) {
-            billActionHandlers.showErrorNotification('This browser does not support notifications.', 'Unsupported');
+            billActionHandlers.showErrorNotification(ERROR_CODES.NOTIFICATIONS_UNSUPPORTED.message, 'Unsupported');
             return;
         }
 
         const permission = await requestNotificationPermission();
         if (permission !== 'granted') {
-            billActionHandlers.showErrorNotification('Notification permission is required for test reminders.', 'Permission Required');
+            billActionHandlers.showErrorNotification(ERROR_CODES.NOTIFICATIONS_PERMISSION_REQUIRED.message, 'Permission Required');
             return;
         }
 
@@ -440,7 +441,7 @@ async function handleSendTestReminder() {
         if (result.sent) {
             billActionHandlers.showSuccessNotification('Test reminder sent successfully.');
         } else {
-            billActionHandlers.showErrorNotification('Could not send test reminder.', 'Reminder Error');
+            billActionHandlers.showErrorNotification(ERROR_CODES.NOTIFICATIONS_TEST_SEND_FAILED.message, 'Reminder Error');
         }
     } catch (error) {
         logger.error('Error sending test reminder', error);
@@ -464,12 +465,12 @@ function handleEditCategory(oldName, categoriesList) {
         }
 
         if (newName.length > 50) {
-            billActionHandlers.showErrorNotification('Category name must be 50 characters or less', 'Invalid Input');
+            billActionHandlers.showErrorNotification(ERROR_CODES.SETTINGS_CATEGORY_NAME_TOO_LONG.message, 'Invalid Input');
             return;
         }
 
         if (categoriesList.includes(newName)) {
-            billActionHandlers.showErrorNotification('A category with that name already exists.', 'Duplicate Category');
+            billActionHandlers.showErrorNotification(ERROR_CODES.SETTINGS_DUPLICATE_CATEGORY.message, 'Duplicate Category');
             return;
         }
 
@@ -751,11 +752,11 @@ async function handleSettingsSave(e, modal) {
         const reminderDays = parseInt(reminderDaysInput?.value ?? '1', 10);
 
         if (!startDate) {
-            throw new Error('Start date is required');
+            throw createAppError('SETTINGS_START_DATE_REQUIRED');
         }
 
         if (amountInput !== '' && (!Number.isFinite(amount) || amount < 0)) {
-            throw new Error('Paycheck amount must be 0 or greater');
+            throw createAppError('SETTINGS_PAYCHECK_AMOUNT_INVALID');
         }
 
         const newSettings = {
@@ -773,7 +774,7 @@ async function handleSettingsSave(e, modal) {
             const validation = validatePaymentSettings(newSettings);
             if (!validation.isValid) {
                 const errorMessage = validation.errors.join('; ');
-                throw new Error(errorMessage);
+                throw createAppError('INVALID_PAYMENT_SETTINGS', errorMessage);
             }
 
             logger.info('Payment settings validated successfully');
@@ -786,7 +787,7 @@ async function handleSettingsSave(e, modal) {
             if (permission !== 'granted') {
                 notificationsEnabled = false;
                 billActionHandlers.showErrorNotification(
-                    'Notification permission was not granted. Reminders were saved as disabled.',
+                    ERROR_CODES.NOTIFICATIONS_PERMISSION_NOT_GRANTED.message,
                     'Notifications Disabled'
                 );
             }
@@ -841,7 +842,7 @@ function handleCleanupUnusedCategories(categoriesList, settingsModal) {
         
         if (unusedCategories.length === 0) {
             billActionHandlers.showErrorNotification(
-                'All categories are in use. Nothing to clean up!',
+                ERROR_CODES.CLEANUP_NO_UNUSED_CATEGORIES.message,
                 'Clean Up Complete'
             );
             return;

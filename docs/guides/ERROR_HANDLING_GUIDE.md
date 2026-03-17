@@ -98,4 +98,5 @@ Canonical definitions live in `src/errors/errorCodes.js`.
 ## Current Adoption
 - Import validation and import UI error paths use centralized app errors.
 - Supabase service response errors now return standardized `{ code, message, recoverable }` objects.
-- Remaining modules should migrate incrementally to preserve behavior while improving consistency.
+- App orchestration flows (view loading, cloud sync warnings, bulk actions) now use centralized code-backed messages.
+- Settings and category management flows now use centralized error codes for validation and user notifications.

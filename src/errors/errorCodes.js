@@ -86,6 +86,110 @@ export const ERROR_CODES = {
         recoverable: true
     },
 
+    APP_INITIALIZATION_FAILED: {
+        code: 'APP_INITIALIZATION_FAILED',
+        message: 'App initialization failed. Please refresh and try again.',
+        recoverable: true
+    },
+    VIEW_CALENDAR_LOAD_FAILED: {
+        code: 'VIEW_CALENDAR_LOAD_FAILED',
+        message: 'Could not load calendar view.',
+        recoverable: true
+    },
+    VIEW_ANALYTICS_LOAD_FAILED: {
+        code: 'VIEW_ANALYTICS_LOAD_FAILED',
+        message: 'Could not load analytics view.',
+        recoverable: true
+    },
+
+    BULK_NO_BILLS_TO_CLEAR: {
+        code: 'BULK_NO_BILLS_TO_CLEAR',
+        message: 'There are no bills to clear.',
+        recoverable: true
+    },
+    BULK_NO_BILLS_TO_UPDATE: {
+        code: 'BULK_NO_BILLS_TO_UPDATE',
+        message: 'There are no bills to update.',
+        recoverable: true
+    },
+    BULK_NO_UNPAID_VISIBLE: {
+        code: 'BULK_NO_UNPAID_VISIBLE',
+        message: 'No unpaid bills visible to mark as paid.',
+        recoverable: true
+    },
+    BILL_INVALID_DUE_DATE: {
+        code: 'BILL_INVALID_DUE_DATE',
+        message: 'Please provide a valid due date.',
+        recoverable: true
+    },
+    BILL_REGENERATION_FAILED: {
+        code: 'BILL_REGENERATION_FAILED',
+        message: 'Recurring bill regeneration failed. Please try again.',
+        recoverable: true
+    },
+
+    SETTINGS_NOT_CONFIGURED: {
+        code: 'SETTINGS_NOT_CONFIGURED',
+        message: 'Payment settings not configured. Please run setup again.',
+        recoverable: true
+    },
+    SETTINGS_HOUSEHOLD_ID_REQUIRED: {
+        code: 'SETTINGS_HOUSEHOLD_ID_REQUIRED',
+        message: 'Please enter a Household ID.',
+        recoverable: true
+    },
+    SETTINGS_CATEGORY_NAME_REQUIRED: {
+        code: 'SETTINGS_CATEGORY_NAME_REQUIRED',
+        message: 'Please enter a category name.',
+        recoverable: true
+    },
+    SETTINGS_CATEGORY_NAME_TOO_LONG: {
+        code: 'SETTINGS_CATEGORY_NAME_TOO_LONG',
+        message: 'Category name must be 50 characters or less.',
+        recoverable: true
+    },
+    SETTINGS_DUPLICATE_CATEGORY: {
+        code: 'SETTINGS_DUPLICATE_CATEGORY',
+        message: 'A category with that name already exists.',
+        recoverable: true
+    },
+    SETTINGS_START_DATE_REQUIRED: {
+        code: 'SETTINGS_START_DATE_REQUIRED',
+        message: 'Start date is required.',
+        recoverable: true
+    },
+    SETTINGS_PAYCHECK_AMOUNT_INVALID: {
+        code: 'SETTINGS_PAYCHECK_AMOUNT_INVALID',
+        message: 'Paycheck amount must be 0 or greater.',
+        recoverable: true
+    },
+    CLEANUP_NO_UNUSED_CATEGORIES: {
+        code: 'CLEANUP_NO_UNUSED_CATEGORIES',
+        message: 'All categories are in use. Nothing to clean up!',
+        recoverable: true
+    },
+
+    NOTIFICATIONS_UNSUPPORTED: {
+        code: 'NOTIFICATIONS_UNSUPPORTED',
+        message: 'This browser does not support notifications.',
+        recoverable: true
+    },
+    NOTIFICATIONS_PERMISSION_REQUIRED: {
+        code: 'NOTIFICATIONS_PERMISSION_REQUIRED',
+        message: 'Notification permission is required for test reminders.',
+        recoverable: true
+    },
+    NOTIFICATIONS_TEST_SEND_FAILED: {
+        code: 'NOTIFICATIONS_TEST_SEND_FAILED',
+        message: 'Could not send test reminder.',
+        recoverable: true
+    },
+    NOTIFICATIONS_PERMISSION_NOT_GRANTED: {
+        code: 'NOTIFICATIONS_PERMISSION_NOT_GRANTED',
+        message: 'Notification permission was not granted. Reminders were saved as disabled.',
+        recoverable: true
+    },
+
     UNKNOWN: {
         code: 'UNKNOWN',
         message: 'Something went wrong. Please try again.',

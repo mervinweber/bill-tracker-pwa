@@ -143,7 +143,7 @@
 ### 4.2 Sanitize Sensitive Data in Logs
 - [x] Audit all calls to `logger.*` for sensitive fields (email, payment settings, bill data)
 - [x] Replace specific personal/financial values with generic messages (e.g. `'User authenticated successfully'`)
-- [ ] Document "what NOT to log" in `CONTRIBUTING.md`
+- [x] Document "what NOT to log" in `CONTRIBUTING.md`
 
 ### 4.3 Supabase Token Refresh
 - [x] Add token expiry detection and silent refresh mechanism in `src/services/supabase.js`
@@ -170,7 +170,7 @@
 - [x] Create `src/errors/errorCodes.js` defining all error scenarios
   (`STORAGE_QUOTA_EXCEEDED`, `INVALID_PAYMENT_SETTINGS`, `SUPABASE_AUTH_FAILED`, etc.)
 - [x] Each error code includes: `code`, `message`, `recoverable` flag
-- [ ] Update error handling throughout to use error codes
+- [x] Update error handling throughout to use error codes
 - [x] Document all codes in `docs/guides/ERROR_HANDLING_GUIDE.md`
 
 ### 5.4 API Integration Guide *(IMPROVEMENT_ROADMAP.md § 2.5)*

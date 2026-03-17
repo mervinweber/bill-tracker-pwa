@@ -11,6 +11,7 @@ import StorageManager from './utils/StorageManager.js';
 import logger from './utils/logger.js';
 import { STORAGE_KEYS } from './utils/constants.js';
 import { DEFAULT_CATEGORIES, SYNC_DEBOUNCE_DELAY_MS } from './config/constants.js';
+import { ERROR_CODES } from './errors/errorCodes.js';
 
 import { initializeHeader, updateHeaderUI } from './components/header.js';
 import { initializeSidebar } from './components/sidebar.js';
@@ -181,7 +182,7 @@ class AppOrchestrator {
                         storageKeys: STORAGE_KEYS,
                         logger,
                         onFetchError: () => {
-                            billActionHandlers.showErrorNotification('Could not fetch bills from cloud', 'Sync Warning');
+                            billActionHandlers.showErrorNotification(ERROR_CODES.SUPABASE_SYNC_FAILED.message, 'Sync Warning');
                         }
                     });
 
@@ -257,7 +258,7 @@ class AppOrchestrator {
             logger.info('App initialized successfully');
         } catch (error) {
             logger.error('Error initializing app', error);
-            billActionHandlers.showErrorNotification(error.message, 'Initialization Error');
+            billActionHandlers.showErrorNotification(error?.message || ERROR_CODES.APP_INITIALIZATION_FAILED.message, 'Initialization Error');
         }
     }
 
@@ -311,7 +312,7 @@ class AppOrchestrator {
             renderCalendar();
         } catch (error) {
             logger.error('Error loading calendar view', error);
-            billActionHandlers.showErrorNotification('Could not load calendar view', 'View Error');
+            billActionHandlers.showErrorNotification(ERROR_CODES.VIEW_CALENDAR_LOAD_FAILED.message, 'View Error');
         }
     }
 
@@ -333,7 +334,7 @@ class AppOrchestrator {
             });
         } catch (error) {
             logger.error('Error loading analytics view', error);
-            billActionHandlers.showErrorNotification('Could not load analytics view', 'View Error');
+            billActionHandlers.showErrorNotification(ERROR_CODES.VIEW_ANALYTICS_LOAD_FAILED.message, 'View Error');
         }
     }
 
@@ -368,7 +369,7 @@ class AppOrchestrator {
                         if (error) {
                             logger.error('Cloud sync failed', error);
                             billActionHandlers.showErrorNotification(
-                                'Your changes could not be saved to the cloud. Check your connection.',
+                                ERROR_CODES.SUPABASE_SYNC_FAILED.message,
                                 'Sync Failed'
                             );
                         } else {
@@ -668,7 +669,7 @@ class AppOrchestrator {
             if (!bill) return;
 
             if (!newDueDate || Number.isNaN(new Date(newDueDate).getTime())) {
-                billActionHandlers.showErrorNotification('Please provide a valid due date.', 'Invalid Date');
+                billActionHandlers.showErrorNotification(ERROR_CODES.BILL_INVALID_DUE_DATE.message, 'Invalid Date');
                 return;
             }
 
@@ -866,7 +867,7 @@ class AppOrchestrator {
             this.rerender();
         } catch (error) {
             logger.error('Error regenerating bills', error);
-            billActionHandlers.showErrorNotification(error.message, 'Regeneration Failed');
+            billActionHandlers.showErrorNotification(error?.message || ERROR_CODES.BILL_REGENERATION_FAILED.message, 'Regeneration Failed');
         }
     }
 
@@ -883,7 +884,7 @@ class AppOrchestrator {
     async handleBulkDelete() {
         const bills = billStore.getAll();
         if (bills.length === 0) {
-            billActionHandlers.showErrorNotification('There are no bills to clear.', 'Bulk Action');
+            billActionHandlers.showErrorNotification(ERROR_CODES.BULK_NO_BILLS_TO_CLEAR.message, 'Bulk Action');
             return;
         }
 
@@ -903,7 +904,7 @@ class AppOrchestrator {
     async handleBulkMarkPaid() {
         const bills = billStore.getAll();
         if (bills.length === 0) {
-            billActionHandlers.showErrorNotification('There are no bills to update.', 'Bulk Action');
+            billActionHandlers.showErrorNotification(ERROR_CODES.BULK_NO_BILLS_TO_UPDATE.message, 'Bulk Action');
             return;
         }
 
@@ -941,7 +942,7 @@ class AppOrchestrator {
         const ids = visibleBills.filter(b => !b.isPaid).map(b => b.id);
 
         if (ids.length === 0) {
-            billActionHandlers.showErrorNotification('No unpaid bills visible to mark as paid.', 'Bulk Action');
+            billActionHandlers.showErrorNotification(ERROR_CODES.BULK_NO_UNPAID_VISIBLE.message, 'Bulk Action');
             return;
         }
 
