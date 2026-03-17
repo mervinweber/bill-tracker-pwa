@@ -295,15 +295,21 @@ class AppOrchestrator {
             const user = await getUser();
             if (user) {
                 this.isSyncing = true;
-                const { error } = await syncBills(bills);
-                this.isSyncing = false;
-
-                if (error) {
-                    logger.error('Cloud sync failed', error);
-                    // Silent fail or small indicator?
-                } else {
-                    logger.info('Cloud sync successful');
-                }
+                    try {
+                        const paymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
+                        const { error } = await syncUserData(bills, paymentSettings);
+                        if (error) {
+                            logger.error('Cloud sync failed', error);
+                            billActionHandlers.showErrorNotification(
+                                'Your changes could not be saved to the cloud. Check your connection.',
+                                'Sync Failed'
+                            );
+                        } else {
+                            logger.info('Cloud sync successful');
+                        }
+                    } finally {
+                        this.isSyncing = false;
+                    }
             }
         }, SYNC_DEBOUNCE_DELAY_MS);
     }
@@ -463,7 +469,7 @@ class AppOrchestrator {
                                 this.handleUpdateBalance(billId, balance),
                             onTogglePayment: (billId, isPaid) =>
                                 this.handleTogglePayment(billId, isPaid),
-                            onRecordPayment: (billId) => this.handleRecordPayment(billId),
+                                     onRecordPayment: (billId) => openRecordPaymentModal(billId),
                             onViewHistory: (billId) => this.handleViewHistory(billId),
                             onDeleteBill: (billId) => this.handleDeleteBill(billId),
                             onEditBill: (billId) => this.handleEditBill(billId),
@@ -625,7 +631,6 @@ class AppOrchestrator {
 
         if (isPaid) {
             openRecordPaymentModal(billId);
-            this.rerender();
             return;
         }
 
@@ -697,24 +702,18 @@ class AppOrchestrator {
         historyContent.innerHTML = ''; // safe to clear
 
         const summaryCard = document.createElement('div');
-        summaryCard.style.padding = '15px';
-        summaryCard.style.background = '#f8f9fa';
-        summaryCard.style.borderRadius = '4px';
-        summaryCard.style.marginBottom = '15px';
+            summaryCard.className = 'history-summary-card';
 
         const title = document.createElement('h3');
-        title.style.margin = '0 0 10px 0';
         title.textContent = bill.name;
         summaryCard.appendChild(title);
 
         const statsDiv = document.createElement('div');
-        statsDiv.style.display = 'flex';
-        statsDiv.style.gap = '20px';
-        statsDiv.style.fontSize = '14px';
+            statsDiv.className = 'history-stats-row';
 
         const createStat = (label, value, color = null) => {
             const span = document.createElement('span');
-            if (color) span.style.color = color;
+                if (color) span.className = color;
             const strong = document.createElement('strong');
             strong.textContent = `${label}: `;
             span.appendChild(strong);
@@ -724,28 +723,21 @@ class AppOrchestrator {
 
         statsDiv.appendChild(createStat('Total Due', totalDue));
         statsDiv.appendChild(createStat('Total Paid', totalPaid));
-        statsDiv.appendChild(createStat('Remaining', remaining, remaining > 0 ? '#e74c3c' : '#27ae60'));
+            statsDiv.appendChild(createStat('Remaining', remaining, remaining > 0 ? 'history-payment-remaining-owed' : 'history-payment-remaining-paid'));
 
         summaryCard.appendChild(statsDiv);
         historyContent.appendChild(summaryCard);
 
         const listContainer = document.createElement('div');
-        listContainer.style.maxHeight = '400px';
-        listContainer.style.overflowY = 'auto';
+            listContainer.className = 'history-list';
 
         if (payments.length > 0) {
             payments.forEach(payment => {
                 const item = document.createElement('div');
-                item.style.padding = '12px';
-                item.style.borderLeft = '3px solid #5eb3d6';
-                item.style.background = 'white';
-                item.style.marginBottom = '10px';
-                item.style.borderRadius = '4px';
+                    item.className = 'history-payment-item';
 
                 const header = document.createElement('div');
-                header.style.display = 'flex';
-                header.style.justifyContent = 'space-between';
-                header.style.marginBottom = '5px';
+                    header.className = 'history-payment-header';
 
                 const dateStr = new Date(payment.date).toLocaleDateString('en-US', {
                     month: 'short',
@@ -758,15 +750,14 @@ class AppOrchestrator {
                 header.appendChild(dateStrong);
 
                 const amountStrong = document.createElement('strong');
-                amountStrong.style.color = '#27ae60';
+                    amountStrong.className = 'history-payment-amount';
                 amountStrong.textContent = `$${payment.amount.toFixed(2)}`;
                 header.appendChild(amountStrong);
 
                 item.appendChild(header);
 
                 const details = document.createElement('div');
-                details.style.fontSize = '13px';
-                details.style.color = '#666';
+                    details.className = 'history-payment-method';
 
                 let detailText = payment.method;
                 if (payment.confirmationNumber) {
@@ -779,9 +770,7 @@ class AppOrchestrator {
             });
         } else {
             const emptyState = document.createElement('p');
-            emptyState.style.textAlign = 'center';
-            emptyState.style.color = '#999';
-            emptyState.style.padding = '20px';
+                emptyState.className = 'history-empty-state';
             emptyState.textContent = 'No payments recorded yet';
             listContainer.appendChild(emptyState);
         }
