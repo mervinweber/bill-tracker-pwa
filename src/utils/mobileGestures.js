@@ -3,6 +3,9 @@
  * Provides swipe, long-press, and other touch interactions for mobile optimization
  */
 
+import logger from './logger.js';
+import { GESTURE_SWIPE_THRESHOLD_PX, GESTURE_LONG_PRESS_DELAY_MS } from '../config/constants.js';
+
 /**
  * Gesture event handlers configuration
  */
@@ -20,7 +23,7 @@ const gestureHandlers = new Map();
  * @returns {Function} Cleanup function to remove listeners
  */
 export function initializeSwipeGesture(element, options = {}) {
-    const threshold = options.threshold || 50;
+    const threshold = options.threshold || GESTURE_SWIPE_THRESHOLD_PX;
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
@@ -36,8 +39,8 @@ export function initializeSwipeGesture(element, options = {}) {
         const touchEndY = e.changedTouches[0].clientY;
         const touchDuration = Date.now() - touchStartTime;
 
-        // Quick swipes only (less than 500ms)
-        if (touchDuration > 500) return;
+        // Quick swipes only (less than threshold ms)
+        if (touchDuration > GESTURE_LONG_PRESS_DELAY_MS) return;
 
         const diffX = touchStartX - touchEndX;
         const diffY = touchStartY - touchEndY;
@@ -87,7 +90,7 @@ export function initializeSwipeGesture(element, options = {}) {
  * @returns {Function} Cleanup function to remove listeners
  */
 export function initializeLongPress(element, options = {}) {
-    const duration = options.duration || 500;
+    const duration = options.duration || GESTURE_LONG_PRESS_DELAY_MS;
     let pressTimer = null;
     let isPressing = false;
 

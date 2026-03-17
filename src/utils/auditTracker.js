@@ -1,8 +1,7 @@
 import StorageManager from './StorageManager.js';
 import logger from './logger.js';
 import { STORAGE_KEYS } from './constants.js';
-
-const MAX_AUDIT_EVENTS = 1000;
+import { MAX_AUDIT_EVENTS } from '../config/constants.js';
 
 function createAuditEvent(eventType, details = {}) {
     const userEmail = StorageManager.get(STORAGE_KEYS.USER_EMAIL, null);

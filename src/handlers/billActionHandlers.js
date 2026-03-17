@@ -18,6 +18,7 @@
 
 import { billStore } from '../store/BillStore.js';
 import { appState } from '../store/appState.js';
+import { TOAST_DISMISS_DELAY_MS, PAGE_RELOAD_DELAY_MS, APP_VERSION } from '../config/constants.js';
 import { formatErrorMessage, ValidationError } from '../utils/errorHandling.js';
 import {
     sanitizeInput,
@@ -99,12 +100,12 @@ export function showErrorNotification(message, title = 'Error') {
 
         document.body.appendChild(notification);
 
-        // Auto-remove after 5 seconds
+        // Auto-remove after timeout
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
             }
-        }, 5000);
+        }, TOAST_DISMISS_DELAY_MS);
     } catch (error) {
         logger.error('Failed to show error notification', error);
     }
@@ -587,7 +588,7 @@ export function exportData() {
 
         const data = {
             exportDate: new Date().toISOString(),
-            version: '1.0',
+            version: APP_VERSION,
             bills,
             customCategories,
             paymentSettings
@@ -677,7 +678,7 @@ export function importData(file) {
                     showSuccessNotification(
                         `Successfully imported ${processedBills.length} bill(s). Refreshing...`
                     );
-                    setTimeout(() => window.location.reload(), 1500);
+                    setTimeout(() => window.location.reload(), PAGE_RELOAD_DELAY_MS);
                     resolve(true);
                 } catch (error) {
                     logger.error('Error parsing file', error);

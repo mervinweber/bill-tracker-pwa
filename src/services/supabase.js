@@ -1,7 +1,6 @@
 
 import logger from '../utils/logger.js';
-
-// Supabase Service
+import { USER_CACHE_TTL_MS, SUPABASE_HEALTH_CHECK_TIMEOUT_MS } from '../config/constants.js';
 // Secrets are read from .env file (Vite)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
@@ -10,7 +9,6 @@ let supabase = null;
 let cachedUser = null;
 let cachedUserAt = 0;
 let inFlightUserRequest = null;
-const USER_CACHE_TTL_MS = 15000;
 
 const resetUserCache = () => {
     cachedUser = null;
@@ -28,7 +26,7 @@ const isConfiguredKey = (key) => {
     return key && key !== 'YOUR_SUPABASE_ANON_KEY';
 };
 
-const isSupabaseEndpointReachable = async (url, timeoutMs = 2500) => {
+const isSupabaseEndpointReachable = async (url, timeoutMs = SUPABASE_HEALTH_CHECK_TIMEOUT_MS) => {
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

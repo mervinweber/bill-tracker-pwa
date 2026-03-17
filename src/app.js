@@ -11,6 +11,7 @@ import { createLocalDate, getMissedMonthlyCycles } from './utils/dates.js';
 import StorageManager from './utils/StorageManager.js';
 import logger from './utils/logger.js';
 import { STORAGE_KEYS } from './utils/constants.js';
+import { DEFAULT_CATEGORIES, SYNC_DEBOUNCE_DELAY_MS, UI_FEEDBACK_TIMEOUT_MS } from './config/constants.js';
 
 import { initializeHeader, updateHeaderUI } from './components/header.js';
 import { initializeSidebar } from './components/sidebar.js';
@@ -298,22 +299,13 @@ class AppOrchestrator {
                     logger.info('Cloud sync successful');
                 }
             }
-        }, 2000); // 2 second debounce
+        }, SYNC_DEBOUNCE_DELAY_MS);
     }
 
     /**
      * Load categories from localStorage
      */
     loadCategories() {
-        const DEFAULT_CATEGORIES = [
-            'Rent',
-            'Utilities',
-            'Groceries',
-            'Transportation',
-            'Insurance',
-            'Entertainment'
-        ];
-
         // Get from storage
         let categories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, [...DEFAULT_CATEGORIES]);
 
@@ -1024,7 +1016,7 @@ class AppOrchestrator {
             // This is especially important on mobile devices
             setTimeout(() => {
                 window.location.reload(); // To refresh sidebar user state/icon and apply synced settings
-            }, 500);
+            }, UI_FEEDBACK_TIMEOUT_MS);
         }
     }
 

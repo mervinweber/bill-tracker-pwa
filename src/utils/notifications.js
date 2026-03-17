@@ -1,13 +1,12 @@
 import StorageManager from './StorageManager.js';
 import { STORAGE_KEYS } from './constants.js';
 import logger from './logger.js';
+import { MS_PER_DAY } from '../config/constants.js';
 
 const DEFAULT_NOTIFICATION_SETTINGS = {
     enabled: false,
     daysBefore: 1
 };
-
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export function isNotificationSupported() {
     return typeof window !== 'undefined' && 'Notification' in window;
@@ -56,7 +55,7 @@ function computeDaysUntilDue(dueDateString, today) {
 
     const dueStart = startOfDay(due);
     const todayStart = startOfDay(today);
-    return Math.round((dueStart.getTime() - todayStart.getTime()) / DAY_IN_MS);
+    return Math.round((dueStart.getTime() - todayStart.getTime()) / MS_PER_DAY);
 }
 
 function buildEligibleBills(bills, daysBefore, today) {
