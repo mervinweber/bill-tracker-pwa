@@ -68,3 +68,39 @@ When behavior or architecture changes, update relevant docs:
 ## Security
 
 If you discover a security issue, follow guidance in `SECURITY.md`.
+
+## Logging Best Practices
+
+When adding logging statements, **never log sensitive user data** that could expose personal or financial information in browser console or server logs.
+
+### ❌ DO NOT LOG:
+- User email addresses or any PII (personally identifiable information)
+- Password reset tokens or authentication credentials
+- Payment settings, bill amounts, or financial data
+- User-provided input that may contain sensitive values
+- Full error objects that contain nested sensitive properties
+
+### ✅ DO LOG:
+- Generic operation status: `'User authenticated successfully'`, `'Payment settings updated'`
+- Aggregate counts: `'Loaded 5 bills from storage'`
+- Non-sensitive error descriptions: `'Failed to sync cloud data'`
+- Flags/booleans indicating success/failure: `{ hasError: true }` (without the error details)
+- Context identifiers that are not personally identifiable: `{ billId: 'bill_123' }`
+
+### Example Refactors:
+
+**Before (sensitive):**
+```javascript
+logger.info('User logged in', { email: user.email });
+logger.info('Payment settings loaded', { settings });
+logger.info('Reset password requested', { email });
+```
+
+**After (sanitized):**
+```javascript
+logger.info('User authenticated and session initialized');
+logger.info('Payment settings retrieved', { categoryCount: settings.categories?.length });
+logger.info('Password reset requested');
+```
+
+The logger uses `[DEBUG]`, `[INFO]`, `[WARN]`, `[ERROR]` severity levels. Use logs for debugging workflow, not storing user data.
