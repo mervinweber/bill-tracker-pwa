@@ -10,10 +10,15 @@
  * @module validation
  */
 
+import DOMPurify from 'dompurify';
 import logger from './logger.js';
 
 /**
  * Sanitize user input to prevent XSS and injection attacks
+ * 
+ * Uses DOMPurify library to strip all HTML tags and attributes,
+ * allowing only plain text. Also removes control characters and
+ * normalizes whitespace.
  * 
  * @param {string} input - Raw user input
  * @param {number} maxLength - Maximum allowed length (default: 500)
@@ -21,15 +26,20 @@ import logger from './logger.js';
  * 
  * @example
  * sanitizeInput('<script>alert("XSS")</script>', 100)
- * // Returns: 'scriptalert("XSS")/script' (HTML tags removed)
+ * // Returns: 'alert("XSS")' (all HTML removed)
+ * 
+ * sanitizeInput('<img src=x onerror="alert(1)">')
+ * // Returns: '' (tag + event handler removed)
  */
 export function sanitizeInput(input, maxLength = 500) {
     if (typeof input !== 'string') return '';
 
-    return input
+    // Use DOMPurify to strip all HTML tags and attributes
+    const purified = DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+
+    return purified
         .trim()
         .slice(0, maxLength)
-        .replace(/[<>]/g, '') // Remove HTML brackets
         .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
         .replace(/\s+/g, ' '); // Normalize whitespace
 }

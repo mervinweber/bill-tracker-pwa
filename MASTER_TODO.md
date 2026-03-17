@@ -135,14 +135,14 @@
 ## 🔐 Section 4: Security
 
 ### 4.1 Enhanced XSS Protection
-- [ ] Install `dompurify` package
-- [ ] Update `sanitizeInput()` in `src/utils/validation.js` to use DOMPurify (strip all HTML tags and attributes)
-- [ ] Remove the current basic regex-based sanitization
-- [ ] Add security test cases for common XSS vectors
+- [x] Install `dompurify` package
+- [x] Update `sanitizeInput()` in `src/utils/validation.js` to use DOMPurify (strip all HTML tags and attributes)
+- [x] Remove the current basic regex-based sanitization
+- [x] Add security test cases for common XSS vectors
 
 ### 4.2 Sanitize Sensitive Data in Logs
-- [ ] Audit all calls to `logger.*` for sensitive fields (email, payment settings, bill data)
-- [ ] Replace specific personal/financial values with generic messages (e.g. `'User authenticated successfully'`)
+- [x] Audit all calls to `logger.*` for sensitive fields (email, payment settings, bill data)
+- [x] Replace specific personal/financial values with generic messages (e.g. `'User authenticated successfully'`)
 - [ ] Document "what NOT to log" in `CONTRIBUTING.md`
 
 ### 4.3 Supabase Token Refresh

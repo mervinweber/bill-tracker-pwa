@@ -26,6 +26,41 @@ it('sanitizeInput removes HTML tags', () => {
     expect(result).not.toContain('>');
 });
 
+it('sanitizeInput removes event handlers', () => {
+    const result = sanitizeInput('<img src=x onerror="alert(1)">');
+    expect(result).not.toContain('onerror');
+    expect(result).not.toContain('script');
+});
+
+it('sanitizeInput removes iframe tags', () => {
+    const result = sanitizeInput('<iframe src="http://malicious.com"></iframe>');
+    expect(result).not.toContain('iframe');
+});
+
+it('sanitizeInput removes javascript: protocol', () => {
+    const result = sanitizeInput('<a href="javascript:alert(1)">click</a>');
+    expect(result).not.toContain('javascript:');
+    expect(result).not.toContain('alert');
+});
+
+it('sanitizeInput removes data: protocol', () => {
+    const result = sanitizeInput('<img src="data:text/html,<script>alert(1)</script>">');
+    expect(result).not.toContain('data:');
+    expect(result).not.toContain('script');
+});
+
+it('sanitizeInput removes svg event handlers', () => {
+    const result = sanitizeInput('<svg onload="alert(1)"></svg>');
+    expect(result).not.toContain('onload');
+    expect(result).not.toContain('svg');
+});
+
+it('sanitizeInput removes style attributes with expressions', () => {
+    const result = sanitizeInput('<div style="background:url(javascript:alert(1))">test</div>');
+    expect(result).not.toContain('style');
+    expect(result).not.toContain('javascript:');
+});
+
 it('sanitizeInput removes control characters', () => {
     expect(sanitizeInput('Test\x00\x01String')).toBe('TestString');
 });

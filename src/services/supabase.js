@@ -133,7 +133,7 @@ export const signOut = async () => {
 };
 
 export const resetPassword = async (email) => {
-    logger.info('Attempting password reset', { email });
+    logger.info('Attempting password reset');
     if (!supabase) {
         logger.error('Supabase not initialized for resetPassword');
         return { error: { message: 'Supabase not initialized' } };
@@ -142,7 +142,7 @@ export const resetPassword = async (email) => {
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: window.location.origin
         });
-        logger.info('Reset password response', { data, error });
+        logger.info('Reset password response received', { hasError: !!error });
         return { data, error };
     } catch (err) {
         logger.error('Exception in resetPassword', err);

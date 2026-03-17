@@ -26,11 +26,11 @@ import { recordAuditEvent } from '../utils/auditTracker.js';
  */
 export function showSettingsModal(categoriesList) {
     try {
-        logger.info('Settings modal requested', { categories: categoriesList });
+        logger.info('Settings modal requested', { categoryCount: categoriesList?.length || 0 });
         
         const settings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, {});
         const notificationSettings = getNotificationSettings();
-        logger.info('Payment settings loaded', { settings });
+        logger.info('Payment settings retrieved');
 
         if (!settings.startDate) {
             throw new Error('Payment settings not configured. Please run setup again.');
@@ -749,7 +749,7 @@ async function handleSettingsSave(e, modal) {
                 throw new Error(errorMessage);
             }
 
-            logger.info('Payment settings validated', { settings: newSettings });
+            logger.info('Payment settings validated successfully');
         } else {
             logger.info('Payment settings unchanged; skipping schedule validation');
         }

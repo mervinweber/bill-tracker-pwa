@@ -116,7 +116,7 @@ class AppOrchestrator {
             // Check for logged-in user FIRST to set localStorage for Sidebar
             const user = await getUser();
             if (user) {
-                logger.info('User logged in', { email: user.email });
+                logger.info('User authenticated and session initialized');
                 StorageManager.set(STORAGE_KEYS.USER_EMAIL, user.email);
             } else {
                 StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
@@ -155,7 +155,7 @@ class AppOrchestrator {
 
             // Fetch cloud data if logged in
             if (user) {
-                logger.info('User logged in', { email: user.email });
+                logger.info('Syncing cloud data for authenticated user');
                 StorageManager.set(STORAGE_KEYS.USER_EMAIL, user.email);
                 try {
                     const { cloudPaymentSettings } = await syncPaymentSettingsFromCloud({
@@ -1061,7 +1061,7 @@ class AppOrchestrator {
     }
 
     async handleResetPassword(email) {
-        logger.info('handleResetPassword called', { email });
+        logger.info('Password reset requested');
         setAuthMessage('Sending reset email...', false);
         try {
             const { error } = await resetPassword(email);
