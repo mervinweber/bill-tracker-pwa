@@ -1,6 +1,6 @@
 
 import logger from '../utils/logger.js';
-import { USER_CACHE_TTL_MS, SUPABASE_HEALTH_CHECK_TIMEOUT_MS } from '../config/constants.js';
+import { USER_CACHE_TTL_MS, SUPABASE_HEALTH_CHECK_TIMEOUT_MS, TOKEN_EXPIRY_WARNING_MS } from '../config/constants.js';
 // Secrets are read from .env file (Vite)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
@@ -9,6 +9,8 @@ let supabase = null;
 let cachedUser = null;
 let cachedUserAt = 0;
 let inFlightUserRequest = null;
+let tokenWarningTimeout = null;
+let isIntentionalSignOut = false;
 
 const resetUserCache = () => {
     cachedUser = null;
@@ -125,9 +127,14 @@ export const signInWithGoogle = async () => {
 
 export const signOut = async () => {
     if (!supabase) return { error: { message: 'Supabase not initialized' } };
-    const { error } = await supabase.auth.signOut();
-    resetUserCache();
-    return { error };
+    isIntentionalSignOut = true;
+    try {
+        const { error } = await supabase.auth.signOut();
+        resetUserCache();
+        return { error };
+    } finally {
+        isIntentionalSignOut = false;
+    }
 };
 
 export const resetPassword = async (email) => {
@@ -363,4 +370,73 @@ export const getHouseholdStatus = async () => {
         .single();
     
     return data?.household_id || null;
+};
+
+/**
+ * Monitor token expiry and trigger silent refresh or session-expired callbacks.
+ *
+ * @param {object} [callbacks]
+ * @param {() => void} [callbacks.onWarning] - Called ~5 minutes before token expiry
+ * @param {() => void} [callbacks.onExpired] - Called when session expires (not from intentional sign-out)
+ * @returns {object|null} Supabase auth subscription (call .unsubscribe() to clean up)
+ */
+export const setupTokenRefreshMonitor = ({ onWarning, onExpired } = {}) => {
+    if (!supabase) return null;
+
+    const clearWarning = () => {
+        if (tokenWarningTimeout) {
+            clearTimeout(tokenWarningTimeout);
+            tokenWarningTimeout = null;
+        }
+    };
+
+    const scheduleWarning = (expiresAt) => {
+        clearWarning();
+        const msUntilWarning = (expiresAt * 1000) - Date.now() - TOKEN_EXPIRY_WARNING_MS;
+        if (msUntilWarning > 0) {
+            tokenWarningTimeout = setTimeout(() => {
+                logger.warn('Session token expiring soon');
+                onWarning?.();
+            }, msUntilWarning);
+        }
+    };
+
+    // Schedule warning for the current session immediately
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.expires_at) {
+            scheduleWarning(session.expires_at);
+        }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'TOKEN_REFRESHED') {
+            if (session?.user) {
+                cachedUser = session.user;
+                cachedUserAt = Date.now();
+            }
+            clearWarning();
+            if (session?.expires_at) {
+                scheduleWarning(session.expires_at);
+            }
+            logger.info('Session token refreshed silently');
+
+        } else if (event === 'SIGNED_IN') {
+            if (session?.user) {
+                cachedUser = session.user;
+                cachedUserAt = Date.now();
+            }
+            if (session?.expires_at) {
+                scheduleWarning(session.expires_at);
+            }
+
+        } else if (event === 'SIGNED_OUT') {
+            clearWarning();
+            resetUserCache();
+            if (!isIntentionalSignOut) {
+                onExpired?.();
+            }
+        }
+    });
+
+    return subscription;
 };

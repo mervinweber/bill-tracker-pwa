@@ -43,7 +43,8 @@ import {
     syncUserData,
     syncPaymentSettings,
     fetchCloudBills,
-    fetchCloudPaymentSettings
+    fetchCloudPaymentSettings,
+    setupTokenRefreshMonitor
 } from './services/supabase.js';
 
 import { safeJSONParse } from './utils/validation.js';
@@ -111,6 +112,19 @@ class AppOrchestrator {
             if (user) {
                 logger.info('User authenticated and session initialized');
                 StorageManager.set(STORAGE_KEYS.USER_EMAIL, user.email);
+                setupTokenRefreshMonitor({
+                    onWarning: () => {
+                        billActionHandlers.showErrorNotification(
+                            'Your session expires in 5 minutes. Save any work to avoid losing changes.',
+                            'Session Expiring Soon'
+                        );
+                    },
+                    onExpired: () => {
+                        if (StorageManager.get(STORAGE_KEYS.USER_EMAIL)) {
+                            this._showSessionExpiredPrompt();
+                        }
+                    }
+                });
             } else {
                 StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
             }
@@ -890,6 +904,71 @@ class AppOrchestrator {
 
     handleShowSettings() {
         settingsHandlers.showSettingsModal(this.categories);
+    }
+
+    /**
+     * Show a session-expired dialog prompting the user to sign in again.
+     * Called by setupTokenRefreshMonitor when a session expires unexpectedly.
+     */
+    _showSessionExpiredPrompt() {
+        StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
+
+        const existing = document.getElementById('sessionExpiredModal');
+        if (existing) return; // already shown
+
+        const modal = document.createElement('div');
+        modal.id = 'sessionExpiredModal';
+        modal.className = 'modal';
+        modal.style.display = 'block';
+
+        const content = document.createElement('div');
+        content.className = 'modal-content modal-content-compact confirm-dialog';
+        content.setAttribute('role', 'dialog');
+        content.setAttribute('aria-modal', 'true');
+        content.setAttribute('aria-labelledby', 'sessionExpiredTitle');
+
+        const title = document.createElement('h2');
+        title.id = 'sessionExpiredTitle';
+        title.className = 'confirm-dialog-title';
+        title.textContent = 'Session Expired';
+
+        const message = document.createElement('p');
+        message.className = 'confirm-dialog-message';
+        message.textContent = 'Your session has expired. Please sign in again to continue syncing your data.';
+
+        const actions = document.createElement('div');
+        actions.className = 'confirm-dialog-actions';
+
+        const dismissBtn = document.createElement('button');
+        dismissBtn.type = 'button';
+        dismissBtn.className = 'confirm-btn confirm-btn-secondary';
+        dismissBtn.textContent = 'Dismiss';
+        dismissBtn.addEventListener('click', () => modal.remove());
+
+        const signInBtn = document.createElement('button');
+        signInBtn.type = 'button';
+        signInBtn.className = 'confirm-btn confirm-btn-primary';
+        signInBtn.textContent = 'Sign In Again';
+        signInBtn.addEventListener('click', () => {
+            modal.remove();
+            openAuthModal();
+        });
+
+        actions.appendChild(dismissBtn);
+        actions.appendChild(signInBtn);
+        content.appendChild(title);
+        content.appendChild(message);
+        content.appendChild(actions);
+        modal.appendChild(content);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+        document.body.appendChild(modal);
+        signInBtn.focus();
+
+        logger.warn('Session expired — prompting user to sign in again');
     }
 
     // initializePaymentModals moved to src/app/initializeModals.js
