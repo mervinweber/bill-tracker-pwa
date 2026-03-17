@@ -108,12 +108,12 @@
 - [x] Add tests for sync and merge scenarios
 
 ### 3.6 Refactor Monolithic app.js
-- [ ] Extract modal-creation logic → `src/app/initializeModals.js`
-- [ ] Extract auth/login event handlers → `src/app/loginHandlers.js`
-- [ ] Extract theme management → `src/app/themeManager.js`
-- [ ] Extract navigation handlers (filter, view changes) → `src/app/navigationHandlers.js`
-- [ ] Trim `app.js` to ≤ 400 lines (orchestration only)
-- [ ] Confirm no functionality is lost; all tests still pass
+- [x] Extract modal-creation logic → `src/app/initializeModals.js`
+- [x] Extract auth/login event handlers → `src/app/loginHandlers.js`
+- [x] Extract theme management → `src/app/themeManager.js`
+- [x] Extract navigation handlers (filter, view changes) → `src/app/navigationHandlers.js`
+- [x] Trim `app.js` to ≤ 400 lines (orchestration only)
+- [x] Confirm no functionality is lost; all tests still pass
 
 ### 3.7 Input Validation
 - [x] Add `validatePaymentSettings()` to `src/utils/validation.js`
@@ -125,10 +125,10 @@
 - [x] Add unit tests for the validator
 
 ### 3.8 Centralize App Constants
-- [ ] Create `src/config/constants.js` and move all magic numbers and app-wide constants:
+- [x] Create `src/config/constants.js` and move all magic numbers and app-wide constants:
   `APP_VERSION`, `CACHE_NAME`, `MAX_YEARS_FUTURE / PAST`, `MAX_BILL_AMOUNT`,
   `DEFAULT_CATEGORIES`, `RETRY_CONFIG`, `SYNC_DEBOUNCE_DELAY`, gesture thresholds (500 ms, 50 px)
-- [ ] Update all files that currently hardcode these values
+- [x] Update all files that currently hardcode these values
 
 ---
 
@@ -146,9 +146,9 @@
 - [ ] Document "what NOT to log" in `CONTRIBUTING.md`
 
 ### 4.3 Supabase Token Refresh
-- [ ] Add token expiry detection and silent refresh mechanism in `src/services/supabase.js`
-- [ ] Show user-friendly session-expired prompt when refresh fails
-- [ ] Add token expiry warning (e.g. 5 minutes before expiry)
+- [x] Add token expiry detection and silent refresh mechanism in `src/services/supabase.js`
+- [x] Show user-friendly session-expired prompt when refresh fails
+- [x] Add token expiry warning (e.g. 5 minutes before expiry)
 
 ---
 
