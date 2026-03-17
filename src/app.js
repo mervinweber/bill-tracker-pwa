@@ -7,18 +7,17 @@
 import { appState } from './store/appState.js';
 import { billStore } from './store/BillStore.js';
 import { paycheckManager } from './utils/paycheckManager.js';
-import { createLocalDate, getMissedMonthlyCycles } from './utils/dates.js';
 import StorageManager from './utils/StorageManager.js';
 import logger from './utils/logger.js';
 import { STORAGE_KEYS } from './utils/constants.js';
-import { DEFAULT_CATEGORIES, SYNC_DEBOUNCE_DELAY_MS, UI_FEEDBACK_TIMEOUT_MS } from './config/constants.js';
+import { DEFAULT_CATEGORIES, SYNC_DEBOUNCE_DELAY_MS } from './config/constants.js';
 
 import { initializeHeader, updateHeaderUI } from './components/header.js';
 import { initializeSidebar } from './components/sidebar.js';
 import { initializeBillGrid, renderBillGrid, cleanupBillGrid } from './components/billGrid.js';
 import { initializeDashboard, renderDashboard } from './components/dashboard.js';
-import { initializeBillForm, openBillForm, resetBillForm, closeBillForm } from './components/billForm.js';
-import { initializeAuthModal, openAuthModal, closeAuthModal, setAuthMessage } from './components/authModal.js';
+import { initializeBillForm, openBillForm, closeBillForm } from './components/billForm.js';
+import { initializeAuthModal, openAuthModal } from './components/authModal.js';
 
 import { initializeCalendarView, renderCalendar } from './views/calendarView.js';
 import { initializeAnalyticsView, renderAnalytics, cleanupCharts } from './views/analyticsView.js';
@@ -35,15 +34,11 @@ import { filterBillsByPeriod } from './utils/billHelpers.js';
 
 import { settingsHandlers } from './handlers/settingsHandler.js';
 
-import { initializeResponsiveDetection, isMobileViewport } from './utils/mobileGestures.js';
+import { initializeResponsiveDetection } from './utils/mobileGestures.js';
 
 import {
     initializeSupabase,
     getUser,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
     syncBills,
     syncUserData,
     syncPaymentSettings,
@@ -59,24 +54,21 @@ import {
     syncLocalDataToCloudIfNeeded,
     syncPaymentSettingsFromCloud
 } from './utils/cloudSyncManager.js';
+import { getLoginAttemptStatus } from './utils/loginAttemptGuard.js';
+
+import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
 import {
-    LOGIN_LOCKOUT_RULES,
-    clearLoginAttemptState,
-    formatRetryAfter,
-    getLoginAttemptStatus,
-    recordFailedLoginAttempt
-} from './utils/loginAttemptGuard.js';
-
-const isCredentialFailure = (error) => {
-    const message = (error?.message || '').toLowerCase();
-    const code = (error?.code || '').toLowerCase();
-    const status = error?.status;
-
-    if (code.includes('invalid_credentials')) return true;
-    if (message.includes('invalid login credentials')) return true;
-    if (message.includes('invalid credentials')) return true;
-    return status === 400 || status === 401;
-};
+    handlePaycheckSelect,
+    handleFilterChange,
+    handleToggleCarriedForward,
+    handleAllBillsSelect,
+    handleUpcomingBillsSelect,
+    handleCategorySelect,
+    handleDisplayModeSelect,
+    handleOpenAddBill
+} from './app/navigationHandlers.js';
+import { handleLogin, handleSignUp, handleLogout, handleResetPassword } from './app/loginHandlers.js';
+import { initializePaymentModals, openRecordPaymentModal, showConfirmationModal } from './app/initializeModals.js';
 
 class AppOrchestrator {
     constructor() {
@@ -109,7 +101,7 @@ class AppOrchestrator {
             this.loadCategories();
 
             // Initialize theme
-            this.initializeTheme();
+            initializeTheme();
 
             // Initialize Supabase
             await initializeSupabase();
@@ -133,22 +125,22 @@ class AppOrchestrator {
 
             // Initialize components with callbacks
             initializeHeader(paycheckLabels, {
-                onPaycheckSelect: (index) => this.handlePaycheckSelect(index),
-                onFilterChange: (filter) => this.handleFilterChange(filter),
-                onAllBillsSelect: () => this.handleAllBillsSelect(),
-                onUpcomingBillsSelect: () => this.handleUpcomingBillsSelect(),
-                onDisplayModeSelect: (mode) => this.handleDisplayModeSelect(mode),
-                onToggleCarriedForward: (show) => this.handleToggleCarriedForward(show)
+                onPaycheckSelect: handlePaycheckSelect,
+                onFilterChange: handleFilterChange,
+                onAllBillsSelect: handleAllBillsSelect,
+                onUpcomingBillsSelect: handleUpcomingBillsSelect,
+                onDisplayModeSelect: handleDisplayModeSelect,
+                onToggleCarriedForward: handleToggleCarriedForward
             });
 
             initializeSidebar(this.categories, {
-                onCategorySelect: (category) => this.handleCategorySelect(category),
-                onOpenAddBill: () => this.handleOpenAddBill(),
+                onCategorySelect: handleCategorySelect,
+                onOpenAddBill: handleOpenAddBill,
                 onRegenerateBills: () => this.handleRegenerateBills(),
                 onExportData: () => this.handleExportData(),
                 onImportData: (file) => this.handleImportData(file),
                 onOpenAuth: () => openAuthModal(),
-                onLogout: () => this.handleLogout(),
+                onLogout: handleLogout,
                 onBulkDelete: () => this.handleBulkDelete(),
                 onBulkMarkPaid: () => this.handleBulkMarkPaid(),
                 onShowSettings: () => this.handleShowSettings()
@@ -206,14 +198,14 @@ class AppOrchestrator {
             });
 
             initializeAuthModal({
-                getLoginGuardStatus: (email) => getLoginAttemptStatus(email),
-                onLogin: (email, password, options) => this.handleLogin(email, password, options),
-                onSignUp: (email, password) => this.handleSignUp(email, password),
-                onResetPassword: (email) => this.handleResetPassword(email)
+                getLoginGuardStatus: getLoginAttemptStatus,
+                onLogin: handleLogin,
+                onSignUp: handleSignUp,
+                onResetPassword: handleResetPassword
             });
 
             // Initialize payment modals
-            this.initializePaymentModals();
+            initializePaymentModals(() => this.rerender());
 
             initializeDashboard();
             initializeBillGrid();
@@ -431,7 +423,7 @@ class AppOrchestrator {
                         `;
                         const addBtn = document.getElementById('emptyStateAddBill');
                         const importInput = /** @type {HTMLInputElement|null} */ (document.getElementById('emptyStateImport'));
-                        if (addBtn) addBtn.addEventListener('click', () => this.handleOpenAddBill());
+                        if (addBtn) addBtn.addEventListener('click', handleOpenAddBill);
                         if (importInput) importInput.addEventListener('change', (e) => {
                             const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
                             if (file) this.handleImportData(file);
@@ -472,63 +464,7 @@ class AppOrchestrator {
     }
 
     // ========== EVENT HANDLERS ==========
-
-    handlePaycheckSelect(index) {
-        appState.setViewMode('filtered');
-        appState.setSelectedPaycheck(index);
-
-        // Synchronize calendar view to the month of the selected paycheck
-        const selectedPaycheckDate = paycheckManager.payCheckDates[index];
-        if (selectedPaycheckDate) {
-            appState.setCurrentCalendarDate(new Date(selectedPaycheckDate));
-        }
-    }
-
-    handleFilterChange(filter) {
-        appState.setPaymentFilter(filter);
-    }
-
-    handleToggleCarriedForward(show) {
-        appState.setShowCarriedForward(show);
-    }
-
-    handleAllBillsSelect() {
-        appState.setViewMode('all');
-        // Reset calendar to today's month when viewing all bills
-        appState.setCurrentCalendarDate(new Date());
-    }
-
-    handleUpcomingBillsSelect() {
-        appState.setViewMode('upcoming');
-        appState.setDisplayMode('list');
-    }
-
-    handleCategorySelect(category) {
-        appState.setSelectedCategory(category);
-        appState.setViewMode('filtered');
-        // Ensure we switch back to list view when category is selected
-        appState.setDisplayMode('list');
-    }
-
-    handleDisplayModeSelect(mode) {
-        appState.setDisplayMode(mode);
-    }
-
-    handleOpenAddBill() {
-        resetBillForm();
-        openBillForm({
-            id: '',
-            category: '',
-            name: '',
-            dueDate: '',
-            amountDue: '',
-            balance: '',
-            recurrence: '',
-            reminderEnabled: true,
-            notes: '',
-            website: ''
-        });
-    }
+    // Navigation handlers moved to src/app/navigationHandlers.js
 
     handleSaveBill(billData = null) {
         try {
@@ -674,7 +610,7 @@ class AppOrchestrator {
         if (!bill) return;
 
         if (isPaid) {
-            this.handleRecordPayment(billId);
+            openRecordPaymentModal(billId);
             this.rerender();
             return;
         }
@@ -720,7 +656,7 @@ class AppOrchestrator {
     handleMarkPaidFromModal(billId, isPaid) {
         if (isPaid) {
             closeBillForm();
-            this.handleRecordPayment(billId);
+            openRecordPaymentModal(billId);
             return;
         }
 
@@ -729,42 +665,7 @@ class AppOrchestrator {
         this.rerender();
     }
 
-    handleRecordPayment(billId) {
-        const bills = billStore.getAll();
-        const bill = bills.find(b => b.id === billId);
-        if (!bill) return;
-
-        const strategySection = document.getElementById('monthlyStrategySection');
-        const strategyHint = document.getElementById('monthlyStrategyHint');
-        const singleCycleOption = document.getElementById('paymentStrategySingleCycle');
-
-        const missedCycles = bill.recurrence === 'Monthly'
-            ? getMissedMonthlyCycles(createLocalDate(bill.dueDate), new Date())
-            : 0;
-
-        if (bill.recurrence === 'Monthly' && missedCycles >= 2) {
-            strategySection.style.display = 'block';
-            strategyHint.textContent = `${missedCycles} months past due. Choose how to advance this recurring bill.`;
-        } else {
-            strategySection.style.display = 'none';
-            strategyHint.textContent = '';
-        }
-
-        /** @type {HTMLInputElement} */ (singleCycleOption).checked = true;
-        const f = (id) => /** @type {any} */ (document.getElementById(id));
-        f('paymentBillName').textContent = bill.name;
-        f('paymentRemainingAmount').textContent =
-            `$${billActionHandlers.getRemainingBalance(bill).toFixed(2)}`;
-        f('paymentBillId').value = billId;
-        f('paymentAmount').value = billActionHandlers
-            .getRemainingBalance(bill)
-            .toFixed(2);
-        f('paymentDate').value = new Date()
-            .toISOString()
-            .split('T')[0];
-        f('paymentOptionalDetails').open = false;
-        f('recordPaymentModal').style.display = 'block';
-    }
+    // handleRecordPayment moved to src/app/initializeModals.js (openRecordPaymentModal)
 
     handleViewHistory(billId) {
         const bills = billStore.getAll();
@@ -904,171 +805,7 @@ class AppOrchestrator {
         billActionHandlers.importData(file);
     }
 
-    async handleLogin(email, password, options = {}) {
-        const preCheck = getLoginAttemptStatus(email);
-        if (preCheck.isLocked) {
-            const retryText = formatRetryAfter(preCheck.retryAfterMs);
-            setAuthMessage(
-                `Too many failed attempts. Please wait ${retryText} before trying again.`,
-                true
-            );
-            recordAuditEvent('auth.login.blocked', {
-                entityType: 'auth',
-                summary: 'Login blocked by local lockout guard',
-                metadata: {
-                    email,
-                    retryAfterMs: preCheck.retryAfterMs,
-                    maxAttempts: LOGIN_LOCKOUT_RULES.maxAttempts
-                }
-            });
-            return;
-        }
-
-        setAuthMessage('Signing in...', false);
-    const { data, error } = await signIn(email, password, options);
-        if (error) {
-            if (isCredentialFailure(error)) {
-                const postFailure = recordFailedLoginAttempt(email);
-                if (postFailure.isLocked) {
-                    const retryText = formatRetryAfter(postFailure.retryAfterMs);
-                    setAuthMessage(
-                        `Account temporarily locked after ${LOGIN_LOCKOUT_RULES.maxAttempts} failed attempts. Try again in ${retryText}.`,
-                        true
-                    );
-                } else {
-                    setAuthMessage(
-                        `${error.message} (${postFailure.remainingAttempts} attempt(s) remaining before temporary lockout)`,
-                        true
-                    );
-                }
-            } else {
-                setAuthMessage(error.message, true);
-            }
-
-            recordAuditEvent('auth.login.failed', {
-                entityType: 'auth',
-                summary: 'Login attempt failed',
-                metadata: {
-                    email,
-                    message: error.message,
-                    trackedByLockoutGuard: isCredentialFailure(error)
-                }
-            });
-        } else {
-            clearLoginAttemptState(email);
-
-            // Save user email to localStorage so Sidebar can read it on reload
-            if (data.user && data.user.email) {
-                StorageManager.set(STORAGE_KEYS.USER_EMAIL, data.user.email);
-            }
-
-            recordAuditEvent('auth.login.succeeded', {
-                entityType: 'auth',
-                summary: 'User logged in',
-                metadata: {
-                    email: data.user?.email || null
-                }
-            });
-
-            closeAuthModal();
-            billActionHandlers.showSuccessNotification('Logged in successfully');
-
-            // Sync/Fetch on login
-            try {
-                const { cloudPaymentSettings } = await syncPaymentSettingsFromCloud({
-                    fetchCloudPaymentSettings,
-                    storageManager: StorageManager,
-                    storageKeys: STORAGE_KEYS,
-                    paycheckManager,
-                    logger
-                });
-
-                const { cloudBills } = await syncBillsFromCloud({
-                    fetchCloudBills,
-                    billStore,
-                    storageManager: StorageManager,
-                    storageKeys: STORAGE_KEYS,
-                    logger,
-                    onFetchError: () => {
-                        billActionHandlers.showErrorNotification('Could not fetch bills from cloud', 'Sync Error');
-                    }
-                });
-
-                await syncLocalDataToCloudIfNeeded({
-                    cloudBills,
-                    cloudPaymentSettings,
-                    billStore,
-                    storageManager: StorageManager,
-                    storageKeys: STORAGE_KEYS,
-                    syncUserData,
-                    syncPaymentSettings,
-                    logger,
-                    onSyncError: () => {
-                        billActionHandlers.showErrorNotification('Could not sync data to cloud', 'Sync Error');
-                    }
-                });
-            } catch (err) {
-                logger.error('Error syncing data on login', err);
-                billActionHandlers.showErrorNotification('Error syncing data from cloud', 'Sync Error');
-            }
-
-            // Add small delay to ensure storage is written before reload
-            // This is especially important on mobile devices
-            setTimeout(() => {
-                window.location.reload(); // To refresh sidebar user state/icon and apply synced settings
-            }, UI_FEEDBACK_TIMEOUT_MS);
-        }
-    }
-
-    async handleSignUp(email, password) {
-        setAuthMessage('Signing up...', false);
-        const { data, error } = await signUp(email, password);
-        if (error) {
-            setAuthMessage(error.message, true);
-            recordAuditEvent('auth.signup.failed', {
-                entityType: 'auth',
-                summary: 'Signup attempt failed',
-                metadata: { message: error.message }
-            });
-        } else {
-            setAuthMessage('Account created! Please check your email.', false);
-            recordAuditEvent('auth.signup.succeeded', {
-                entityType: 'auth',
-                summary: 'Signup completed',
-                metadata: { email: data?.user?.email || email }
-            });
-        }
-    }
-
-    async handleLogout() {
-        const userEmail = StorageManager.get(STORAGE_KEYS.USER_EMAIL, null);
-        await signOut();
-        recordAuditEvent('auth.logout', {
-            entityType: 'auth',
-            summary: 'User logged out',
-            metadata: { email: userEmail }
-        });
-        StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
-        window.location.reload();
-    }
-
-    async handleResetPassword(email) {
-        logger.info('Password reset requested');
-        setAuthMessage('Sending reset email...', false);
-        try {
-            const { error } = await resetPassword(email);
-            if (error) {
-                logger.error('Reset password error', error);
-                setAuthMessage(error.message || 'Failed to send reset email', true);
-            } else {
-                logger.info('Reset email sent successfully');
-                setAuthMessage('Success! Check your inbox (and Spam folder).', false);
-            }
-        } catch (err) {
-            logger.error('Unexpected error during password reset', err);
-            setAuthMessage('An unexpected error occurred. Check the console.', true);
-        }
-    }
+    // handleLogin, handleSignUp, handleLogout, handleResetPassword moved to src/app/loginHandlers.js
 
     async handleBulkDelete() {
         const bills = billStore.getAll();
@@ -1078,7 +815,7 @@ class AppOrchestrator {
         }
 
         const ids = bills.map(b => b.id);
-        const confirmed = await this.showConfirmationModal({
+        const confirmed = await showConfirmationModal({
             title: 'Clear all bills?',
             message: `This will permanently delete ${ids.length} bill${ids.length === 1 ? '' : 's'}. This action cannot be undone.`,
             confirmText: 'Clear All',
@@ -1135,7 +872,7 @@ class AppOrchestrator {
             return;
         }
 
-        const confirmed = await this.showConfirmationModal({
+        const confirmed = await showConfirmationModal({
             title: 'Mark bills as paid?',
             message: `This will mark ${ids.length} visible unpaid bill${ids.length === 1 ? '' : 's'} as paid.`,
             confirmText: 'Mark Paid',
@@ -1147,191 +884,17 @@ class AppOrchestrator {
         }
     }
 
-    showConfirmationModal({
-        title,
-        message,
-        confirmText = 'Confirm',
-        confirmVariant = 'primary'
-    }) {
-        return new Promise((resolve) => {
-            const existingModal = document.getElementById('actionConfirmModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
+    // showConfirmationModal moved to src/app/initializeModals.js
 
-            const modal = document.createElement('div');
-            modal.id = 'actionConfirmModal';
-            modal.className = 'modal';
-
-            const confirmButtonClass = confirmVariant === 'danger'
-                ? 'confirm-btn confirm-btn-danger'
-                : 'confirm-btn confirm-btn-primary';
-
-            modal.innerHTML = `
-                <div class="modal-content modal-content-compact confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmDialogTitle">
-                    <div class="confirm-dialog-header">
-                        <h2 id="confirmDialogTitle" class="confirm-dialog-title">${title}</h2>
-                    </div>
-                    <p class="confirm-dialog-message">${message}</p>
-                    <div class="confirm-dialog-actions">
-                        <button type="button" class="confirm-btn confirm-btn-secondary" id="confirmDialogCancel">Cancel</button>
-                        <button type="button" class="${confirmButtonClass}" id="confirmDialogConfirm">${confirmText}</button>
-                    </div>
-                </div>
-            `;
-
-            const cleanup = (result) => {
-                modal.remove();
-                resolve(result);
-            };
-
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    cleanup(false);
-                }
-            });
-
-            document.body.appendChild(modal);
-
-            document.getElementById('confirmDialogCancel')?.addEventListener('click', () => cleanup(false));
-            document.getElementById('confirmDialogConfirm')?.addEventListener('click', () => cleanup(true));
-            document.getElementById('confirmDialogConfirm')?.focus();
-        });
-    }
-
-    handleToggleTheme() {
-        document.body.classList.toggle('dark');
-        const isDark = document.body.classList.contains('dark');
-        StorageManager.set(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light');
-
-        // Update button icon
-        const themeBtn = document.getElementById('themeBtn');
-        if (themeBtn) themeBtn.textContent = isDark ? '☀️' : '🌓';
-    }
+    // handleToggleTheme moved to src/app/themeManager.js
 
     handleShowSettings() {
         settingsHandlers.showSettingsModal(this.categories);
     }
 
-    /**
-     * Initialize payment modals
-     */
-    initializePaymentModals() {
-        const container = document.getElementById('paymentModals');
-        if (!container) return;
-        const g = (id) => /** @type {any} */ (document.getElementById(id));
+    // initializePaymentModals moved to src/app/initializeModals.js
 
-        container.innerHTML = `
-            <div id="recordPaymentModal" class="modal">
-                <div class="modal-content">
-                    <span class="close" id="closeRecordPayment">&times;</span>
-                    <h2>Record Payment</h2>
-                    <form id="recordPaymentForm">
-                        <input type="hidden" id="paymentBillId">
-                        <div class="payment-summary-card" aria-live="polite">
-                            <p class="payment-summary-bill">Bill: <strong id="paymentBillName">-</strong></p>
-                            <p class="payment-summary-remaining">Remaining: <strong id="paymentRemainingAmount">$0.00</strong></p>
-                        </div>
-                        <div id="monthlyStrategySection" class="payment-strategy-section" style="display:none;">
-                            <p id="monthlyStrategyHint" class="payment-strategy-hint"></p>
-                            <div class="payment-strategy-options" role="radiogroup" aria-label="Overdue monthly payment strategy">
-                                <label>
-                                    <input type="radio" id="paymentStrategySingleCycle" name="paymentRecurrenceStrategy" value="single-cycle" checked>
-                                    Clear one month only
-                                </label>
-                                <label>
-                                    <input type="radio" id="paymentStrategyCatchUp" name="paymentRecurrenceStrategy" value="catch-up-to-current">
-                                    Catch up to current month
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group"><label>Amount Paid:</label><input type="number" id="paymentAmount" step="0.01" required></div>
-                        <div class="form-group"><label>Payment Date:</label><input type="date" id="paymentDate" required></div>
-                        <div class="payment-modal-actions">
-                            <button type="button" id="quickPayFullBtn" class="submit-btn">⚡ Pay Full Today</button>
-                            <button type="submit" class="action-btn">💾 Save Payment</button>
-                        </div>
-                        <details id="paymentOptionalDetails" class="payment-optional-details">
-                            <summary>Optional details</summary>
-                            <div class="form-group"><label>Payment Method:</label><select id="paymentMethod">
-                                <option value="Credit Card">💳 Credit Card</option>
-                                <option value="Debit Card">💳 Debit Card</option>
-                                <option value="Bank Transfer">🏦 Bank Transfer</option>
-                                <option value="Cash">💵 Cash</option>
-                                <option value="Check">📝 Check</option>
-                                <option value="PayPal">💰 PayPal</option>
-                                <option value="Venmo">💸 Venmo</option>
-                            </select></div>
-                            <div class="form-group"><label>Confirmation # (Optional):</label><input type="text" id="paymentConfirmation"></div>
-                        </details>
-                    </form>
-                </div>
-            </div>
-            <div id="viewHistoryModal" class="modal">
-                <div class="modal-content"><span class="close" id="closeViewHistory">&times;</span><h2>📜 Payment History</h2><div id="historyContent"></div></div>
-            </div>
-        `;
-
-        document.getElementById('closeRecordPayment').addEventListener('click', () => {
-            document.getElementById('recordPaymentModal').style.display = 'none';
-        });
-        document.getElementById('closeViewHistory').addEventListener('click', () => {
-            document.getElementById('viewHistoryModal').style.display = 'none';
-        });
-
-        const submitPayment = (billId, paymentData) => {
-            if (billActionHandlers.recordPayment(billId, paymentData)) {
-                g('recordPaymentModal').style.display = 'none';
-                g('recordPaymentForm').reset();
-                this.rerender();
-            }
-        };
-
-        document.getElementById('quickPayFullBtn').addEventListener('click', () => {
-            const billId = g('paymentBillId').value;
-            const amount = g('paymentAmount').value;
-            const date = g('paymentDate').value;
-            const method = g('paymentMethod').value;
-            const confirmationNumber = g('paymentConfirmation').value;
-            const recurrenceStrategy =
-                /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="paymentRecurrenceStrategy"]:checked'))?.value ||
-                'single-cycle';
-
-            submitPayment(billId, {
-                amount,
-                date,
-                method,
-                confirmationNumber,
-                recurrenceStrategy
-            });
-        });
-
-        g('recordPaymentForm').addEventListener('submit', e => {
-            e.preventDefault();
-            const billId = g('paymentBillId').value;
-            const paymentData = {
-                amount: g('paymentAmount').value,
-                date: g('paymentDate').value,
-                method: g('paymentMethod').value,
-                confirmationNumber: g('paymentConfirmation').value,
-                recurrenceStrategy:
-                    /** @type {HTMLInputElement|null} */ (document.querySelector('input[name="paymentRecurrenceStrategy"]:checked'))?.value ||
-                    'single-cycle'
-            };
-
-            submitPayment(billId, paymentData);
-        });
-    }
-
-    /**
-     * Initialize theme from localStorage
-     */
-    initializeTheme() {
-        const savedTheme = StorageManager.get(STORAGE_KEYS.THEME);
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark');
-        }
-    }
+    // initializeTheme moved to src/app/themeManager.js
 }
 
 // Export singleton instance
