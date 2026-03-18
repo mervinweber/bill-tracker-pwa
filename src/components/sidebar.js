@@ -198,6 +198,30 @@ export const initializeSidebar = (categories, actions) => {
     const bottomSection = document.createElement('div');
     bottomSection.className = "mt-auto space-y-4 pt-4 border-t";
 
+    const modeDiv = document.createElement('div');
+    modeDiv.className = "rounded-lg border bg-muted/40 p-3 space-y-1";
+
+    const modeLabel = document.createElement('div');
+    modeLabel.className = "text-[11px] leading-tight text-muted-foreground uppercase font-bold";
+    modeLabel.textContent = 'Sync Mode';
+
+    const modeBadge = document.createElement('div');
+    modeBadge.className = userEmail
+        ? "inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
+        : "inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700";
+    modeBadge.textContent = userEmail ? '☁️ Cloud Mode' : '💾 Local Mode';
+
+    const modeHelp = document.createElement('p');
+    modeHelp.className = "text-[11px] text-muted-foreground leading-snug";
+    modeHelp.textContent = userEmail
+        ? 'Changes sync to Supabase and stay available across devices.'
+        : 'Data is stored only in this browser until you sign in.';
+
+    modeDiv.appendChild(modeLabel);
+    modeDiv.appendChild(modeBadge);
+    modeDiv.appendChild(modeHelp);
+    bottomSection.appendChild(modeDiv);
+
     const themeDiv = document.createElement('div');
     themeDiv.className = "flex items-center justify-between px-2";
 

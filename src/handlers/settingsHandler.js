@@ -7,7 +7,7 @@ import { billStore } from '../store/BillStore.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import { billActionHandlers } from './billActionHandlers.js';
 import { safeJSONParse, validatePaymentSettings } from '../utils/validation.js';
-import { syncPaymentSettings, getUser, createHousehold, joinHousehold, getHouseholdStatus } from '../services/supabase.js';
+import { syncPaymentSettings, getUser, createHousehold, joinHousehold, getHouseholdStatus, updatePassword } from '../services/supabase.js';
 import StorageManager from '../utils/StorageManager.js';
 import logger from '../utils/logger.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
@@ -58,6 +58,7 @@ export function showSettingsModal(categoriesList) {
         
         const settings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, {});
         const notificationSettings = getNotificationSettings();
+        const userEmail = StorageManager.get(STORAGE_KEYS.USER_EMAIL, null);
         logger.info('Payment settings retrieved');
 
         if (!settings.startDate) {
@@ -82,6 +83,19 @@ export function showSettingsModal(categoriesList) {
         const form = document.createElement('form');
         form.id = 'settingsForm';
         form.className = 'settings-form';
+
+        const accountSecuritySection = userEmail
+            ? `
+            <hr class="settings-divider">
+            <h3>Account Security</h3>
+            <div class="form-group settings-inline-group">
+                <button type="button" id="changePasswordBtn" class="view-btn settings-secondary-btn">
+                    🔐 Change Password
+                </button>
+                <span class="settings-help-text">Signed in as ${userEmail}. Updates your Supabase password.</span>
+            </div>
+            `
+            : '';
 
         // Static Form Fields
         form.innerHTML = `
@@ -169,6 +183,7 @@ export function showSettingsModal(categoriesList) {
                     <button type="button" id="addNewCategoryBtn" class="view-btn">Add</button>
                 </div>
             </div>
+            ${accountSecuritySection}
         `;
 
         // Category List Container
@@ -282,6 +297,13 @@ export function showSettingsModal(categoriesList) {
             handleAddNewCategory(categoriesList, modal);
         });
 
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+        if (changePasswordBtn) {
+            changePasswordBtn.addEventListener('click', async () => {
+                await handleChangePasswordFromSettings();
+            });
+        }
+
         const sendTestReminderBtn = document.getElementById('sendTestReminderBtn');
         if (sendTestReminderBtn) {
             sendTestReminderBtn.addEventListener('click', async () => {
@@ -350,6 +372,37 @@ export function showSettingsModal(categoriesList) {
     } catch (error) {
         logger.error('Error showing settings modal', error);
         billActionHandlers.showErrorNotification(error.message, 'Settings Error');
+    }
+}
+
+async function handleChangePasswordFromSettings() {
+    const newPassword = window.prompt('Enter a new password (minimum 8 characters):') || '';
+    if (!newPassword) {
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        billActionHandlers.showErrorNotification('Password must be at least 8 characters long.', 'Password Update');
+        return;
+    }
+
+    const confirmPassword = window.prompt('Confirm your new password:') || '';
+    if (newPassword !== confirmPassword) {
+        billActionHandlers.showErrorNotification('Passwords do not match.', 'Password Update');
+        return;
+    }
+
+    try {
+        const { error } = await updatePassword(newPassword);
+        if (error) {
+            billActionHandlers.showErrorNotification(error.message || 'Unable to update password.', 'Password Update');
+            return;
+        }
+
+        billActionHandlers.showSuccessNotification('Password updated successfully.');
+    } catch (error) {
+        logger.error('Error updating password from settings', error);
+        billActionHandlers.showErrorNotification('Unable to update password. Please try again.', 'Password Update');
     }
 }
 
