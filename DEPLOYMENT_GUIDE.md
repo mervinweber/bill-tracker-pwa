@@ -65,6 +65,21 @@
 - [x] Images optimized
 - [x] CSS/JS minified
 
+### Automated Post-Deploy PWA Verification
+
+After deployment, run the following command against your production URL to validate manifest/service-worker/smoke endpoints:
+
+```bash
+npm run verify:production-pwa -- https://your-production-url.example.com
+```
+
+What it checks:
+- Home page is reachable
+- Manifest can be discovered and parsed
+- Manifest includes basic app metadata (name/start_url/icons)
+- `/service-worker.js` is reachable and has expected service worker markers
+- `/setup.html` smoke endpoint responds
+
 ---
 
 ## Deployment Platforms

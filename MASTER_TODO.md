@@ -14,10 +14,12 @@
 - [ ] Add `VITE_TURNSTILE_SITE_KEY` to your environment (`.env.local` for local and hosting provider env vars for production)
 - [ ] In Supabase Dashboard, enable Auth CAPTCHA and configure Cloudflare Turnstile keys
 - [ ] Verify challenge enforcement on live login with wrong password attempts (after 3 failures challenge appears; after 5 failures lockout remains)
+- [x] Add local env preflight command: `npm run verify:security-env`
 
 ### Manual Production Checks
 - [ ] Complete Section 1.4 production deploy verification checks (manifest/service worker + smoke pass)
 - [ ] Verify cloud sync state after login/logout with a real Supabase account
+- [x] Add deploy verification command: `npm run verify:production-pwa -- <production-url>`
 
 ---
 

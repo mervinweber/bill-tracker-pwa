@@ -128,6 +128,16 @@ If you want to validate the authentication hardening flow locally and in product
 
 If `VITE_TURNSTILE_SITE_KEY` is not set, the app falls back to a lightweight local challenge after repeated failures so protection still exists in development.
 
+#### Fast Preflight Command for Security Item #2
+
+Run this before manual Supabase Dashboard validation:
+
+```bash
+npm run verify:security-env
+```
+
+This command verifies local Turnstile env readiness (`VITE_TURNSTILE_SITE_KEY`) and reminds you about the required Supabase Dashboard CAPTCHA configuration that must still be checked manually.
+
 ### 5. Start Development Server
 
 ```bash
