@@ -1,4 +1,5 @@
 
+import { createClient } from '@supabase/supabase-js';
 import logger from '../utils/logger.js';
 import { USER_CACHE_TTL_MS, SUPABASE_HEALTH_CHECK_TIMEOUT_MS, TOKEN_EXPIRY_WARNING_MS } from '../config/constants.js';
 import { createAppErrorObject } from '../errors/errorCodes.js';
@@ -49,32 +50,26 @@ const isSupabaseEndpointReachable = async (url, timeoutMs = SUPABASE_HEALTH_CHEC
 };
 
 export const initializeSupabase = async () => {
-    if (window.supabase) {
-        // Validate URL before attempting init to prevent crash
-        if (!isConfiguredUrl(SUPABASE_URL) || !isConfiguredKey(SUPABASE_KEY)) {
-            logger.warn('Supabase URL not configured in .env. Skipping initialization.');
-            return false;
-        }
+    // Validate URL before attempting init to prevent crash
+    if (!isConfiguredUrl(SUPABASE_URL) || !isConfiguredKey(SUPABASE_KEY)) {
+        logger.warn('Supabase URL not configured in .env. Skipping initialization.');
+        return false;
+    }
 
-        const reachable = await isSupabaseEndpointReachable(SUPABASE_URL);
-        if (!reachable) {
-            logger.warn('Supabase endpoint is unreachable. Cloud auth is disabled for this session.', {
-                url: SUPABASE_URL
-            });
-            return false;
-        }
+    const reachable = await isSupabaseEndpointReachable(SUPABASE_URL);
+    if (!reachable) {
+        logger.warn('Supabase endpoint is unreachable. Cloud auth is disabled for this session.', {
+            url: SUPABASE_URL
+        });
+        return false;
+    }
 
-        try {
-            // @ts-ignore
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            logger.info('Supabase initialized');
-            return true;
-        } catch (error) {
-            logger.error('Failed to initialize Supabase', error);
-            return false;
-        }
-    } else {
-        logger.error('Supabase client not loaded');
+    try {
+        supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        logger.info('Supabase initialized');
+        return true;
+    } catch (error) {
+        logger.error('Failed to initialize Supabase', error);
         return false;
     }
 };

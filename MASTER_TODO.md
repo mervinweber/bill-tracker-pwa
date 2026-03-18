@@ -5,7 +5,7 @@
 > `docs/archive/legacy-planning/CODE_REVIEW_IMPROVEMENTS.md`, `docs/archive/legacy-planning/FEATURE_REQUEST_CODE_QUALITY.md`,
 > `docs/archive/legacy-planning/PHASE_1_2_IMPROVEMENTS.md`, `VERCEL_DEPLOYMENT_CHECKLIST.md`
 >
-> **Last Updated**: March 17, 2026
+> **Last Updated**: March 18, 2026
 > Contains both completed and pending items to preserve implementation history and remaining actions.
 
 ## ✅ User Steps You Need To Complete
@@ -20,6 +20,30 @@
 - [ ] Complete Section 1.4 production deploy verification checks (manifest/service worker + smoke pass)
 - [ ] Verify cloud sync state after login/logout with a real Supabase account
 - [x] Add deploy verification command: `npm run verify:production-pwa -- <production-url>`
+
+---
+
+## 🧪 Pre-Beta Gate *(must complete before external user testing)*
+
+### P0 — Must-Do
+
+- [x] Replace runtime Supabase CDN script with bundled npm dependency
+  - *Removed `<script>` from `index.html`; installed `@supabase/supabase-js`; `createClient` imported in `src/services/supabase.js`*
+  - *Build clean, 273 tests pass after migration*
+- [x] Add production security headers in `vercel.json`
+  - *Added: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` on all routes*
+  - *CSP allows `self`, Cloudflare (Turnstile), and `*.supabase.co`; cache headers preserved on assets/index*
+  - Verify headers visible on live deployed URL
+- [x] Tighten CI release gate in `.github/workflows/ci.yml`
+  - *Added `npm run type-check` step before build*
+  - *Added `npm run coverage` step with threshold enforcement in `vitest.config.js` (60% statements/branches/lines, 50% functions)*
+
+### P1 — Post-Beta Backlog
+
+- [ ] Narrow stale service worker recovery trigger in `src/index.js`
+  - Only trigger on SW/chunk-load failures, not all global errors / unhandled rejections
+- [ ] Extend `scripts/verify_production_pwa.mjs` to assert security headers on live URL
+- [ ] Update `SECURITY.md` dependency section to reflect current runtime dependencies (`dompurify`, `chart.js`, `@supabase/supabase-js`)
 
 ---
 
