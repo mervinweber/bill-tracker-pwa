@@ -5,7 +5,7 @@
 > `docs/archive/legacy-planning/CODE_REVIEW_IMPROVEMENTS.md`, `docs/archive/legacy-planning/FEATURE_REQUEST_CODE_QUALITY.md`,
 > `docs/archive/legacy-planning/PHASE_1_2_IMPROVEMENTS.md`, `VERCEL_DEPLOYMENT_CHECKLIST.md`
 >
-> **Last Updated**: March 16, 2026
+> **Last Updated**: March 17, 2026
 > All 100%-complete items have been removed. Items below require action.
 
 ## ✅ User Steps You Need To Complete
@@ -16,8 +16,7 @@
 - [ ] Verify challenge enforcement on live login with wrong password attempts (after 3 failures challenge appears; after 5 failures lockout remains)
 
 ### Manual Production Checks
-- [ ] Verify deployed app loads manifest + service worker correctly
-- [ ] Run 5-minute post-deploy smoke pass on production URL
+- [ ] Complete Section 1.4 production deploy verification checks (manifest/service worker + smoke pass)
 - [ ] Verify cloud sync state after login/logout with a real Supabase account
 
 ---
@@ -80,9 +79,9 @@
 ## ⚙️ Section 3: Code Quality & Technical Debt
 
 ### 3.1 Storage Layer — Critical
-- [ ] Create `src/utils/StorageManager.js` with `get()`, `set()`, `remove()` and quota-exceeded handling
-- [ ] Replace all 60+ direct `localStorage.getItem` / `setItem` / `removeItem` calls throughout `app.js`, handlers, components, and store
-- [ ] Add unit tests for StorageManager (including private-browsing and quota-exceeded paths)
+- [x] Create `src/utils/StorageManager.js` with `get()`, `set()`, `remove()` and quota-exceeded handling
+- [x] Replace remaining direct `localStorage.getItem` / `setItem` / `removeItem` calls throughout components and utility wrappers
+- [x] Add unit tests for StorageManager (including private-browsing and quota-exceeded paths)
 - [ ] Verify app still works in private browsing mode after migration
 
 ### 3.2 Service Worker Consolidation — High

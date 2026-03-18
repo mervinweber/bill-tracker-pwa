@@ -12,6 +12,7 @@
  */
 
 import logger from './logger.js';
+import StorageManager from './StorageManager.js';
 
 /**
  * Retry configuration object
@@ -134,13 +135,7 @@ export function safeStringify(obj, fallback = '{}') {
  * const paycheck = safeGetFromStorage('nextPaycheck', new Date());
  */
 export function safeGetFromStorage(key, fallback = null) {
-    try {
-        const item = localStorage.getItem(key);
-        return item ? safeParse(item, fallback) : fallback;
-    } catch (error) {
-        logger.warn(`Failed to read from localStorage (${key})`, { error: error.message });
-        return fallback;
-    }
+    return StorageManager.get(key, fallback);
 }
 
 /**
@@ -150,19 +145,7 @@ export function safeGetFromStorage(key, fallback = null) {
  * @returns {boolean} Success status
  */
 export function safeSetToStorage(key, value) {
-    try {
-        localStorage.setItem(key, safeStringify(value));
-        return true;
-    } catch (error) {
-        logger.error(`Failed to write to localStorage (${key})`, error);
-
-        // Handle quota exceeded
-        if (error.name === 'QuotaExceededError') {
-            logger.error('localStorage quota exceeded. Please clear some data.', error);
-        }
-
-        return false;
-    }
+    return StorageManager.set(key, value);
 }
 
 /**

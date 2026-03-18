@@ -22,9 +22,12 @@
  *   - Full WCAG 2.1 Level AA accessibility including aria-labels, keyboard nav, and semantic structure
  */
 
+import StorageManager from '../utils/StorageManager.js';
+import { STORAGE_KEYS } from '../utils/constants.js';
+
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = StorageManager.get(STORAGE_KEYS.THEME, 'light');
 
     // Shadcn-like styling constants
     const btnBase = "inline-flex items-center justify-start whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
@@ -160,7 +163,7 @@ export const initializeSidebar = (categories, actions) => {
     settingsBtn.addEventListener('click', () => actions.onShowSettings());
     dataDiv.appendChild(settingsBtn);
 
-    const userEmail = localStorage.getItem('userEmail');
+    const userEmail = StorageManager.get(STORAGE_KEYS.USER_EMAIL, null);
     if (!userEmail) {
         const loginBtn = document.createElement('button');
         loginBtn.type = 'button';
@@ -214,10 +217,10 @@ export const initializeSidebar = (categories, actions) => {
     themeInput.addEventListener('change', (e) => {
         if (/** @type {HTMLInputElement} */ (e.target).checked) {
             document.body.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
+            StorageManager.set(STORAGE_KEYS.THEME, 'dark');
         } else {
             document.body.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
+            StorageManager.set(STORAGE_KEYS.THEME, 'light');
         }
     });
 
