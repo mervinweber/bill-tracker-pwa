@@ -332,14 +332,25 @@ export const initializeAuthModal = (actions) => {
     loginBtn.onclick = () => handleAuthAction(loginBtn, actions.onLogin);
     signUpBtn.onclick = () => handleAuthAction(signUpBtn, actions.onSignUp);
 
-    document.getElementById('forgotPasswordLink').onclick = () => {
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    forgotPasswordLink.onclick = async () => {
         const email = emailInput.value.trim();
         if (!email) {
             setAuthMessage('Please enter your email address first', true);
             emailInput.focus();
             return;
         }
-        actions.onResetPassword(email);
+        const originalText = forgotPasswordLink.textContent;
+        forgotPasswordLink.textContent = 'Sending…';
+        forgotPasswordLink.disabled = true;
+        try {
+            await actions.onResetPassword(email);
+        } catch (err) {
+            setAuthMessage('An unexpected error occurred. Please try again.', true);
+        } finally {
+            forgotPasswordLink.textContent = originalText;
+            forgotPasswordLink.disabled = false;
+        }
     };
 
     passwordInput.addEventListener('keypress', (e) => {

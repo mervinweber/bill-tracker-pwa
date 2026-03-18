@@ -75,6 +75,7 @@ class AppOrchestrator {
         this.categories = [];
         this.initialized = false;
         this.isSyncing = false;
+        this.hasSyncErroredThisSession = false;
         this.cleanupResponsiveDetection = null;
         this.calendarViewModule = null;
         this.analyticsViewModule = null;
@@ -368,11 +369,15 @@ class AppOrchestrator {
                         const { error } = await syncUserData(bills, paymentSettings);
                         if (error) {
                             logger.error('Cloud sync failed', error);
-                            billActionHandlers.showErrorNotification(
-                                ERROR_CODES.SUPABASE_SYNC_FAILED.message,
-                                'Sync Failed'
-                            );
+                            if (!this.hasSyncErroredThisSession) {
+                                this.hasSyncErroredThisSession = true;
+                                billActionHandlers.showErrorNotification(
+                                    'Cloud sync failed. Check your Supabase connection or database setup.',
+                                    'Sync Warning'
+                                );
+                            }
                         } else {
+                            this.hasSyncErroredThisSession = false;
                             logger.info('Cloud sync successful');
                         }
                     } finally {
