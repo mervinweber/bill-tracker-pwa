@@ -6,7 +6,7 @@
 > `docs/archive/legacy-planning/PHASE_1_2_IMPROVEMENTS.md`, `VERCEL_DEPLOYMENT_CHECKLIST.md`
 >
 > **Last Updated**: March 17, 2026
-> All 100%-complete items have been removed. Items below require action.
+> Contains both completed and pending items to preserve implementation history and remaining actions.
 
 ## ✅ User Steps You Need To Complete
 
@@ -46,7 +46,7 @@
 ### 1.3 Go / No-Go Gate *(must pass before tagging a release)*
 - [x] No console errors during key flows above *(build clean, 0 type errors)*
 - [ ] No blocking UI issues on desktop + mobile viewport *(requires live browser check)*
-- [x] Data persists correctly after a browser reload *(localStorage via StorageManager; 244 tests pass)*
+- [x] Data persists correctly after a browser reload *(localStorage via StorageManager; 269 tests pass)*
 - [ ] Cloud sync state is consistent after login / logout *(requires live Supabase test)*
 
 ### 1.4 Deployment Steps
@@ -111,7 +111,7 @@
 - [x] Extract auth/login event handlers → `src/app/loginHandlers.js`
 - [x] Extract theme management → `src/app/themeManager.js`
 - [x] Extract navigation handlers (filter, view changes) → `src/app/navigationHandlers.js`
-- [x] Trim `app.js` to ≤ 400 lines (orchestration only)
+- [x] Refactor `app.js` to orchestration-first structure with extracted modules
 - [x] Confirm no functionality is lost; all tests still pass
 
 ### 3.7 Input Validation
