@@ -94,6 +94,7 @@ Create a file named `.env` in the project root:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
+VITE_TURNSTILE_SITE_KEY=your-cloudflare-turnstile-site-key
 ```
 
 **To get these values**:
@@ -106,6 +107,26 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 - Supabase is **optional** - the app works fully offline
 - Local data is stored in localStorage automatically
 - Supabase enables cloud sync across devices
+
+### 4.1 Security Setup (Turnstile + Supabase Auth CAPTCHA)
+
+If you want to validate the authentication hardening flow locally and in production:
+
+1. Add `VITE_TURNSTILE_SITE_KEY` to your `.env.local` (local) and hosting provider env vars (production).
+2. In Supabase Dashboard, open **Authentication → Settings → CAPTCHA**.
+3. Enable CAPTCHA and choose **Cloudflare Turnstile**.
+4. Add your Cloudflare site key + secret key in Supabase CAPTCHA settings.
+5. Redeploy/restart app so new environment values are loaded.
+
+#### Verification Checklist (Security Item #1)
+
+1. Attempt login with wrong credentials 3 times.
+2. Confirm challenge appears before another sign-in attempt is accepted.
+3. Continue failed attempts until 5 total failures.
+4. Confirm temporary lockout message appears with retry timer.
+5. Confirm successful login clears lockout/captcha state.
+
+If `VITE_TURNSTILE_SITE_KEY` is not set, the app falls back to a lightweight local challenge after repeated failures so protection still exists in development.
 
 ### 5. Start Development Server
 

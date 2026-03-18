@@ -173,7 +173,7 @@ export function showConfirmationModal({
 
         const modal = document.createElement('div');
         modal.id = 'actionConfirmModal';
-        modal.className = 'modal';
+        modal.className = 'modal confirm-modal-overlay';
 
         const confirmButtonClass = confirmVariant === 'danger'
             ? 'confirm-btn confirm-btn-danger'
