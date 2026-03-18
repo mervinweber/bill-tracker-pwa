@@ -155,35 +155,7 @@
             <button type="submit" class="submit-btn">Save Settings & Continue</button>
         </form>
     </div>
-    
-    <script>
-        // Set today's date as default
-        document.getElementById('setupStartDate').valueAsDate = new Date();
-        
-        document.getElementById('setupForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const startDate = document.getElementById('setupStartDate').value;
-            const frequency = document.getElementById('setupFrequency').value;
-            const weeks = document.getElementById('setupWeeks').value;
-            const amountInput = document.getElementById('setupAmount').value;
-            const parsedAmount = amountInput !== '' ? parseFloat(amountInput) : null;
 
-            if (amountInput !== '' && (!Number.isFinite(parsedAmount) || parsedAmount < 0)) {
-                alert('Please enter a valid paycheck amount (0 or greater).');
-                return;
-            }
-            
-            // Save to localStorage
-            localStorage.setItem('paymentSettings', JSON.stringify({
-                startDate: startDate,
-                frequency: frequency,
-                payPeriodsToShow: parseInt(weeks),
-                amount: parsedAmount
-            }));
-            
-            // Redirect to main app
-            window.location.href = 'index.html';
-        });
-    </script>
+    <script src="/setup.js"></script>
 </body>
 </html>

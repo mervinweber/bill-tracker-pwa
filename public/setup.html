@@ -146,30 +146,16 @@
                 <small>How far ahead do you want to plan?</small>
             </div>
             
+            <div class="form-group">
+                <label for="setupAmount"><strong>Paycheck Amount (optional)</strong></label>
+                <input type="number" id="setupAmount" step="0.01" min="0" placeholder="e.g. 2500">
+                <small>Used for upcoming bill coverage calculations.</small>
+            </div>
+
             <button type="submit" class="submit-btn">Save Settings & Continue</button>
         </form>
     </div>
-    
-    <script>
-        // Set today's date as default
-        document.getElementById('setupStartDate').valueAsDate = new Date();
-        
-        document.getElementById('setupForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const startDate = document.getElementById('setupStartDate').value;
-            const frequency = document.getElementById('setupFrequency').value;
-            const weeks = document.getElementById('setupWeeks').value;
-            
-            // Save to localStorage
-            localStorage.setItem('paymentSettings', JSON.stringify({
-                startDate: startDate,
-                frequency: frequency,
-                payPeriodsToShow: parseInt(weeks)
-            }));
-            
-            // Redirect to main app
-            window.location.href = 'index.html';
-        });
-    </script>
+
+    <script src="/setup.js"></script>
 </body>
 </html>

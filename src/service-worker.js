@@ -3,7 +3,7 @@
 // This file is synced to public/service-worker.js by Vite config.
 
 const CACHE_NAME = 'bill-tracker-v10';
-const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/setup.html'];
+const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/setup.html', '/setup.js'];
 
 /** @type {ServiceWorkerGlobalScope} */
 const swSelf = /** @type {ServiceWorkerGlobalScope} */ (/** @type {unknown} */ (self));
