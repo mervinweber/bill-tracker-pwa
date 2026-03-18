@@ -320,7 +320,7 @@ export function validateNotes(notes) {
  * @returns {Object} Validation result with isValid and error message
  */
 export function validateRecurrence(recurrence) {
-    const validTypes = ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly'];
+    const validTypes = ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Quarterly', 'Yearly'];
 
     if (!recurrence) {
         return { isValid: false, error: 'Recurrence type is required' };

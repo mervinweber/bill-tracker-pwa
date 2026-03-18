@@ -202,7 +202,7 @@ it('validateNotes rejects notes over 500 chars', () => {
 
 // ---- validateRecurrence ----
 it('validateRecurrence accepts valid types', () => {
-    ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly'].forEach(t => {
+    ['One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Quarterly', 'Yearly'].forEach(t => {
         expect(validateRecurrence(t).isValid).toBe(true);
     });
 });

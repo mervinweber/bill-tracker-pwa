@@ -69,7 +69,7 @@ export function forecastNextMonth(bills) {
         recurringBills: []
     };
 
-    const recurringTypes = ['Weekly', 'Bi-weekly', 'Monthly', 'Yearly'];
+    const recurringTypes = ['Weekly', 'Bi-weekly', 'Monthly', 'Quarterly', 'Yearly'];
 
     bills.forEach(bill => {
         if (recurringTypes.includes(bill.recurrence)) {
