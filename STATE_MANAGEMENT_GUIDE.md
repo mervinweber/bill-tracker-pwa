@@ -58,6 +58,61 @@ In practice:
 4. AppOrchestrator runs `rerender()`.
 5. `rerender()` chooses `list` / `calendar` / `analytics` path and updates UI.
 
+## State Flow Diagrams
+
+### UI State Transition Flow (`appState`)
+
+```mermaid
+flowchart TD
+	A[User interaction\nheader/sidebar/view controls] --> B[Navigation handler\nin src/app/navigationHandlers.js]
+	B --> C[appState.setState* call]
+	C --> D[appState subscribers notified]
+	D --> E[AppOrchestrator.handleStateChange]
+	E --> F[AppOrchestrator.rerender]
+	F --> G{displayMode}
+	G -->|list| H[renderDashboard + renderBillGrid]
+	G -->|calendar| I[initializeCalendarView + renderCalendar]
+	G -->|analytics| J[initializeAnalyticsView + renderAnalytics]
+```
+
+### Bill Data Mutation Flow (`billStore`)
+
+```mermaid
+flowchart TD
+	A[User bill action\nadd/edit/pay/delete/import] --> B[billActionHandlers]
+	B --> C[billStore.add/update/delete/setBills]
+	C --> D[StorageManager persists bills]
+	C --> E[billStore subscribers notified]
+	E --> F[AppOrchestrator.rerender]
+	E --> G[AppOrchestrator.handleCloudSync]
+	G --> H{User authenticated?}
+	H -->|yes| I[Debounced syncUserData/syncPaymentSettings]
+	H -->|no| J[Local-only mode]
+```
+
+### Auth and Sync Bootstrap Flow
+
+```mermaid
+sequenceDiagram
+	participant U as User
+	participant A as AppOrchestrator
+	participant S as Supabase Service
+	participant BS as billStore
+	participant AS as appState
+
+	U->>A: Open app
+	A->>S: initializeSupabase/getUser
+	alt authenticated
+		A->>S: fetchCloudPaymentSettings
+		A->>S: fetchCloudBills
+		A->>BS: setBills(cloud/local merge result)
+	else not authenticated
+		A->>BS: load local bills
+	end
+	A->>AS: set initial UI state
+	A->>A: rerender()
+```
+
 ---
 
 ## Update Rules

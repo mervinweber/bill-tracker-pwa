@@ -14,7 +14,8 @@
     "coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit --project jsconfig.json",
     "verify:security-env": "node scripts/verify_security_env.mjs",
-    "verify:production-pwa": "node scripts/verify_production_pwa.mjs"
+    "verify:production-pwa": "node scripts/verify_production_pwa.mjs",
+    "verify:sw-cache": "node scripts/validate_service_worker_cache.mjs"
   },
   "devDependencies": {
     "@types/dompurify": "^3.2.0",

@@ -2,8 +2,8 @@
 // Source of truth for service worker logic.
 // This file is synced to public/service-worker.js by Vite config.
 
-const CACHE_NAME = 'bill-tracker-v9';
-const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/setup.html', '/src/index.css'];
+const CACHE_NAME = 'bill-tracker-v10';
+const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/setup.html'];
 
 /** @type {ServiceWorkerGlobalScope} */
 const swSelf = /** @type {ServiceWorkerGlobalScope} */ (/** @type {unknown} */ (self));

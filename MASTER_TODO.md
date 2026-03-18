@@ -74,7 +74,7 @@
 - [ ] Verify mobile layout remains functional with no overlap / regression after changes
 
 ### 2.2 State Management Guide *(IMPROVEMENT_ROADMAP.md § 2.3 — one item still open)*
-- [ ] Add state flow diagrams to `STATE_MANAGEMENT_GUIDE.md`
+- [x] Add state flow diagrams to `STATE_MANAGEMENT_GUIDE.md`
 
 ---
 
@@ -91,7 +91,7 @@
 - [x] Make `src/service-worker.js` the single source of truth
 - [x] Remove / deprecate the redundant `src/serviceWorker.js` (registration-only, 12 lines)
 - [x] Update build config to copy the canonical service worker to `public/` during build
-- [ ] Confirm caching works correctly in a production build after consolidation
+- [x] Confirm caching works correctly in a production build after consolidation *(validated via `npm run build` + `npm run verify:sw-cache`)*
 
 ### 3.3 Remove Deprecated Module
 - [x] Remove `src/utils/storage.js` (deprecated — `getBills()` / `saveBills()` bypass BillStore)
@@ -187,7 +187,7 @@
 - [x] Document common debugging strategies and known issues
 
 ### 5.6 Complete JSDoc / Type Documentation *(FEATURE_REQUEST § US-7.2)*
-- [ ] Add `@typedef` for complex domain objects: `Bill`, `PaymentSettings`, `Category`, `SyncOperation`
+- [x] Add `@typedef` for complex domain objects: `Bill`, `PaymentSettings`, `Category`, `SyncOperation`
 - [ ] Complete `@param` and `@returns` on all public functions
 - [ ] Add `@throws` documentation where errors are expected
 

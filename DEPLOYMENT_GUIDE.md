@@ -80,6 +80,14 @@ What it checks:
 - `/service-worker.js` is reachable and has expected service worker markers
 - `/setup.html` smoke endpoint responds
 
+For build artifact integrity before deploying, also run:
+
+```bash
+npm run verify:sw-cache
+```
+
+This confirms the canonical service worker cache list only references assets that exist in the generated `dist/` output.
+
 ---
 
 ## Deployment Platforms

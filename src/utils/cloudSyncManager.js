@@ -2,6 +2,16 @@
  * Cloud sync helpers to reduce duplicated sync logic in app initialization and login flows.
  */
 
+/**
+ * @param {Object} params
+ * @param {() => Promise<{data: import('../types/domainTypes.js').PaymentSettings|null}>} params.fetchCloudPaymentSettings
+ * @param {{ set: (key: string, value: unknown) => boolean }} params.storageManager
+ * @param {{ PAYMENT_SETTINGS: string }} params.storageKeys
+ * @param {{ paymentSettings: import('../types/domainTypes.js').PaymentSettings|null, generatePaycheckDates: () => void }} params.paycheckManager
+ * @param {{ info: (message: string) => void }} params.logger
+ * @returns {Promise<{cloudPaymentSettings: import('../types/domainTypes.js').PaymentSettings|null, synced: boolean}>}
+ * @throws {Error} Propagates errors thrown by fetchCloudPaymentSettings.
+ */
 export const syncPaymentSettingsFromCloud = async ({
     fetchCloudPaymentSettings,
     storageManager,
@@ -23,6 +33,17 @@ export const syncPaymentSettingsFromCloud = async ({
     return { cloudPaymentSettings: null, synced: false };
 };
 
+/**
+ * @param {Object} params
+ * @param {() => Promise<{data: import('../types/domainTypes.js').Bill[], error: {message?: string}|null}>} params.fetchCloudBills
+ * @param {{ setBills: (bills: import('../types/domainTypes.js').Bill[]) => void }} params.billStore
+ * @param {{ set: (key: string, value: unknown) => boolean }} params.storageManager
+ * @param {{ BILLS: string }} params.storageKeys
+ * @param {{ info: (message: string) => void, warn: (message: string, data?: unknown) => void }} params.logger
+ * @param {(error: unknown) => void} [params.onFetchError]
+ * @returns {Promise<{cloudBills: import('../types/domainTypes.js').Bill[], synced: boolean, error: unknown}>}
+ * @throws {Error} Propagates errors thrown by fetchCloudBills.
+ */
 export const syncBillsFromCloud = async ({
     fetchCloudBills,
     billStore,
@@ -52,6 +73,20 @@ export const syncBillsFromCloud = async ({
     return { cloudBills: [], synced: false, error: null };
 };
 
+/**
+ * @param {Object} params
+ * @param {import('../types/domainTypes.js').Bill[]} params.cloudBills
+ * @param {import('../types/domainTypes.js').PaymentSettings|null} params.cloudPaymentSettings
+ * @param {{ getAll: () => import('../types/domainTypes.js').Bill[] }} params.billStore
+ * @param {{ get: (key: string, fallback: unknown) => unknown }} params.storageManager
+ * @param {{ PAYMENT_SETTINGS: string }} params.storageKeys
+ * @param {(bills: import('../types/domainTypes.js').Bill[], settings: import('../types/domainTypes.js').PaymentSettings|null) => Promise<{error: unknown}>} params.syncUserData
+ * @param {(settings: import('../types/domainTypes.js').PaymentSettings) => Promise<{error: unknown}>} params.syncPaymentSettings
+ * @param {{ info: (message: string) => void, error: (message: string, error: unknown) => void }} params.logger
+ * @param {(error: unknown) => void} [params.onSyncError]
+ * @returns {Promise<{synced: boolean, error: unknown}>}
+ * @throws {Error} Propagates unexpected errors from storage access or sync callbacks.
+ */
 export const syncLocalDataToCloudIfNeeded = async ({
     cloudBills,
     cloudPaymentSettings,
