@@ -15,7 +15,8 @@
 -- WHAT THIS DOES:
 -- - Enables Row Level Security on the user_data table
 -- - Creates policies that restrict data access to authenticated users only
--- - Ensures users can only see/modify their own bills
+-- - Supports both personal and household-shared access patterns
+-- - Ensures new users (no household yet) can still access only their own data
 -- - Adds database constraints for data integrity
 -- - Creates performance indexes
 --
@@ -30,34 +31,84 @@ DROP POLICY IF EXISTS "Users can view own data" ON user_data;
 DROP POLICY IF EXISTS "Users can insert own data" ON user_data;
 DROP POLICY IF EXISTS "Users can update own data" ON user_data;
 DROP POLICY IF EXISTS "Users can delete own data" ON user_data;
+DROP POLICY IF EXISTS "Users can view own or household data" ON user_data;
+DROP POLICY IF EXISTS "Users can update own or household data" ON user_data;
 
 -- Step 3: Create SELECT policy (viewing data)
--- Users can only SELECT rows where user_id matches their authenticated ID
-CREATE POLICY "Users can view own data" ON user_data
+-- Users can view their own row OR rows in the same household.
+-- New users with household_id NULL can still view their own row.
+CREATE POLICY "Users can view own or household data" ON user_data
     FOR SELECT
-    USING (auth.uid() = user_id);
+    TO authenticated
+    USING (
+        auth.uid() IS NOT NULL
+        AND (
+            user_id = auth.uid()
+            OR (
+                household_id IS NOT NULL
+                AND household_id IN (
+                    SELECT u.household_id
+                    FROM user_data u
+                    WHERE u.user_id = auth.uid()
+                )
+            )
+        )
+    );
 
 -- Step 4: Create INSERT policy (creating new data)
 -- Users can only INSERT rows with their own user_id
 CREATE POLICY "Users can insert own data" ON user_data
     FOR INSERT
+    TO authenticated
     WITH CHECK (auth.uid() = user_id);
 
 -- Step 5: Create UPDATE policy (modifying existing data)
--- Users can only UPDATE rows they own, and cannot change ownership
-CREATE POLICY "Users can update own data" ON user_data
+-- Users can UPDATE their own row OR rows in the same household.
+-- WITH CHECK uses the same predicate to prevent bypasses.
+CREATE POLICY "Users can update own or household data" ON user_data
     FOR UPDATE
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+    TO authenticated
+    USING (
+        auth.uid() IS NOT NULL
+        AND (
+            user_id = auth.uid()
+            OR (
+                household_id IS NOT NULL
+                AND household_id IN (
+                    SELECT u.household_id
+                    FROM user_data u
+                    WHERE u.user_id = auth.uid()
+                )
+            )
+        )
+    )
+    WITH CHECK (
+        auth.uid() IS NOT NULL
+        AND (
+            user_id = auth.uid()
+            OR (
+                household_id IS NOT NULL
+                AND household_id IN (
+                    SELECT u.household_id
+                    FROM user_data u
+                    WHERE u.user_id = auth.uid()
+                )
+            )
+        )
+    );
 
 -- Step 6: Create DELETE policy (removing data)
 -- Users can only DELETE their own rows
 CREATE POLICY "Users can delete own data" ON user_data
     FOR DELETE
+    TO authenticated
     USING (auth.uid() = user_id);
 
 -- Step 7: Add database constraints for data integrity
 -- Ensure user_id is never null
+ALTER TABLE user_data
+    DROP CONSTRAINT IF EXISTS user_data_user_id_not_null;
+
 ALTER TABLE user_data
     ADD CONSTRAINT user_data_user_id_not_null 
     CHECK (user_id IS NOT NULL);
@@ -66,6 +117,11 @@ ALTER TABLE user_data
 -- Speeds up queries filtering by user_id
 CREATE INDEX IF NOT EXISTS idx_user_data_user_id 
     ON user_data(user_id);
+
+-- Step 9: Create household performance index
+-- Speeds up household-based sharing queries
+CREATE INDEX IF NOT EXISTS idx_user_data_household_id
+    ON user_data(household_id);
 
 -- ============================================================================
 -- VERIFICATION QUERIES
@@ -82,7 +138,7 @@ SELECT policyname, cmd, qual, with_check
 FROM pg_policies
 WHERE tablename = 'user_data';
 
--- Count total policies (should be 4)
+-- Count total policies (should be 4 for this script's target policy set)
 SELECT COUNT(*) as policy_count
 FROM pg_policies
 WHERE tablename = 'user_data';
