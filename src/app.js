@@ -1045,14 +1045,35 @@ class AppOrchestrator {
 
     _isPasswordRecoveryRedirect() {
         const hash = window.location.hash || '';
-        if (!hash) return false;
+        const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+        const searchParams = new URLSearchParams(window.location.search);
 
-        const params = new URLSearchParams(hash.replace(/^#/, ''));
-        return params.get('type') === 'recovery' && Boolean(params.get('access_token'));
+        const recoveryType = hashParams.get('type') || searchParams.get('type');
+        const hasRecoveryToken = Boolean(
+            hashParams.get('access_token') ||
+            hashParams.get('refresh_token') ||
+            searchParams.get('token_hash') ||
+            searchParams.get('code')
+        );
+
+        return recoveryType === 'recovery' || hasRecoveryToken;
     }
 
-    _clearAuthHashFromUrl() {
-        const cleanUrl = `${window.location.pathname}${window.location.search}`;
+    _clearAuthRecoveryParamsFromUrl() {
+        const url = new URL(window.location.href);
+        const recoverySearchParams = [
+            'type',
+            'token_hash',
+            'code',
+            'error',
+            'error_code',
+            'error_description'
+        ];
+
+        recoverySearchParams.forEach((param) => url.searchParams.delete(param));
+        url.hash = '';
+
+        const cleanUrl = `${url.pathname}${url.search}`;
         window.history.replaceState({}, document.title, cleanUrl);
     }
 
@@ -1064,25 +1085,25 @@ class AppOrchestrator {
         const password = window.prompt('Enter your new password (minimum 8 characters):') || '';
         if (!password) {
             billActionHandlers.showErrorNotification('Password reset canceled. Open the reset link again when you are ready.', 'Password Reset');
-            this._clearAuthHashFromUrl();
+            this._clearAuthRecoveryParamsFromUrl();
             return;
         }
 
         if (password.length < 8) {
             billActionHandlers.showErrorNotification('Password must be at least 8 characters long.', 'Password Reset');
-            this._clearAuthHashFromUrl();
+            this._clearAuthRecoveryParamsFromUrl();
             return;
         }
 
         const confirmPassword = window.prompt('Confirm your new password:') || '';
         if (password !== confirmPassword) {
             billActionHandlers.showErrorNotification('Passwords do not match. Please try the reset link again.', 'Password Reset');
-            this._clearAuthHashFromUrl();
+            this._clearAuthRecoveryParamsFromUrl();
             return;
         }
 
         const { error } = await updatePassword(password);
-        this._clearAuthHashFromUrl();
+        this._clearAuthRecoveryParamsFromUrl();
 
         if (error) {
             logger.error('Failed to update password from recovery link', error);
