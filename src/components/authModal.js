@@ -265,7 +265,7 @@ export const initializeAuthModal = (actions) => {
 
     closeBtn.onclick = close;
 
-    window.onclick = (event) => {
+    modal.onclick = (event) => {
         if (event.target === modal) {
             close();
         }

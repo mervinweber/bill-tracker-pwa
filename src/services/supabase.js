@@ -86,11 +86,16 @@ export const isSupabaseConfigured = () => {
 };
 
 // Auth Functions
-export const signUp = async (email, password) => {
+export const signUp = async (email, password, options = {}) => {
     if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: options.captchaToken
+            ? {
+                captchaToken: options.captchaToken
+            }
+            : undefined,
     });
     return { data, error };
 };

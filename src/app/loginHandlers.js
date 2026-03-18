@@ -150,9 +150,9 @@ export async function handleLogin(email, password, options = {}) {
     }
 }
 
-export async function handleSignUp(email, password) {
+export async function handleSignUp(email, password, options = {}) {
     setAuthMessage('Signing up...', false);
-    const { data, error } = await signUp(email, password);
+    const { data, error } = await signUp(email, password, options);
     if (error) {
         setAuthMessage(error.message, true);
         recordAuditEvent('auth.signup.failed', {
@@ -165,18 +165,16 @@ export async function handleSignUp(email, password) {
         recordAuditEvent('auth.signup.succeeded', {
             entityType: 'auth',
             summary: 'Signup completed',
-            metadata: { email: data?.user?.email || email }
+            metadata: { provider: data?.session ? 'oauth' : 'password' }
         });
     }
 }
 
 export async function handleLogout() {
-    const userEmail = StorageManager.get(STORAGE_KEYS.USER_EMAIL, null);
     await signOut();
     recordAuditEvent('auth.logout', {
         entityType: 'auth',
-        summary: 'User logged out',
-        metadata: { email: userEmail }
+        summary: 'User logged out'
     });
     StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
     window.location.reload();
