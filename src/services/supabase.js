@@ -230,7 +230,7 @@ export const syncUserData = async (localBills, localPaymentSettings = null) => {
 
     const { data, error } = await supabase
         .from('user_data')
-        .upsert(updateData);
+        .upsert(updateData, { onConflict: 'user_id' });
 
     return { data, error };
 };
@@ -257,7 +257,7 @@ export const syncPaymentSettings = async (paymentSettings) => {
         .upsert({
             user_id: user.id,
             paymentSettings: paymentSettings
-        });
+        }, { onConflict: 'user_id' });
 
     return { data, error };
 };

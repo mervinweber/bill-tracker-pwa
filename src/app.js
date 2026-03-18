@@ -375,8 +375,9 @@ class AppOrchestrator {
                             logger.error('Cloud sync failed', error);
                             if (!this.hasSyncErroredThisSession) {
                                 this.hasSyncErroredThisSession = true;
+                                const detail = error?.message || error?.code || 'unknown error';
                                 billActionHandlers.showErrorNotification(
-                                    'Cloud sync failed. Check your Supabase connection or database setup.',
+                                    `Cloud sync failed: ${detail}`,
                                     'Sync Warning'
                                 );
                             }

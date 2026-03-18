@@ -113,12 +113,30 @@ ALTER TABLE user_data
     ADD CONSTRAINT user_data_user_id_not_null 
     CHECK (user_id IS NOT NULL);
 
--- Step 8: Create performance index
--- Speeds up queries filtering by user_id
-CREATE INDEX IF NOT EXISTS idx_user_data_user_id 
+-- Step 8: Ensure required columns exist
+-- These columns are written by the app's sync functions
+ALTER TABLE user_data ADD COLUMN IF NOT EXISTS last_sync TIMESTAMPTZ;
+ALTER TABLE user_data ADD COLUMN IF NOT EXISTS household_id UUID;
+ALTER TABLE user_data ADD COLUMN IF NOT EXISTS "paymentSettings" JSONB;
+
+-- Step 9: Remove duplicate rows before creating unique index
+-- Keeps the most recently synced row per user, discards older duplicates.
+-- Safe to run on a table with no duplicates (no rows deleted).
+DELETE FROM user_data
+WHERE ctid NOT IN (
+    SELECT DISTINCT ON (user_id) ctid
+    FROM user_data
+    ORDER BY user_id, last_sync DESC NULLS LAST
+);
+
+-- Step 10: Create unique index on user_id
+-- Required for upsert conflict resolution (onConflict: 'user_id').
+-- Guarantees one row per user; replaces the non-unique index below.
+DROP INDEX IF EXISTS idx_user_data_user_id;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_data_user_id
     ON user_data(user_id);
 
--- Step 9: Create household performance index
+-- Step 11: Create household performance index
 -- Speeds up household-based sharing queries
 CREATE INDEX IF NOT EXISTS idx_user_data_household_id
     ON user_data(household_id);
