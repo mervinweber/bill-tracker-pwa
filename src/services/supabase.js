@@ -156,6 +156,12 @@ export const resetPassword = async (email) => {
     }
 };
 
+export const updatePassword = async (newPassword) => {
+    if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+    return { data, error };
+};
+
 export const getUser = async () => {
     if (!supabase) return null;
 

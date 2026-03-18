@@ -38,9 +38,11 @@ import { initializeResponsiveDetection } from './utils/mobileGestures.js';
 import {
     initializeSupabase,
     getUser,
+    signOut,
     syncBills,
     syncUserData,
     syncPaymentSettings,
+    updatePassword,
     fetchCloudBills,
     fetchCloudPaymentSettings,
     setupTokenRefreshMonitor
@@ -220,6 +222,8 @@ class AppOrchestrator {
                 onSignUp: handleSignUp,
                 onResetPassword: handleResetPassword
             });
+
+            await this._handlePasswordRecoveryRedirect();
 
             // Initialize payment modals
             initializePaymentModals(() => this.rerender());
@@ -1037,6 +1041,59 @@ class AppOrchestrator {
         signInBtn.focus();
 
         logger.warn('Session expired — prompting user to sign in again');
+    }
+
+    _isPasswordRecoveryRedirect() {
+        const hash = window.location.hash || '';
+        if (!hash) return false;
+
+        const params = new URLSearchParams(hash.replace(/^#/, ''));
+        return params.get('type') === 'recovery' && Boolean(params.get('access_token'));
+    }
+
+    _clearAuthHashFromUrl() {
+        const cleanUrl = `${window.location.pathname}${window.location.search}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    async _handlePasswordRecoveryRedirect() {
+        if (!this._isPasswordRecoveryRedirect()) {
+            return;
+        }
+
+        const password = window.prompt('Enter your new password (minimum 8 characters):') || '';
+        if (!password) {
+            billActionHandlers.showErrorNotification('Password reset canceled. Open the reset link again when you are ready.', 'Password Reset');
+            this._clearAuthHashFromUrl();
+            return;
+        }
+
+        if (password.length < 8) {
+            billActionHandlers.showErrorNotification('Password must be at least 8 characters long.', 'Password Reset');
+            this._clearAuthHashFromUrl();
+            return;
+        }
+
+        const confirmPassword = window.prompt('Confirm your new password:') || '';
+        if (password !== confirmPassword) {
+            billActionHandlers.showErrorNotification('Passwords do not match. Please try the reset link again.', 'Password Reset');
+            this._clearAuthHashFromUrl();
+            return;
+        }
+
+        const { error } = await updatePassword(password);
+        this._clearAuthHashFromUrl();
+
+        if (error) {
+            logger.error('Failed to update password from recovery link', error);
+            billActionHandlers.showErrorNotification(error.message || 'Unable to update password. Please request a new reset email.', 'Password Reset');
+            return;
+        }
+
+        await signOut();
+        StorageManager.remove(STORAGE_KEYS.USER_EMAIL);
+        billActionHandlers.showSuccessNotification('Password updated. Please sign in with your new password.');
+        openAuthModal();
     }
 
     // initializePaymentModals moved to src/app/initializeModals.js
