@@ -762,9 +762,12 @@ class AppOrchestrator {
         const bill = bills.find(b => b.id === billId);
         if (!bill) return;
 
-        const totalDue = bill.amountDue || 0;
         const totalPaid = billActionHandlers.getTotalPaid(bill);
         const remaining = billActionHandlers.getRemainingBalance(bill);
+        const amountDue = Number.parseFloat(String(bill.amountDue));
+        const totalDue = Number.isFinite(amountDue) && amountDue > 0
+            ? amountDue
+            : (totalPaid + remaining);
         const payments = (bill.paymentHistory || []).sort(
             (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );

@@ -95,9 +95,12 @@ function openViewHistory(billId) {
     const bill = window.bills.find(b => b.id === billId);
     if (!bill) return;
 
-    const totalDue = bill.balance || bill.amountDue || 0;
     const totalPaid = window.getTotalPaid(bill);
     const remaining = window.getRemainingBalance(bill);
+    const amountDue = Number.parseFloat(String(bill.amountDue));
+    const totalDue = Number.isFinite(amountDue) && amountDue > 0
+        ? amountDue
+        : (totalPaid + remaining);
 
     const payments = (bill.paymentHistory || []).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
