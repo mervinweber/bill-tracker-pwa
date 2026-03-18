@@ -12,7 +12,7 @@
  * - amountDue: Amount of bill in dollars
  * - balance: Current balance owed
  * - isPaid: Payment status (boolean)
- * - recurrence: Recurrence frequency ('One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly')
+ * - recurrence: Recurrence frequency ('One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Quarterly', 'Yearly')
  * - notes: Additional notes (optional)
  * - lastPaymentDate: Date of last payment (optional)
  * - paymentHistory: Array of past payments (optional)
@@ -148,7 +148,7 @@ class BillStore {
      * @param {number} bill.amountDue - Amount due in dollars
      * @param {number} bill.balance - Current balance owed
      * @param {boolean} bill.isPaid - Payment status
-     * @param {string} bill.recurrence - Frequency ('One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly')
+    * @param {string} bill.recurrence - Frequency ('One-time', 'Weekly', 'Bi-weekly', 'Monthly', 'Quarterly', 'Yearly')
      * @param {string} [bill.notes] - Optional notes about the bill
      * @param {string} [bill.lastPaymentDate] - Optional last payment date (YYYY-MM-DD)
      * @param {Array} [bill.paymentHistory] - Optional payment history array

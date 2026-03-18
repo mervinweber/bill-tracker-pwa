@@ -15,6 +15,14 @@ it('calculateNextDueDate - Weekly', () => {
     expect(next.getTime()).toBe(expected.getTime());
 });
 
+it('calculateNextDueDate - Quarterly', () => {
+    const date = new Date(2025, 0, 1);
+    const next = calculateNextDueDate(date, 'Quarterly');
+    expect(next.getFullYear()).toBe(2025);
+    expect(next.getMonth()).toBe(3); // April
+    expect(next.getDate()).toBe(1);
+});
+
 it('getRemainingBalance - Fully Unpaid', () => {
     const bill = { amountDue: 100, paymentHistory: [] };
     const balance = getRemainingBalance(bill);
@@ -85,6 +93,13 @@ describe('advanceBillToNextCycle', () => {
         const updated = { ...bill, isPaid: true };
         advanceBillToNextCycle(bill, updated);
         expect(updated.dueDate).toBe('2026-01-15');
+    });
+
+    it('advances quarterly bill by 3 months', () => {
+        const bill = { dueDate: '2025-01-15', recurrence: 'Quarterly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated);
+        expect(updated.dueDate).toBe('2025-04-15');
     });
 
     it('catch-up strategy advances past overdue monthly cycles', () => {

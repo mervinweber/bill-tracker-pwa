@@ -89,6 +89,7 @@ export const initializeBillForm = (categories, actions) => {
                         <option value="Weekly">Weekly</option>
                         <option value="Bi-weekly">Bi-weekly</option>
                         <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Every 3 months (Quarterly)</option>
                         <option value="Yearly">Yearly</option>
                     </select>
                 </div>

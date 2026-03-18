@@ -36,7 +36,7 @@
  * @property {number} amountDue
  * @property {number} balance
  * @property {boolean} isPaid
- * @property {('One-time'|'Weekly'|'Bi-weekly'|'Monthly'|'Yearly')} recurrence
+ * @property {('One-time'|'Weekly'|'Bi-weekly'|'Monthly'|'Quarterly'|'Yearly')} recurrence
  * @property {string} [notes]
  * @property {string|null} [lastPaymentDate]
  * @property {PaymentHistoryEntry[]} [paymentHistory]

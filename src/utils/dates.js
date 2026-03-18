@@ -63,7 +63,7 @@ export function formatLocalDate(date) {
  * @function calculateNextDueDate
  * @param {Date} currentDate - Starting date for calculation
  * @param {string} recurrence - Recurrence frequency pattern
- *   Options: 'Weekly', 'Bi-weekly', 'Monthly', 'Yearly', 'One-time'
+ *   Options: 'Weekly', 'Bi-weekly', 'Monthly', 'Quarterly', 'Yearly', 'One-time'
  * 
  * @returns {Date|null} Next due date as local Date object.
  *   Returns null for 'One-time' recurrence or unknown patterns.
@@ -74,6 +74,7 @@ export function formatLocalDate(date) {
  *   - Weekly: 7 days
  *   - Bi-weekly: 14 days
  *   - Monthly: 1 month (handles month-end dates)
+ *   - Quarterly: 3 months
  *   - Yearly: 1 year
  *   - One-time: null (no next occurrence)
  * 
@@ -98,6 +99,7 @@ export function calculateNextDueDate(currentDate, recurrence) {
         case 'Weekly': nextDate.setDate(nextDate.getDate() + 7); break;
         case 'Bi-weekly': nextDate.setDate(nextDate.getDate() + 14); break;
         case 'Monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+        case 'Quarterly': nextDate.setMonth(nextDate.getMonth() + 3); break;
         case 'Yearly': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
         default: return null;
     }

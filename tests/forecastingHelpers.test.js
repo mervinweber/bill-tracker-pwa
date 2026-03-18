@@ -38,6 +38,13 @@ it('forecastNextMonth does not count one-time bills', () => {
     expect(forecastNextMonth(oneTime).recurringCount).toBe(0);
 });
 
+it('forecastNextMonth counts quarterly bills as recurring', () => {
+    const quarterly = [{ id: '1', dueDate: '2026-04-01', amountDue: 180, category: 'Insurance', recurrence: 'Quarterly' }];
+    const forecast = forecastNextMonth(quarterly);
+    expect(forecast.recurringCount).toBe(1);
+    expect(forecast.total).toBe(180);
+});
+
 it('getSpendingAlerts returns empty array for empty bills', () => {
     expect(getSpendingAlerts([]).length).toBe(0);
 });

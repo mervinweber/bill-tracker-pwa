@@ -52,3 +52,14 @@ it('should handle import payload with no paymentSettings', () => {
     const result = normalizeImportPayload(simplePayload);
     expect(result.processedBills.length).toBe(1);
 });
+
+it('should normalize every 3 months recurrence to Quarterly', () => {
+    const quarterlyPayload = {
+        bills: [{
+            ...validPayload.bills[0],
+            recurrence: 'every 3 months'
+        }]
+    };
+    const result = normalizeImportPayload(quarterlyPayload);
+    expect(result.processedBills[0].recurrence).toBe('Quarterly');
+});

@@ -36,7 +36,7 @@ export function formatDate(date) {
  * @function calculateDueDate
  * @param {Date} startDate - Starting date for calculation
  * @param {string} recurrence - Recurrence frequency (lowercase)
- *   Options: 'weekly', 'bi-weekly', 'monthly', 'yearly'
+ *   Options: 'weekly', 'bi-weekly', 'monthly', 'quarterly', 'yearly'
  * 
  * @returns {Date} New date object with recurrence applied
  * 
@@ -45,6 +45,7 @@ export function formatDate(date) {
  *   - weekly: 7 days forward
  *   - bi-weekly: 14 days forward
  *   - monthly: 1 month forward
+ *   - quarterly: 3 months forward
  *   - yearly: 1 year forward
  * 
  * @deprecated Use calculateNextDueDate from dates.js for consistency
@@ -65,6 +66,9 @@ export function calculateDueDate(startDate, recurrence) {
             break;
         case 'monthly':
             date.setMonth(date.getMonth() + 1);
+            break;
+        case 'quarterly':
+            date.setMonth(date.getMonth() + 3);
             break;
         case 'yearly':
             date.setFullYear(date.getFullYear() + 1);

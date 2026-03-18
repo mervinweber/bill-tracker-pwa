@@ -21,6 +21,7 @@ function normalizeRecurrence(recurrence) {
     if (recurrenceLower === 'weekly') return 'Weekly';
     if (recurrenceLower === 'bi-weekly') return 'Bi-weekly';
     if (recurrenceLower === 'monthly') return 'Monthly';
+    if (recurrenceLower === 'quarterly' || recurrenceLower === 'every 3 months' || recurrenceLower === 'every-3-months') return 'Quarterly';
     if (recurrenceLower === 'yearly') return 'Yearly';
 
     return String(recurrence);
