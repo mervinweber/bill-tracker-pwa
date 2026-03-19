@@ -25,6 +25,23 @@ function getRecurrenceCycleLabel(recurrence) {
     }
 }
 
+function getRecurrenceSingleCycleLabel(recurrence) {
+    switch (recurrence) {
+        case 'Weekly':
+            return 'week';
+        case 'Bi-weekly':
+            return 'bi-weekly cycle';
+        case 'Monthly':
+            return 'month';
+        case 'Quarterly':
+            return 'quarter';
+        case 'Yearly':
+            return 'year';
+        default:
+            return 'cycle';
+    }
+}
+
 /**
  * Initialize and mount payment recording / history modals
  * @param {Function} onRerender - Called when the UI needs to refresh after a payment
@@ -50,11 +67,11 @@ export function initializePaymentModals(onRerender) {
                         <div class="payment-strategy-options" role="radiogroup" aria-label="Overdue recurring payment strategy">
                             <label>
                                 <input type="radio" id="paymentStrategySingleCycle" name="paymentRecurrenceStrategy" value="single-cycle" checked>
-                                Clear one cycle only
+                                <span id="paymentStrategySingleCycleLabel">Clear one cycle only</span>
                             </label>
                             <label>
                                 <input type="radio" id="paymentStrategyCatchUp" name="paymentRecurrenceStrategy" value="catch-up-to-current">
-                                Catch up to current schedule
+                                <span id="paymentStrategyCatchUpLabel">Catch up to current schedule</span>
                             </label>
                         </div>
                     </div>
@@ -142,11 +159,21 @@ export function openRecordPaymentModal(billId) {
     const strategySection = document.getElementById('monthlyStrategySection');
     const strategyHint = document.getElementById('monthlyStrategyHint');
     const singleCycleOption = document.getElementById('paymentStrategySingleCycle');
+    const singleCycleLabel = document.getElementById('paymentStrategySingleCycleLabel');
+    const catchUpLabel = document.getElementById('paymentStrategyCatchUpLabel');
 
     const isRecurring = !!bill.recurrence && bill.recurrence !== 'One-time';
     const missedCycles = isRecurring
         ? getMissedCycles(createLocalDate(bill.dueDate), bill.recurrence, new Date())
         : 0;
+
+    const singleCycleUnit = getRecurrenceSingleCycleLabel(bill.recurrence);
+    if (singleCycleLabel) {
+        singleCycleLabel.textContent = `Clear one ${singleCycleUnit} only`;
+    }
+    if (catchUpLabel) {
+        catchUpLabel.textContent = `Catch up to current ${singleCycleUnit}`;
+    }
 
     if (isRecurring && missedCycles >= 2) {
         const cycleLabel = getRecurrenceCycleLabel(bill.recurrence);
