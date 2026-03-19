@@ -34,7 +34,26 @@ DROP POLICY IF EXISTS "Users can delete own data" ON user_data;
 DROP POLICY IF EXISTS "Users can view own or household data" ON user_data;
 DROP POLICY IF EXISTS "Users can update own or household data" ON user_data;
 
--- Step 3: Create SELECT policy (viewing data)
+-- Step 3: Create helper function for household lookups
+-- SECURITY DEFINER avoids recursive RLS evaluation when policy checks the same table.
+DROP FUNCTION IF EXISTS public.current_user_household_id();
+
+CREATE FUNCTION public.current_user_household_id()
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT household_id
+    FROM public.user_data
+    WHERE user_id = auth.uid()
+    LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.current_user_household_id() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.current_user_household_id() TO authenticated;
+
+-- Step 4: Create SELECT policy (viewing data)
 -- Users can view their own row OR rows in the same household.
 -- New users with household_id NULL can still view their own row.
 CREATE POLICY "Users can view own or household data" ON user_data
@@ -46,23 +65,19 @@ CREATE POLICY "Users can view own or household data" ON user_data
             user_id = auth.uid()
             OR (
                 household_id IS NOT NULL
-                AND household_id IN (
-                    SELECT u.household_id
-                    FROM user_data u
-                    WHERE u.user_id = auth.uid()
-                )
+                AND household_id = public.current_user_household_id()
             )
         )
     );
 
--- Step 4: Create INSERT policy (creating new data)
+-- Step 5: Create INSERT policy (creating new data)
 -- Users can only INSERT rows with their own user_id
 CREATE POLICY "Users can insert own data" ON user_data
     FOR INSERT
     TO authenticated
     WITH CHECK (auth.uid() = user_id);
 
--- Step 5: Create UPDATE policy (modifying existing data)
+-- Step 6: Create UPDATE policy (modifying existing data)
 -- Users can UPDATE their own row OR rows in the same household.
 -- WITH CHECK uses the same predicate to prevent bypasses.
 CREATE POLICY "Users can update own or household data" ON user_data
@@ -74,11 +89,7 @@ CREATE POLICY "Users can update own or household data" ON user_data
             user_id = auth.uid()
             OR (
                 household_id IS NOT NULL
-                AND household_id IN (
-                    SELECT u.household_id
-                    FROM user_data u
-                    WHERE u.user_id = auth.uid()
-                )
+                AND household_id = public.current_user_household_id()
             )
         )
     )
@@ -88,23 +99,19 @@ CREATE POLICY "Users can update own or household data" ON user_data
             user_id = auth.uid()
             OR (
                 household_id IS NOT NULL
-                AND household_id IN (
-                    SELECT u.household_id
-                    FROM user_data u
-                    WHERE u.user_id = auth.uid()
-                )
+                AND household_id = public.current_user_household_id()
             )
         )
     );
 
--- Step 6: Create DELETE policy (removing data)
+-- Step 7: Create DELETE policy (removing data)
 -- Users can only DELETE their own rows
 CREATE POLICY "Users can delete own data" ON user_data
     FOR DELETE
     TO authenticated
     USING (auth.uid() = user_id);
 
--- Step 7: Add database constraints for data integrity
+-- Step 8: Add database constraints for data integrity
 -- Ensure user_id is never null
 ALTER TABLE user_data
     DROP CONSTRAINT IF EXISTS user_data_user_id_not_null;
@@ -113,13 +120,13 @@ ALTER TABLE user_data
     ADD CONSTRAINT user_data_user_id_not_null 
     CHECK (user_id IS NOT NULL);
 
--- Step 8: Ensure required columns exist
+-- Step 9: Ensure required columns exist
 -- These columns are written by the app's sync functions
 ALTER TABLE user_data ADD COLUMN IF NOT EXISTS last_sync TIMESTAMPTZ;
 ALTER TABLE user_data ADD COLUMN IF NOT EXISTS household_id UUID;
 ALTER TABLE user_data ADD COLUMN IF NOT EXISTS "paymentSettings" JSONB;
 
--- Step 9: Remove duplicate rows before creating unique index
+-- Step 10: Remove duplicate rows before creating unique index
 -- Keeps the most recently synced row per user, discards older duplicates.
 -- Safe to run on a table with no duplicates (no rows deleted).
 DELETE FROM user_data
@@ -129,14 +136,14 @@ WHERE ctid NOT IN (
     ORDER BY user_id, last_sync DESC NULLS LAST
 );
 
--- Step 10: Create unique index on user_id
+-- Step 11: Create unique index on user_id
 -- Required for upsert conflict resolution (onConflict: 'user_id').
 -- Guarantees one row per user; replaces the non-unique index below.
 DROP INDEX IF EXISTS idx_user_data_user_id;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_data_user_id
     ON user_data(user_id);
 
--- Step 11: Create household performance index
+-- Step 12: Create household performance index
 -- Speeds up household-based sharing queries
 CREATE INDEX IF NOT EXISTS idx_user_data_household_id
     ON user_data(household_id);
