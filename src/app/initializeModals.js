@@ -5,8 +5,42 @@
  */
 
 import { billActionHandlers } from '../handlers/billActionHandlers.js';
-import { getMissedMonthlyCycles, createLocalDate } from '../utils/dates.js';
+import { getMissedCycles, createLocalDate } from '../utils/dates.js';
 import { billStore } from '../store/BillStore.js';
+
+function getRecurrenceCycleLabel(recurrence) {
+    switch (recurrence) {
+        case 'Weekly':
+            return 'weeks';
+        case 'Bi-weekly':
+            return 'bi-weekly cycles';
+        case 'Monthly':
+            return 'months';
+        case 'Quarterly':
+            return 'quarters';
+        case 'Yearly':
+            return 'years';
+        default:
+            return 'cycles';
+    }
+}
+
+function getRecurrenceSingleCycleLabel(recurrence) {
+    switch (recurrence) {
+        case 'Weekly':
+            return 'week';
+        case 'Bi-weekly':
+            return 'bi-weekly cycle';
+        case 'Monthly':
+            return 'month';
+        case 'Quarterly':
+            return 'quarter';
+        case 'Yearly':
+            return 'year';
+        default:
+            return 'cycle';
+    }
+}
 
 /**
  * Initialize and mount payment recording / history modals
@@ -30,14 +64,14 @@ export function initializePaymentModals(onRerender) {
                     </div>
                     <div id="monthlyStrategySection" class="payment-strategy-section" style="display:none;">
                         <p id="monthlyStrategyHint" class="payment-strategy-hint"></p>
-                        <div class="payment-strategy-options" role="radiogroup" aria-label="Overdue monthly payment strategy">
+                        <div class="payment-strategy-options" role="radiogroup" aria-label="Overdue recurring payment strategy">
                             <label>
                                 <input type="radio" id="paymentStrategySingleCycle" name="paymentRecurrenceStrategy" value="single-cycle" checked>
-                                Clear one month only
+                                <span id="paymentStrategySingleCycleLabel">Clear one cycle only</span>
                             </label>
                             <label>
                                 <input type="radio" id="paymentStrategyCatchUp" name="paymentRecurrenceStrategy" value="catch-up-to-current">
-                                Catch up to current month
+                                <span id="paymentStrategyCatchUpLabel">Catch up to current schedule</span>
                             </label>
                         </div>
                     </div>
@@ -125,14 +159,26 @@ export function openRecordPaymentModal(billId) {
     const strategySection = document.getElementById('monthlyStrategySection');
     const strategyHint = document.getElementById('monthlyStrategyHint');
     const singleCycleOption = document.getElementById('paymentStrategySingleCycle');
+    const singleCycleLabel = document.getElementById('paymentStrategySingleCycleLabel');
+    const catchUpLabel = document.getElementById('paymentStrategyCatchUpLabel');
 
-    const missedCycles = bill.recurrence === 'Monthly'
-        ? getMissedMonthlyCycles(createLocalDate(bill.dueDate), new Date())
+    const isRecurring = !!bill.recurrence && bill.recurrence !== 'One-time';
+    const missedCycles = isRecurring
+        ? getMissedCycles(createLocalDate(bill.dueDate), bill.recurrence, new Date())
         : 0;
 
-    if (bill.recurrence === 'Monthly' && missedCycles >= 2) {
+    const singleCycleUnit = getRecurrenceSingleCycleLabel(bill.recurrence);
+    if (singleCycleLabel) {
+        singleCycleLabel.textContent = `Clear one ${singleCycleUnit} only`;
+    }
+    if (catchUpLabel) {
+        catchUpLabel.textContent = `Catch up to current ${singleCycleUnit}`;
+    }
+
+    if (isRecurring && missedCycles >= 2) {
+        const cycleLabel = getRecurrenceCycleLabel(bill.recurrence);
         strategySection.style.display = 'block';
-        strategyHint.textContent = `${missedCycles} months past due. Choose how to advance this recurring bill.`;
+        strategyHint.textContent = `${missedCycles} ${cycleLabel} past due. Choose how to advance this recurring bill.`;
     } else {
         strategySection.style.display = 'none';
         strategyHint.textContent = '';

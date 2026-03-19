@@ -113,6 +113,26 @@ describe('advanceBillToNextCycle', () => {
         expect(updated.dueDate > '2025-01-15').toBe(true);
     });
 
+    it('catch-up strategy advances weekly bills to a non-overdue cycle', () => {
+        const bill = { dueDate: '2025-01-01', recurrence: 'Weekly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated, {
+            strategy: 'catch-up-to-current',
+            referenceDate: new Date('2025-01-20')
+        });
+        expect(updated.dueDate).toBe('2025-01-22');
+    });
+
+    it('catch-up strategy advances bi-weekly bills to a non-overdue cycle', () => {
+        const bill = { dueDate: '2025-01-01', recurrence: 'Bi-weekly' };
+        const updated = { ...bill, isPaid: true };
+        advanceBillToNextCycle(bill, updated, {
+            strategy: 'catch-up-to-current',
+            referenceDate: new Date('2025-01-20')
+        });
+        expect(updated.dueDate).toBe('2025-01-29');
+    });
+
     it('single-cycle strategy ignores overdue status and advances by one month', () => {
         const bill = { dueDate: '2024-10-15', recurrence: 'Monthly' };
         const updated = { ...bill, isPaid: true };
