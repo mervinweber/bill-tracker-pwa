@@ -61,7 +61,11 @@ describe('cloudSyncManager', () => {
             getAll: vi.fn().mockReturnValue([{ id: 'l1', name: 'Phone', amountDue: 120 }])
         };
         const storageManager = {
-            get: vi.fn().mockReturnValue({ frequency: 'monthly', payPeriodsToShow: 4 })
+            get: vi.fn().mockReturnValue({
+                startDate: '2026-01-01',
+                frequency: 'monthly',
+                payPeriodsToShow: 4
+            })
         };
 
         const result = await syncLocalDataToCloudIfNeeded({
@@ -79,7 +83,7 @@ describe('cloudSyncManager', () => {
         expect(result.synced).toBe(true);
         expect(syncUserData).toHaveBeenCalledWith(
             [{ id: 'l1', name: 'Phone', amountDue: 120 }],
-            { frequency: 'monthly', payPeriodsToShow: 4 }
+            { startDate: '2026-01-01', frequency: 'monthly', payPeriodsToShow: 4 }
         );
         expect(syncPaymentSettings).not.toHaveBeenCalled();
         expect(onSyncError).not.toHaveBeenCalled();
@@ -91,10 +95,25 @@ describe('cloudSyncManager', () => {
         const logger = { info: vi.fn(), error: vi.fn() };
 
         const result = await syncLocalDataToCloudIfNeeded({
-            cloudBills: [{ id: 'c1' }],
+            cloudBills: [{
+                id: 'c1',
+                name: 'Cloud Bill',
+                category: 'Utilities',
+                dueDate: '2026-03-01',
+                amountDue: 100,
+                balance: 100,
+                isPaid: false,
+                recurrence: 'Monthly'
+            }],
             cloudPaymentSettings: null,
             billStore: { getAll: vi.fn().mockReturnValue([{ id: 'l1' }]) },
-            storageManager: { get: vi.fn().mockReturnValue({ frequency: 'weekly' }) },
+            storageManager: {
+                get: vi.fn().mockReturnValue({
+                    startDate: '2026-01-01',
+                    frequency: 'weekly',
+                    payPeriodsToShow: 6
+                })
+            },
             storageKeys: { PAYMENT_SETTINGS: 'paymentSettings' },
             syncUserData,
             syncPaymentSettings,
@@ -104,7 +123,11 @@ describe('cloudSyncManager', () => {
 
         expect(result.synced).toBe(true);
         expect(syncUserData).not.toHaveBeenCalled();
-        expect(syncPaymentSettings).toHaveBeenCalledWith({ frequency: 'weekly' });
+        expect(syncPaymentSettings).toHaveBeenCalledWith({
+            startDate: '2026-01-01',
+            frequency: 'weekly',
+            payPeriodsToShow: 6
+        });
     });
 
     it('syncLocalDataToCloudIfNeeded reports sync errors', async () => {
@@ -115,7 +138,13 @@ describe('cloudSyncManager', () => {
             cloudBills: [],
             cloudPaymentSettings: null,
             billStore: { getAll: vi.fn().mockReturnValue([{ id: 'l1' }]) },
-            storageManager: { get: vi.fn().mockReturnValue({ frequency: 'weekly' }) },
+            storageManager: {
+                get: vi.fn().mockReturnValue({
+                    startDate: '2026-01-01',
+                    frequency: 'weekly',
+                    payPeriodsToShow: 6
+                })
+            },
             storageKeys: { PAYMENT_SETTINGS: 'paymentSettings' },
             syncUserData: vi.fn().mockResolvedValue({ error: syncError }),
             syncPaymentSettings: vi.fn(),

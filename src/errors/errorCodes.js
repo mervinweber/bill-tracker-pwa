@@ -206,7 +206,9 @@ export const ERROR_CODES = {
  */
 export function createAppError(codeKey, overrideMessage) {
     const template = ERROR_CODES[codeKey] || ERROR_CODES.UNKNOWN;
-    const err = new Error(overrideMessage || template.message);
+    const err = /** @type {Error & {code: string, recoverable: boolean}} */ (
+        new Error(overrideMessage || template.message)
+    );
     err.code = template.code;
     err.recoverable = template.recoverable;
     return err;

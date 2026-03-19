@@ -3,6 +3,27 @@
  */
 
 /**
+ * @typedef {{ message?: string, code?: string }} CloudSyncError
+ */
+
+/**
+ * @param {unknown} value
+ * @returns {value is import('../types/domainTypes.js').PaymentSettings}
+ */
+const isPaymentSettings = (value) => {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const candidate = /** @type {{ startDate?: unknown, frequency?: unknown, payPeriodsToShow?: unknown }} */ (value);
+    return (
+        typeof candidate.startDate === 'string' &&
+        typeof candidate.frequency === 'string' &&
+        typeof candidate.payPeriodsToShow === 'number'
+    );
+};
+
+/**
  * @param {Object} params
  * @param {() => Promise<{data: import('../types/domainTypes.js').PaymentSettings|null}>} params.fetchCloudPaymentSettings
  * @param {{ set: (key: string, value: unknown) => boolean }} params.storageManager
@@ -35,13 +56,13 @@ export const syncPaymentSettingsFromCloud = async ({
 
 /**
  * @param {Object} params
- * @param {() => Promise<{data: import('../types/domainTypes.js').Bill[], error: {message?: string}|null}>} params.fetchCloudBills
+ * @param {() => Promise<{data?: import('../types/domainTypes.js').Bill[]|null, error?: CloudSyncError|null}>} params.fetchCloudBills
  * @param {{ setBills: (bills: import('../types/domainTypes.js').Bill[]) => void }} params.billStore
  * @param {{ set: (key: string, value: unknown) => boolean }} params.storageManager
  * @param {{ BILLS: string }} params.storageKeys
  * @param {{ info: (message: string) => void, warn: (message: string, data?: unknown) => void }} params.logger
- * @param {(error: unknown) => void} [params.onFetchError]
- * @returns {Promise<{cloudBills: import('../types/domainTypes.js').Bill[], synced: boolean, error: unknown}>}
+ * @param {(error: CloudSyncError) => void} [params.onFetchError]
+ * @returns {Promise<{cloudBills: import('../types/domainTypes.js').Bill[], synced: boolean, error: CloudSyncError|null}>}
  * @throws {Error} Propagates errors thrown by fetchCloudBills.
  */
 export const syncBillsFromCloud = async ({
@@ -52,7 +73,8 @@ export const syncBillsFromCloud = async ({
     logger,
     onFetchError
 }) => {
-    const { data: cloudBills, error } = await fetchCloudBills();
+    const { data: cloudBillsData, error = null } = await fetchCloudBills();
+    const cloudBills = Array.isArray(cloudBillsData) ? cloudBillsData : [];
 
     if (cloudBills && Array.isArray(cloudBills) && cloudBills.length > 0) {
         logger.info(`Fetched ${cloudBills.length} bills from cloud`);
@@ -99,7 +121,10 @@ export const syncLocalDataToCloudIfNeeded = async ({
     onSyncError = null
 }) => {
     const localBills = billStore.getAll();
-    const localPaymentSettings = storageManager.get(storageKeys.PAYMENT_SETTINGS, null);
+    const localPaymentSettingsRaw = storageManager.get(storageKeys.PAYMENT_SETTINGS, null);
+    const localPaymentSettings = isPaymentSettings(localPaymentSettingsRaw)
+        ? localPaymentSettingsRaw
+        : null;
 
     if ((!cloudBills || cloudBills.length === 0) && localBills.length > 0) {
         logger.info(`Syncing ${localBills.length} local bills to cloud...`);

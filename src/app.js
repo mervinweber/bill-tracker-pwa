@@ -185,7 +185,11 @@ class AppOrchestrator {
                         storageKeys: STORAGE_KEYS,
                         logger,
                         onFetchError: (error) => {
-                            const detail = error?.message || error?.code || ERROR_CODES.SUPABASE_SYNC_FAILED.message;
+                            let detail = ERROR_CODES.SUPABASE_SYNC_FAILED.message;
+                            if (error && typeof error === 'object') {
+                                const syncError = /** @type {{message?: string, code?: string}} */ (error);
+                                detail = syncError.message || syncError.code || detail;
+                            }
                             billActionHandlers.showErrorNotification(`Cloud sync failed: ${detail}`, 'Sync Warning');
                         }
                     });

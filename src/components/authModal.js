@@ -332,7 +332,10 @@ export const initializeAuthModal = (actions) => {
     loginBtn.onclick = () => handleAuthAction(loginBtn, actions.onLogin);
     signUpBtn.onclick = () => handleAuthAction(signUpBtn, actions.onSignUp);
 
-    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const forgotPasswordLink = /** @type {HTMLButtonElement|null} */ (document.getElementById('forgotPasswordLink'));
+    if (!forgotPasswordLink) {
+        return;
+    }
     forgotPasswordLink.onclick = async () => {
         const email = emailInput.value.trim();
         if (!email) {
