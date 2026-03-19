@@ -38,13 +38,15 @@ function debouncedSyncPaymentSettings(newSettings) {
             const { error } = await syncPaymentSettings(newSettings);
             if (error) {
                 logger.error('Failed to sync payment settings to cloud', error);
-                billActionHandlers.showErrorNotification(ERROR_CODES.SUPABASE_SYNC_FAILED.message, 'Sync Warning');
+                const detail = error?.message || error?.code || ERROR_CODES.SUPABASE_SYNC_FAILED.message;
+                billActionHandlers.showErrorNotification(`Cloud sync failed: ${detail}`, 'Sync Warning');
             } else {
                 logger.info('Payment settings synced to cloud');
             }
         } catch (syncErr) {
             logger.error('Error syncing payment settings', syncErr);
-            billActionHandlers.showErrorNotification(ERROR_CODES.SUPABASE_SYNC_FAILED.message, 'Sync Warning');
+            const detail = syncErr?.message || syncErr?.code || ERROR_CODES.SUPABASE_SYNC_FAILED.message;
+            billActionHandlers.showErrorNotification(`Cloud sync failed: ${detail}`, 'Sync Warning');
         }
     }, SETTINGS_SAVE_DEBOUNCE_MS);
 }
