@@ -34,7 +34,7 @@ import {
 import { normalizeImportPayload } from '../utils/importHelpers.js';
 import {
     createLocalDate,
-    getMissedMonthlyCycles
+    getMissedCycles
 } from '../utils/dates.js';
 import { advanceBillToNextCycle } from '../utils/billHelpers.js';
 import logger from '../utils/logger.js';
@@ -146,13 +146,13 @@ export function showSuccessNotification(message) {
 }
 
 function getRecurringPaymentStrategy(bill, updated, paymentDate, preferredStrategy = 'single-cycle') {
-    if (!updated.isPaid || bill.recurrence !== 'Monthly') {
+    if (!updated.isPaid || !bill.recurrence || bill.recurrence === 'One-time') {
         return 'single-cycle';
     }
 
     const currentDueDate = createLocalDate(bill.dueDate);
     const referenceDate = createLocalDate(paymentDate);
-    const missedCycles = getMissedMonthlyCycles(currentDueDate, referenceDate);
+    const missedCycles = getMissedCycles(currentDueDate, bill.recurrence, referenceDate);
     if (missedCycles < 2) {
         return 'single-cycle';
     }

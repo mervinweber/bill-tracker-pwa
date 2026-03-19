@@ -1,5 +1,11 @@
 import { it, expect } from 'vitest';
-import { getMissedMonthlyCycles, getNextNonOverdueMonthlyDate, formatLocalDate } from '../src/utils/dates.js';
+import {
+    getMissedMonthlyCycles,
+    getNextNonOverdueMonthlyDate,
+    getMissedCycles,
+    getNextNonOverdueDueDate,
+    formatLocalDate
+} from '../src/utils/dates.js';
 
 it('should return zero missed cycles when due date is not overdue', () => {
     const dueDate = new Date(2026, 2, 15); // Mar 15, 2026
@@ -19,4 +25,18 @@ it('should advance to next non-overdue monthly due date', () => {
     const nextDue = getNextNonOverdueMonthlyDate(dueDate, referenceDate);
     expect(nextDue).toBeInstanceOf(Date);
     expect(formatLocalDate(nextDue)).toBe('2026-03-15');
+});
+
+it('should count missed weekly cycles', () => {
+    const dueDate = new Date(2026, 1, 1); // Feb 1, 2026
+    const referenceDate = new Date(2026, 1, 20); // Feb 20, 2026
+    expect(getMissedCycles(dueDate, 'Weekly', referenceDate)).toBe(3);
+});
+
+it('should advance quarterly recurrence to next non-overdue date', () => {
+    const dueDate = new Date(2025, 0, 15); // Jan 15, 2025
+    const referenceDate = new Date(2025, 7, 1); // Aug 1, 2025
+    const nextDue = getNextNonOverdueDueDate(dueDate, 'Quarterly', referenceDate);
+    expect(nextDue).toBeInstanceOf(Date);
+    expect(formatLocalDate(nextDue)).toBe('2025-10-15');
 });

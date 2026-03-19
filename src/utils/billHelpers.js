@@ -2,8 +2,7 @@ import {
     createLocalDate,
     formatLocalDate,
     calculateNextDueDate,
-    getMissedMonthlyCycles,
-    getNextNonOverdueMonthlyDate
+    getNextNonOverdueDueDate
 } from './dates.js';
 import { paycheckManager } from './paycheckManager.js';
 
@@ -258,7 +257,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
  * @param {Object} [options={}] - Strategy options
  * @param {string} [options.strategy='single-cycle'] - Advance strategy:
  *   'single-cycle' advances by one recurrence interval;
- *   'catch-up-to-current' jumps past all overdue monthly cycles.
+ *   'catch-up-to-current' jumps past all overdue cycles for the bill recurrence.
  * @param {Date} [options.referenceDate] - Reference date for catch-up strategy (defaults to today)
  * @returns {void}
  */
@@ -267,10 +266,9 @@ export function advanceBillToNextCycle(bill, updated, options = {}) {
         return;
     }
     const currentDueDate = createLocalDate(bill.dueDate);
-    const catchUpToCurrent =
-        bill.recurrence === 'Monthly' && options.strategy === 'catch-up-to-current';
+    const catchUpToCurrent = options.strategy === 'catch-up-to-current';
     const nextDueDate = catchUpToCurrent
-        ? getNextNonOverdueMonthlyDate(currentDueDate, options.referenceDate || new Date())
+        ? getNextNonOverdueDueDate(currentDueDate, bill.recurrence, options.referenceDate || new Date())
         : calculateNextDueDate(currentDueDate, bill.recurrence);
     if (nextDueDate) {
         updated.dueDate = formatLocalDate(nextDueDate);
