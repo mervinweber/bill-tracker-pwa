@@ -167,7 +167,6 @@ export const initializeHeader = (paychecks, actions) => {
         upcomingBillsBtn.setAttribute('aria-pressed', 'true');
         allBillsBtn.classList.remove('active');
         allBillsBtn.setAttribute('aria-pressed', 'false');
-        payPeriodSelect.value = '';
         headerStatus.textContent = 'Viewing upcoming bills';
         actions.onUpcomingBillsSelect();
     });
@@ -223,6 +222,10 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
     const carriedForwardToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('carriedForwardToggle'));
 
+    if (payPeriodSelect) {
+        payPeriodSelect.value = selectedPaycheck !== null ? String(selectedPaycheck) : '';
+    }
+
     if (viewMode === 'all') {
         allBillsBtn.classList.add('active');
         allBillsBtn.setAttribute('aria-pressed', 'true');
@@ -243,9 +246,6 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
         if (upcomingBillsBtn) {
             upcomingBillsBtn.classList.remove('active');
             upcomingBillsBtn.setAttribute('aria-pressed', 'false');
-        }
-        if (payPeriodSelect && selectedPaycheck !== null) {
-            payPeriodSelect.value = String(selectedPaycheck);
         }
     }
 

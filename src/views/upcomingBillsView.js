@@ -54,6 +54,11 @@ export function renderUpcomingBills({ bills }, actions) {
     const upcomingContainer = document.getElementById('upcomingBillsView');
     if (!upcomingContainer) return;
 
+    const buttonBase = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50';
+    const neutralButton = `${buttonBase} border border-input bg-background px-3 py-2 text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground`;
+    const primaryButton = `${buttonBase} bg-primary px-3 py-2 text-primary-foreground shadow hover:opacity-90`;
+    const inputBase = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
     const upcomingBills = getUpcomingBills(bills);
     const totalDue = upcomingBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
     const paycheckAmountRaw = actions?.paycheckAmount;
@@ -61,21 +66,28 @@ export function renderUpcomingBills({ bills }, actions) {
 
     if (upcomingBills.length === 0) {
         upcomingContainer.innerHTML = `
-            <section class="upcoming-bills-shell" aria-label="Upcoming bills">
-                <div class="upcoming-bills-header">
-                    <h2>📅 Upcoming Bills</h2>
-                    <p>All upcoming unpaid bills in one place.</p>
+            <section class="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 sm:p-6" aria-label="Upcoming bills">
+                <div class="rounded-2xl border bg-card p-6 shadow-sm">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div class="space-y-1">
+                            <h2 class="text-2xl font-semibold tracking-tight text-card-foreground">📅 Upcoming Bills</h2>
+                            <p class="text-sm text-muted-foreground">All upcoming unpaid bills in one place.</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="upcoming-empty-state" role="status" aria-live="polite">
-                    No upcoming unpaid bills. You’re all caught up.
+                <div class="rounded-2xl border border-dashed bg-card/70 px-6 py-12 text-center shadow-sm" role="status" aria-live="polite">
+                    <p class="text-base font-medium text-card-foreground">No upcoming unpaid bills. You’re all caught up.</p>
+                    <p class="mt-2 text-sm text-muted-foreground">When new unpaid bills fall due in the future, they’ll show up here.</p>
                 </div>
-                <div class="upcoming-total-footer" role="note" aria-label="Total upcoming amount due">
-                    <span>Total Upcoming Due</span>
-                    <strong>${toCurrency(0)}</strong>
-                </div>
-                <div class="upcoming-coverage-row ${coverage.statusClass}" role="note" aria-label="Paycheck coverage">
-                    <span>${coverage.label}</span>
-                    <strong>${coverage.hasAmount ? coverage.value : '—'}</strong>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-xl border bg-card p-4 shadow-sm" role="note" aria-label="Total upcoming amount due">
+                        <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Total Upcoming Due</div>
+                        <strong class="mt-2 block text-2xl font-semibold text-card-foreground">${toCurrency(0)}</strong>
+                    </div>
+                    <div class="rounded-xl border bg-card p-4 shadow-sm" role="note" aria-label="Paycheck coverage">
+                        <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">${coverage.label}</div>
+                        <strong class="mt-2 block text-2xl font-semibold ${coverage.statusClass === 'short' ? 'text-destructive' : 'text-card-foreground'}">${coverage.hasAmount ? coverage.value : '—'}</strong>
+                    </div>
                 </div>
             </section>
         `;
@@ -83,38 +95,60 @@ export function renderUpcomingBills({ bills }, actions) {
     }
 
     const listMarkup = upcomingBills.map((bill) => `
-        <article class="upcoming-bill-card" data-bill-id="${bill.id}">
-            <div class="upcoming-bill-main">
-                <h3>${bill.name}</h3>
-                <p class="upcoming-bill-meta">${bill.category} • Due ${bill.dueDate}</p>
+        <article class="rounded-2xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md" data-bill-id="${bill.id}">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="truncate text-lg font-semibold text-card-foreground">${bill.name}</h3>
+                        <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">${bill.category}</span>
+                    </div>
+                    <p class="mt-1 text-sm text-muted-foreground">Due ${bill.dueDate}</p>
+                </div>
+                <div class="text-left lg:text-right">
+                    <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Amount Due</div>
+                    <div class="mt-1 text-2xl font-semibold text-card-foreground">${toCurrency(bill.amountDue)}</div>
+                </div>
             </div>
-            <div class="upcoming-bill-amount">${toCurrency(bill.amountDue)}</div>
-            <div class="upcoming-bill-actions">
-                <label class="upcoming-date-label" for="dueDate-${bill.id}">Due date</label>
-                <input id="dueDate-${bill.id}" class="upcoming-date-input" type="date" value="${bill.dueDate}" aria-label="Due date for ${bill.name}">
-                <button class="view-btn upcoming-update-btn" data-action="update-date">Update Date</button>
-                <button class="view-btn upcoming-edit-btn" data-action="edit-bill">Edit</button>
-                <button class="view-btn upcoming-paid-btn" data-action="mark-paid">Mark Paid</button>
+            <div class="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-[minmax(0,220px)_repeat(3,max-content)] sm:items-end">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground" for="dueDate-${bill.id}">Due date</label>
+                    <input id="dueDate-${bill.id}" class="upcoming-date-input ${inputBase}" type="date" value="${bill.dueDate}" aria-label="Due date for ${bill.name}">
+                </div>
+                <button class="upcoming-update-btn ${neutralButton}" data-action="update-date">Update Date</button>
+                <button class="upcoming-edit-btn ${neutralButton}" data-action="edit-bill">Edit</button>
+                <button class="upcoming-paid-btn ${primaryButton}" data-action="mark-paid">Mark Paid</button>
             </div>
         </article>
     `).join('');
 
     upcomingContainer.innerHTML = `
-        <section class="upcoming-bills-shell" aria-label="Upcoming bills">
-            <div class="upcoming-bills-header">
-                <h2>📅 Upcoming Bills</h2>
-                <p>See what’s coming up, update dates, and mark bills paid.</p>
+        <section class="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 sm:p-6" aria-label="Upcoming bills">
+            <div class="rounded-2xl border bg-card p-6 shadow-sm">
+                <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                    <div class="space-y-1">
+                        <h2 class="text-2xl font-semibold tracking-tight text-card-foreground">📅 Upcoming Bills</h2>
+                        <p class="text-sm text-muted-foreground">See what’s coming up, update dates, and mark bills paid.</p>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2 md:min-w-[320px]">
+                        <div class="rounded-xl border bg-background/60 p-4">
+                            <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Total Upcoming Due</div>
+                            <strong class="mt-2 block text-2xl font-semibold text-card-foreground">${toCurrency(totalDue)}</strong>
+                        </div>
+                        <div class="rounded-xl border bg-background/60 p-4">
+                            <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">${coverage.label}</div>
+                            <strong class="mt-2 block text-2xl font-semibold ${coverage.statusClass === 'short' ? 'text-destructive' : 'text-card-foreground'}">${coverage.hasAmount ? coverage.value : '—'}</strong>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="upcoming-bills-list" role="list">
+            <div class="flex flex-col gap-4" role="list">
                 ${listMarkup}
             </div>
-            <div class="upcoming-total-footer" role="note" aria-label="Total upcoming amount due">
-                <span>Total Upcoming Due</span>
-                <strong>${toCurrency(totalDue)}</strong>
-            </div>
-            <div class="upcoming-coverage-row ${coverage.statusClass}" role="note" aria-label="Paycheck coverage">
-                <span>${coverage.label}</span>
-                <strong>${coverage.hasAmount ? coverage.value : '—'}</strong>
+            <div class="rounded-2xl border bg-card p-4 shadow-sm" role="note" aria-label="Upcoming bills summary">
+                <div class="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                    <span>Review upcoming unpaid bills, keep due dates current, and mark them paid from this view.</span>
+                    <span class="font-medium text-card-foreground">${upcomingBills.length} bill${upcomingBills.length === 1 ? '' : 's'} upcoming</span>
+                </div>
             </div>
         </section>
     `;
