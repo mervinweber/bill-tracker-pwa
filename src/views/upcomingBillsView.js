@@ -1,4 +1,6 @@
 import { createLocalDate } from '../utils/dates.js';
+import { filterBillsByPeriod } from '../utils/billHelpers.js';
+import { paycheckManager } from '../utils/paycheckManager.js';
 
 const toCurrency = (value) => `$${(value || 0).toFixed(2)}`;
 
@@ -24,15 +26,43 @@ const getCoverageSummary = (totalDue, paycheckAmountRaw) => {
     };
 };
 
-const getUpcomingBills = (bills = []) => {
+const getUpcomingBills = (bills = [], selectedPaycheck, payCheckDates, showCarriedForward = true) => {
+    // If no paycheck selected, show all unpaid bills for next paycheck period
+    // Otherwise use period filtering to constrain to selected period
+    if (selectedPaycheck === null || !payCheckDates || payCheckDates.length === 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const sevenDaysOut = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        return bills
+            .filter((bill) => {
+                const dueDate = createLocalDate(bill.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                return !bill.isPaid && dueDate >= today && dueDate <= sevenDaysOut;
+            })
+            .sort((a, b) => createLocalDate(a.dueDate).getTime() - createLocalDate(b.dueDate).getTime());
+    }
+
+    // Use period-aware filtering when pay period is selected
+    // Show bills for all categories within the selected period
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const currentPaycheckDate = payCheckDates[selectedPaycheck] || today;
+    const frequency = paycheckManager.paymentSettings?.frequency || 'bi-weekly';
+    const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+
+    const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1
+        ? payCheckDates[selectedPaycheck + 1]
+        : new Date(currentPaycheckDate.getTime() + (days * 24 * 60 * 60 * 1000));
 
     return bills
         .filter((bill) => {
-            const dueDate = createLocalDate(bill.dueDate);
-            dueDate.setHours(0, 0, 0, 0);
-            return !bill.isPaid && dueDate >= today;
+            const billDate = createLocalDate(bill.dueDate);
+            billDate.setHours(0, 0, 0, 0);
+            const isInPeriod = !bill.isPaid && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+            const isOverdue = showCarriedForward && !bill.isPaid && billDate < currentPaycheckDate;
+
+            return isInPeriod || isOverdue;
         })
         .sort((a, b) => createLocalDate(a.dueDate).getTime() - createLocalDate(b.dueDate).getTime());
 };
@@ -50,7 +80,7 @@ export function initializeUpcomingBillsView() {
     }
 }
 
-export function renderUpcomingBills({ bills }, actions) {
+export function renderUpcomingBills({ bills, selectedPaycheck, payCheckDates, showCarriedForward }, actions) {
     const upcomingContainer = document.getElementById('upcomingBillsView');
     if (!upcomingContainer) return;
 
@@ -59,7 +89,7 @@ export function renderUpcomingBills({ bills }, actions) {
     const primaryButton = `${buttonBase} bg-primary px-3 py-2 text-primary-foreground shadow hover:opacity-90`;
     const inputBase = 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
-    const upcomingBills = getUpcomingBills(bills);
+    const upcomingBills = getUpcomingBills(bills, selectedPaycheck, payCheckDates, showCarriedForward ?? true);
     const totalDue = upcomingBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
     const paycheckAmountRaw = actions?.paycheckAmount;
     const coverage = getCoverageSummary(totalDue, paycheckAmountRaw);

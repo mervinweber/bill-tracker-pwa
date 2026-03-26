@@ -467,7 +467,12 @@ class AppOrchestrator {
                 if (state.viewMode === 'upcoming') {
                     if (upcomingBillsView) upcomingBillsView.style.display = 'block';
                     renderUpcomingBills(
-                        { bills },
+                        {
+                            bills,
+                            selectedPaycheck: state.selectedPaycheck,
+                            payCheckDates: paycheckManager.payCheckDates,
+                            showCarriedForward: state.showCarriedForward
+                        },
                         {
                             onTogglePayment: (billId, isPaid) => this.handleTogglePayment(billId, isPaid),
                             onEditBill: (billId) => this.handleEditBill(billId),
