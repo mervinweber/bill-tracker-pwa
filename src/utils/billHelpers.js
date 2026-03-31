@@ -182,8 +182,10 @@ export const getTotalPaid = (bill) => {
  */
 export const getRemainingBalance = (bill) => {
     const totalDue = bill.balance || bill.amountDue || 0;
+    const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
+    const effectiveDue = Math.max(0, totalDue - creditBalance);
     const totalPaid = getTotalPaid(bill);
-    return Math.max(0, totalDue - totalPaid);
+    return Math.max(0, effectiveDue - totalPaid);
 };
 
 /**
@@ -198,6 +200,8 @@ export const getRemainingBalance = (bill) => {
  * @returns {Array<Object>} Filtered and sorted bills
  */
 export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true, allBillsScope = 'everything') => {
+    const hasCredit = (bill) => (Number.parseFloat(bill.creditBalance) || 0) > 0;
+
     if (viewMode === 'all') {
         let filtered = [...bills];
 
@@ -231,6 +235,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
 
         if (paymentFilter === 'unpaid') filtered = filtered.filter(b => !b.isPaid);
         if (paymentFilter === 'paid') filtered = filtered.filter(b => b.isPaid);
+        if (paymentFilter === 'credit') filtered = filtered.filter(hasCredit);
         return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     }
 
@@ -270,6 +275,8 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
         filtered = filtered.filter(bill => !bill.isPaid);
     } else if (paymentFilter === 'paid') {
         filtered = filtered.filter(bill => bill.isPaid);
+    } else if (paymentFilter === 'credit') {
+        filtered = filtered.filter(hasCredit);
     }
 
     return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());

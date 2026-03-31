@@ -827,6 +827,7 @@ class AppOrchestrator {
                 notes: billData?.notes || g('billNotes').value,
                 website: billData?.website || g('billWebsite').value,
                 split: split,
+                creditBalance: existingBill ? existingBill.creditBalance || 0 : 0,
                 isPaid: existingBill ? existingBill.isPaid || false : false,
                 lastPaymentDate: existingBill ? existingBill.lastPaymentDate || null : null,
                 paymentHistory: existingBill ? existingBill.paymentHistory || [] : []

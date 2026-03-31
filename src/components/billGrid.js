@@ -85,6 +85,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             ${viewMode === 'all' ? '<th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Category</th>' : ''}
             <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Amount</th>
             <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Balance</th>
+            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Credit</th>
             <th class="h-10 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
             <th class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
         </tr>
@@ -96,6 +97,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
     dueBills.forEach(bill => {
         const isPaid = bill.isPaid || false;
+        const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const dueDate = new Date(bill.dueDate);
@@ -161,6 +163,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         balanceInput.addEventListener('change', (e) => actions.onUpdateBalance(bill.id, parseFloat(/** @type {HTMLInputElement} */ (e.target).value)));
         balanceCell.appendChild(balanceInput);
         row.appendChild(balanceCell);
+
+        // Credit
+        const creditCell = document.createElement('td');
+        creditCell.className = 'p-4 align-middle font-medium font-mono';
+        creditCell.innerHTML = creditBalance > 0
+            ? `<span class="text-emerald-600">$${creditBalance.toFixed(2)}</span>`
+            : '<span class="text-muted-foreground">$0.00</span>';
+        row.appendChild(creditCell);
 
         // Status / Paid Toggle
         const statusCell = document.createElement('td');

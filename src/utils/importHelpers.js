@@ -59,6 +59,13 @@ function validateImportedBillCandidate(bill) {
         errors.push('Balance: ' + balanceValidation.error);
     }
 
+    if (bill.creditBalance !== undefined) {
+        const creditValidation = validateAmount(bill.creditBalance);
+        if (!creditValidation.isValid) {
+            errors.push('Credit Balance: ' + creditValidation.error);
+        }
+    }
+
     return {
         isValid: errors.length === 0,
         errors
@@ -161,6 +168,17 @@ export function normalizeImportPayload(data, options = {}) {
 
         if (newBill.reminderEnabled === undefined) newBill.reminderEnabled = true;
         newBill.reminderEnabled = Boolean(newBill.reminderEnabled);
+
+        if (newBill.creditBalance === undefined) {
+            newBill.creditBalance = 0;
+        } else {
+            const parsedCreditBalance = Number.parseFloat(newBill.creditBalance);
+            if (!Number.isFinite(parsedCreditBalance) || parsedCreditBalance < 0) {
+                importErrors.push(`Bill ${index + 1}: Credit balance must be a valid non-negative number`);
+                return null;
+            }
+            newBill.creditBalance = parsedCreditBalance;
+        }
 
         const billValidation = validateImportedBillCandidate(newBill);
         if (!billValidation.isValid) {

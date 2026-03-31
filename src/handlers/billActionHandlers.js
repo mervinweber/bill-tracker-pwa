@@ -432,7 +432,9 @@ export function getRemainingBalance(bill) {
         if (!bill) return 0;
 
         const totalDue = parseFloat(bill.balance || bill.amountDue || 0);
+        const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
         if (totalDue < 0) return 0;
+        const effectiveDue = Math.max(0, totalDue - creditBalance);
 
         // If split is enabled, remaining balance is based on unpaid payers
         if (bill.split?.enabled) {
@@ -442,7 +444,7 @@ export function getRemainingBalance(bill) {
         }
 
         const totalPaid = getTotalPaid(bill);
-        return Math.max(0, totalDue - totalPaid);
+        return Math.max(0, effectiveDue - totalPaid);
     } catch (error) {
         logger.error('Error calculating remaining balance', error);
         return bill.amountDue || 0;
@@ -499,8 +501,17 @@ export function recordPayment(billId, paymentData) {
             }
         }
 
-        const remaining = getRemainingBalance(updated);
+        const prePaymentRemaining = getRemainingBalance({
+            ...updated,
+            paymentHistory: updated.paymentHistory.slice(0, -1)
+        });
+        const existingCredit = Math.max(0, Number.parseFloat(updated.creditBalance) || 0);
+        const overpaymentCredit = Math.max(0, amount - prePaymentRemaining);
+        const totalCredit = existingCredit + overpaymentCredit;
+
+        let remaining = Math.max(0, prePaymentRemaining - amount);
         updated.balance = remaining;
+        updated.creditBalance = totalCredit;
         updated.isPaid = remaining <= 0;
 
         // If fully paid and bill is recurring, move to next payment cycle
@@ -515,6 +526,16 @@ export function recordPayment(billId, paymentData) {
             referenceDate: createLocalDate(payment.date)
         });
 
+        const advancedToNewCycle = updated.dueDate !== bill.dueDate;
+        if (advancedToNewCycle) {
+            const nextCycleDue = Math.max(0, Number.parseFloat(updated.amountDue) || 0);
+            const appliedCredit = Math.min(totalCredit, nextCycleDue);
+            remaining = Math.max(0, nextCycleDue - appliedCredit);
+            updated.balance = remaining;
+            updated.creditBalance = totalCredit - appliedCredit;
+            updated.isPaid = remaining <= 0;
+        }
+
         billStore.update(updated);
         recordAuditEvent('bill.payment.recorded', {
             entityType: 'bill',
@@ -523,13 +544,17 @@ export function recordPayment(billId, paymentData) {
             metadata: {
                 amount,
                 paymentDate: payment.date,
-                recurrenceStrategy
+                recurrenceStrategy,
+                overpaymentCredit,
+                creditBalance: updated.creditBalance || 0
             }
         });
         
         // Show appropriate message based on payment amount
         if (amount === 0) {
             showSuccessNotification(`"${bill.name}" marked as paid (zero balance recorded)`);
+        } else if (overpaymentCredit > 0) {
+            showSuccessNotification(`Payment of $${amount.toFixed(2)} recorded for "${bill.name}". Credit: $${(updated.creditBalance || 0).toFixed(2)}`);
         } else {
             showSuccessNotification(`Payment of $${amount.toFixed(2)} recorded for "${bill.name}"`);
         }
@@ -768,6 +793,14 @@ export function validateBill(billData) {
         const balanceValidation = validateAmount(billData.balance);
         if (!balanceValidation.isValid) {
             errors.push('Balance: ' + balanceValidation.error);
+        }
+    }
+
+    // Validate credit balance if provided
+    if (billData.creditBalance !== undefined) {
+        const creditValidation = validateAmount(billData.creditBalance);
+        if (!creditValidation.isValid) {
+            errors.push('Credit Balance: ' + creditValidation.error);
         }
     }
 

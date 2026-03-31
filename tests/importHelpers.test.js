@@ -63,3 +63,19 @@ it('should normalize every 3 months recurrence to Quarterly', () => {
     const result = normalizeImportPayload(quarterlyPayload);
     expect(result.processedBills[0].recurrence).toBe('Quarterly');
 });
+
+it('should normalize missing credit balance to zero', () => {
+    const result = normalizeImportPayload({ bills: [validPayload.bills[0]] });
+    expect(result.processedBills[0].creditBalance).toBe(0);
+});
+
+it('should reject negative credit balance', () => {
+    const badPayload = { bills: [{ ...validPayload.bills[0], creditBalance: -1 }] };
+    let rejected = false;
+    try {
+        normalizeImportPayload(badPayload);
+    } catch (err) {
+        rejected = /credit balance|invalid bill entries|non-negative number/i.test(err.message);
+    }
+    expect(rejected).toBe(true);
+});

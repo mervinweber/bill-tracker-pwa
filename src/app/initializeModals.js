@@ -186,11 +186,15 @@ export function openRecordPaymentModal(billId) {
 
     /** @type {HTMLInputElement} */ (singleCycleOption).checked = true;
     const f = (id) => /** @type {any} */ (document.getElementById(id));
+    const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
+    const remaining = billActionHandlers.getRemainingBalance(bill);
     f('paymentBillName').textContent = bill.name;
     f('paymentRemainingAmount').textContent =
-        `$${billActionHandlers.getRemainingBalance(bill).toFixed(2)}`;
+        creditBalance > 0
+            ? `$${remaining.toFixed(2)} (Credit: $${creditBalance.toFixed(2)})`
+            : `$${remaining.toFixed(2)}`;
     f('paymentBillId').value = billId;
-    f('paymentAmount').value = billActionHandlers.getRemainingBalance(bill).toFixed(2);
+    f('paymentAmount').value = remaining.toFixed(2);
     f('paymentDate').value = new Date().toISOString().split('T')[0];
     f('paymentOptionalDetails').open = false;
     f('recordPaymentModal').style.display = 'block';

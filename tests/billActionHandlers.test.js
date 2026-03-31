@@ -63,3 +63,14 @@ it('should validate bill with zero amount as valid (zero-balance bills are allow
     // Zero amount is valid per business logic (balance can be cleared)
     expect(result.isValid).toBe(true);
 });
+
+it('should calculate remaining balance with credit balance applied', () => {
+    const bill = { ...mockBill, creditBalance: 25 };
+    expect(getRemainingBalance(bill)).toBe(75);
+});
+
+it('should reject negative credit balance in validation', () => {
+    const result = validateBill({ ...mockBill, creditBalance: -10 });
+    expect(result.isValid).toBe(false);
+    expect(result.errors.some(e => /credit balance/i.test(e))).toBe(true);
+});

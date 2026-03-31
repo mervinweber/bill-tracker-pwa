@@ -10,6 +10,7 @@ import { filterBillsByPeriod } from '../utils/billHelpers.js';
  * Dashboard Metrics Displayed:
  * - Total Bills: Count of all bills in current view
  * - Total Due: Sum of all bill amounts
+ * - Total Credit: Sum of all stored bill credits
  * - Unpaid Count: Number of unpaid bills
  * - Unpaid Amount: Sum of unpaid bill amounts
  * - Overdue Count: Bills past due date and unpaid
@@ -54,9 +55,10 @@ export const initializeDashboard = () => {
  * 
  * @description Calculates and displays:
  *   1. Total bill count and total amount due
- *   2. Unpaid bill count and unpaid amount
- *   3. Overdue bill count (past due and unpaid)
- *   4. Payment history pie chart showing paid vs unpaid ratio
+ *   2. Total available credit across visible bills
+ *   3. Unpaid bill count and unpaid amount
+ *   4. Overdue bill count (past due and unpaid)
+ *   5. Payment history pie chart showing paid vs unpaid ratio
  *   
  *   Applies filters in order:
  *   1. Payment status filter (paid/unpaid/all)
@@ -81,6 +83,8 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
 
     const totalBills = displayBills.length;
     const totalAmountDue = displayBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
+    const totalCredit = displayBills.reduce((sum, bill) => sum + Math.max(0, Number.parseFloat(bill.creditBalance) || 0), 0);
+    const netDue = Math.max(0, totalAmountDue - totalCredit);
     const unpaidBills = displayBills.filter(b => !b.isPaid);
     const totalUnpaidAmount = unpaidBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
 
@@ -107,6 +111,12 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                     <span>💰</span><span class="font-medium">Total Due</span><span class="font-bold text-foreground">$0.00</span>
                 </div>
                 <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
+                    <span>🧮</span><span class="font-medium">Net Due</span><span class="font-bold text-foreground">$0.00</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg border bg-emerald-50 px-3 py-2 shadow-sm text-xs text-emerald-700 border-emerald-200">
+                    <span>💚</span><span class="font-medium">Total Credit</span><span class="font-bold text-emerald-800">$0.00</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
                     <span>⚠️</span><span class="font-medium">Unpaid</span><span class="font-bold text-foreground">0</span>
                 </div>
                 <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
@@ -119,7 +129,7 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
 
     dashboard.className = "w-full pt-4 pb-2";
     dashboard.innerHTML = `
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4 mb-2">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-7 sm:gap-4 mb-2">
             <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
                 <div class="flex items-center justify-between space-y-0 pb-1">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Total Bills</span>
@@ -137,6 +147,26 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                 </div>
                 <div class="flex items-center pt-1">
                     <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">$${totalAmountDue.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Net Due</span>
+                    <span class="text-sm">🧮</span>
+                </div>
+                <div class="flex items-center pt-1">
+                    <span class="text-xl font-bold tracking-tight ${netDue > 0 ? 'text-foreground' : 'text-emerald-700'} sm:text-2xl">$${netDue.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 sm:text-xs">Total Credit</span>
+                    <span class="text-sm">💚</span>
+                </div>
+                <div class="flex items-center pt-1">
+                    <span class="text-xl font-bold tracking-tight text-emerald-800 sm:text-2xl">$${totalCredit.toFixed(2)}</span>
                 </div>
             </div>
 

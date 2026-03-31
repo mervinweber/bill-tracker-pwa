@@ -7,7 +7,7 @@
  * - selectedCategory: Current category filter
  * - viewMode: 'filtered' (paycheck+category view), 'all' (all bills), or 'upcoming'
  * - displayMode: 'list', 'calendar', or 'analytics'
- * - paymentFilter: 'all', 'paid', or 'unpaid'
+ * - paymentFilter: 'all', 'paid', 'unpaid', or 'credit'
  * - isLoading: Loading state for async operations
  * - error: Current error message if any
  * 
@@ -28,7 +28,7 @@ class AppState {
             selectedCategory: null,
             viewMode: 'filtered', // 'filtered', 'all', or 'upcoming'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
-            paymentFilter: 'all', // 'all', 'unpaid', 'paid'
+            paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'credit'
             allBillsScope: 'everything', // 'everything', 'open-through-next-pay-date', 'open-only'
             showCarriedForward: true,
             currentCalendarDate: new Date(),
@@ -134,7 +134,7 @@ class AppState {
     }
 
     setPaymentFilter(filter) {
-        this.state.paymentFilter = filter; // 'all', 'unpaid', 'paid'
+        this.state.paymentFilter = filter; // 'all', 'unpaid', 'paid', 'credit'
         this.notifySubscribers();
     }
 

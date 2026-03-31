@@ -1,5 +1,6 @@
 import { it, expect, describe } from 'vitest';
-import { calculateNextDueDate, getRemainingBalance, advanceBillToNextCycle } from '../src/utils/billHelpers.js';
+import { calculateNextDueDate, getRemainingBalance, advanceBillToNextCycle, filterBillsByPeriod } from '../src/utils/billHelpers.js';
+import { paycheckManager } from '../src/utils/paycheckManager.js';
 
 it('calculateNextDueDate - Monthly', () => {
     const date = new Date('2025-01-01');
@@ -50,6 +51,16 @@ it('getRemainingBalance - Fully Paid', () => {
     };
     const balance = getRemainingBalance(bill);
     expect(balance).toBe(0);
+});
+
+it('getRemainingBalance - Applies credit balance before payments', () => {
+    const bill = {
+        amountDue: 100,
+        creditBalance: 30,
+        paymentHistory: []
+    };
+    const balance = getRemainingBalance(bill);
+    expect(balance).toBe(70);
 });
 
 describe('advanceBillToNextCycle', () => {
@@ -138,5 +149,59 @@ describe('advanceBillToNextCycle', () => {
         const updated = { ...bill, isPaid: true };
         advanceBillToNextCycle(bill, updated, { strategy: 'single-cycle' });
         expect(updated.dueDate).toBe('2024-11-15');
+    });
+});
+
+describe('filterBillsByPeriod', () => {
+    it('supports credit filter in all-bills view', () => {
+        const bills = [
+            { id: '1', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
+            { id: '2', dueDate: '2025-01-12', isPaid: true, creditBalance: 25 },
+            { id: '3', dueDate: '2025-01-15', isPaid: false, creditBalance: 5 }
+        ];
+
+        const result = filterBillsByPeriod(
+            bills,
+            'all',
+            null,
+            null,
+            'credit',
+            [new Date(2025, 0, 1), new Date(2025, 0, 15)],
+            true,
+            'everything'
+        );
+
+        expect(result.map((bill) => bill.id)).toEqual(['2', '3']);
+    });
+
+    it('supports credit filter in filtered paycheck/category view', () => {
+        const originalPaySettings = { ...paycheckManager.paymentSettings };
+        try {
+            paycheckManager.paymentSettings = {
+                ...originalPaySettings,
+                frequency: 'bi-weekly'
+            };
+
+            const bills = [
+                { id: '1', category: 'Utilities', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
+                { id: '2', category: 'Utilities', dueDate: '2025-01-11', isPaid: true, creditBalance: 20 },
+                { id: '3', category: 'Rent', dueDate: '2025-01-12', isPaid: true, creditBalance: 40 }
+            ];
+
+            const result = filterBillsByPeriod(
+                bills,
+                'filtered',
+                0,
+                'Utilities',
+                'credit',
+                [new Date(2025, 0, 1), new Date(2025, 0, 15)],
+                true,
+                'everything'
+            );
+
+            expect(result.map((bill) => bill.id)).toEqual(['2']);
+        } finally {
+            paycheckManager.paymentSettings = originalPaySettings;
+        }
     });
 });
