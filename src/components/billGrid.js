@@ -38,14 +38,14 @@ export const initializeBillGrid = () => {
     `;
 };
 
-export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates }, actions) => {
+export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates, allBillsScope }, actions) => {
     runBillGridCleanup();
     const useCompactMobileActions = isTouchDevice() && isMobileViewport();
     const billGrid = document.getElementById('billGrid');
     billGrid.className = "flex flex-col gap-4 p-4 sm:p-6";
     billGrid.innerHTML = '';
 
-    const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward);
+    const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
 
     if (viewMode !== 'all' && (selectedPaycheck === null || selectedCategory === null)) {
         initializeBillGrid();

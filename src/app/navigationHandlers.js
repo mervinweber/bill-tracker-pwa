@@ -22,6 +22,10 @@ export function handleFilterChange(filter) {
     appState.setPaymentFilter(filter);
 }
 
+export function handleAllBillsScopeChange(scope) {
+    appState.setAllBillsScope(scope);
+}
+
 export function handleToggleCarriedForward(show) {
     appState.setShowCarriedForward(show);
 }

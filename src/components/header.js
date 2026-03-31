@@ -6,6 +6,7 @@
  * @param {Function} actions.onPaycheckSelect - Called when user selects a pay period (receives index)
  * @param {Function} actions.onAllBillsSelect - Called when user clicks "All Bills" button
  * @param {Function} actions.onFilterChange - Called when user changes payment filter (receives filter value: 'all'|'paid'|'unpaid')
+ * @param {Function} [actions.onAllBillsScopeChange] - Called when user changes all bills scope
  * @param {Function} [actions.onUpcomingBillsSelect] - Called when user clicks "Upcoming" button
  * @param {Function} [actions.onToggleCarriedForward] - Called when carried forward toggle changes
  * @param {Function} [actions.onPaycheckPlannerSelect] - Called when user clicks "Planner" button
@@ -72,6 +73,15 @@ export const initializeHeader = (paychecks, actions) => {
                             <option value="all">All</option>
                             <option value="unpaid">Unpaid</option>
                             <option value="paid">Paid</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <label for="allBillsScopeFilter" class="text-xs font-medium text-foreground sm:text-sm">All Bills:</label>
+                        <select id="allBillsScopeFilter" class="${inputBase} h-8 w-auto min-w-[190px] sm:h-9" aria-label="Scope for all bills view">
+                            <option value="everything">Everything</option>
+                            <option value="open-through-next-pay-date">Open Through Next Pay Date</option>
+                            <option value="open-only">Open Only</option>
                         </select>
                     </div>
 
@@ -198,6 +208,11 @@ export const initializeHeader = (paychecks, actions) => {
         actions.onFilterChange(sel.value);
     });
 
+    document.getElementById('allBillsScopeFilter').addEventListener('change', (e) => {
+        const sel = /** @type {HTMLSelectElement} */ (e.target);
+        actions.onAllBillsScopeChange?.(sel.value);
+    });
+
     document.getElementById('carriedForwardToggle').addEventListener('change', (e) => {
         actions.onToggleCarriedForward(/** @type {HTMLInputElement} */ (e.target).checked);
     });
@@ -233,7 +248,7 @@ export const initializeHeader = (paychecks, actions) => {
  * @param {boolean} showCarriedForward - Whether to show carried forward bills
  * @returns {void}
  */
-export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward) => {
+export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward, allBillsScope = 'everything') => {
     const payPeriodSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('payPeriodSelect'));
     const allBillsBtn = document.getElementById('allBillsBtn');
     const upcomingBillsBtn = document.getElementById('upcomingBillsBtn');
@@ -242,6 +257,7 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
     const calendarViewBtn = document.getElementById('calendarViewBtn');
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
     const carriedForwardToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('carriedForwardToggle'));
+    const allBillsScopeFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('allBillsScopeFilter'));
 
     if (payPeriodSelect) {
         payPeriodSelect.value = selectedPaycheck !== null ? String(selectedPaycheck) : '';
@@ -302,5 +318,10 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
 
     if (carriedForwardToggle && typeof showCarriedForward !== 'undefined') {
         carriedForwardToggle.checked = showCarriedForward;
+    }
+
+    if (allBillsScopeFilter) {
+        allBillsScopeFilter.value = allBillsScope;
+        allBillsScopeFilter.disabled = viewMode !== 'all';
     }
 };

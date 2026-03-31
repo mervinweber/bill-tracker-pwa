@@ -63,6 +63,7 @@ import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
 import {
     handlePaycheckSelect,
     handleFilterChange,
+    handleAllBillsScopeChange,
     handleToggleCarriedForward,
     handleAllBillsSelect,
     handleUpcomingBillsSelect,
@@ -149,6 +150,7 @@ class AppOrchestrator {
             initializeHeader(paycheckLabels, {
                 onPaycheckSelect: handlePaycheckSelect,
                 onFilterChange: handleFilterChange,
+                onAllBillsScopeChange: handleAllBillsScopeChange,
                 onAllBillsSelect: handleAllBillsSelect,
                 onUpcomingBillsSelect: handleUpcomingBillsSelect,
                 onPaycheckPlannerSelect: handlePaycheckPlannerSelect,
@@ -583,7 +585,7 @@ class AppOrchestrator {
             const renderToken = ++this.viewRenderToken;
 
             // Update header UI
-            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward);
+            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward, state.allBillsScope);
 
             // Render appropriate view based on displayMode
             const billGrid = document.getElementById('billGrid');
@@ -654,7 +656,19 @@ class AppOrchestrator {
 
                     // Zero-bill empty state — skip dashboard, show getting-started panel
                     if (bills.length === 0) {
-                        if (dashboard) dashboard.style.display = 'none';
+                        if (dashboard) {
+                            dashboard.style.display = 'block';
+                            renderDashboard(
+                                bills,
+                                state.viewMode,
+                                state.selectedPaycheck,
+                                state.selectedCategory,
+                                state.paymentFilter,
+                                paycheckManager.payCheckDates,
+                                state.showCarriedForward,
+                                state.allBillsScope
+                            );
+                        }
                         billGrid.className = 'flex flex-col gap-4 p-4 sm:p-6';
                         billGrid.innerHTML = `
                             <div class="flex flex-col items-center justify-center gap-6 py-14 px-6 max-w-lg mx-auto w-full">
@@ -712,7 +726,7 @@ class AppOrchestrator {
                     }
 
                     if (dashboard) dashboard.style.display = 'block';
-                    renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward);
+                    renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward, state.allBillsScope);
 
                     renderBillGrid(
                         {
@@ -722,7 +736,8 @@ class AppOrchestrator {
                             selectedCategory: state.selectedCategory,
                             paymentFilter: state.paymentFilter,
                             showCarriedForward: state.showCarriedForward,
-                            payCheckDates: paycheckManager.payCheckDates
+                            payCheckDates: paycheckManager.payCheckDates,
+                            allBillsScope: state.allBillsScope
                         },
                         {
                             onUpdateBalance: (billId, balance) =>

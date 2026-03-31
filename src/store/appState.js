@@ -29,6 +29,7 @@ class AppState {
             viewMode: 'filtered', // 'filtered', 'all', or 'upcoming'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
             paymentFilter: 'all', // 'all', 'unpaid', 'paid'
+            allBillsScope: 'everything', // 'everything', 'open-through-next-pay-date', 'open-only'
             showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,
@@ -50,6 +51,11 @@ class AppState {
         const savedCategory = StorageManager.get(STORAGE_KEYS.SELECTED_CATEGORY);
         if (savedCategory) {
             this.state.selectedCategory = savedCategory;
+        }
+
+        const savedAllBillsScope = StorageManager.get(STORAGE_KEYS.ALL_BILLS_SCOPE);
+        if (['everything', 'open-through-next-pay-date', 'open-only'].includes(savedAllBillsScope)) {
+            this.state.allBillsScope = savedAllBillsScope;
         }
     }
 
@@ -132,6 +138,12 @@ class AppState {
         this.notifySubscribers();
     }
 
+    setAllBillsScope(scope) {
+        this.state.allBillsScope = scope;
+        StorageManager.set(STORAGE_KEYS.ALL_BILLS_SCOPE, scope);
+        this.notifySubscribers();
+    }
+
     setShowCarriedForward(show) {
         this.state.showCarriedForward = show;
         this.notifySubscribers();
@@ -196,6 +208,7 @@ class AppState {
             viewMode: 'filtered',
             displayMode: 'list',
             paymentFilter: 'all',
+            allBillsScope: StorageManager.get(STORAGE_KEYS.ALL_BILLS_SCOPE) || 'everything',
             showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,

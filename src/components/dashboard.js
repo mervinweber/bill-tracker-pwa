@@ -72,11 +72,11 @@ export const initializeDashboard = () => {
  *   [new Date(2024, 0, 1), new Date(2024, 0, 15), ...]
  * );
  */
-export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true) => {
+export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true, allBillsScope = 'everything') => {
     const dashboard = document.getElementById('dashboard');
 
     // Use shared filtering logic to ensure consistency with grid
-    const displayBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward);
+    const displayBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
 
 
     const totalBills = displayBills.length;

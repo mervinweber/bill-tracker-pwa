@@ -197,9 +197,38 @@ export const getRemainingBalance = (bill) => {
  * @param {Array<Date>} payCheckDates - Array of paycheck dates
  * @returns {Array<Object>} Filtered and sorted bills
  */
-export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true) => {
+export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true, allBillsScope = 'everything') => {
     if (viewMode === 'all') {
         let filtered = [...bills];
+
+        const parseBillDate = (rawDate) => {
+            if (typeof rawDate !== 'string') return null;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return createLocalDate(rawDate);
+            const parsed = new Date(rawDate);
+            if (Number.isNaN(parsed.getTime())) return null;
+            return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+        };
+
+        if (allBillsScope === 'open-only') {
+            filtered = filtered.filter(b => !b.isPaid);
+        } else if (allBillsScope === 'open-through-next-pay-date') {
+            const frequency = paycheckManager.paymentSettings.frequency;
+            const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+            const fallbackIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
+            const effectiveIndex = selectedPaycheck ?? fallbackIndex;
+            const currentPaycheckDate = payCheckDates?.[effectiveIndex] || new Date();
+            const nextPaycheckDate = (payCheckDates && effectiveIndex < payCheckDates.length - 1)
+                ? payCheckDates[effectiveIndex + 1]
+                : new Date(currentPaycheckDate.getTime() + (days * 24 * 60 * 60 * 1000));
+
+            filtered = filtered.filter((bill) => {
+                if (bill.isPaid) return false;
+                const dueDate = parseBillDate(bill.dueDate);
+                if (!dueDate) return false;
+                return dueDate < nextPaycheckDate;
+            });
+        }
+
         if (paymentFilter === 'unpaid') filtered = filtered.filter(b => !b.isPaid);
         if (paymentFilter === 'paid') filtered = filtered.filter(b => b.isPaid);
         return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
