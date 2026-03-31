@@ -222,6 +222,23 @@ class AppOrchestrator {
                 selectedCategory: appState.getState('selectedCategory')
             });
 
+            try {
+                const addedRecurringBills = paycheckManager.addMissingRecurringBillInstances();
+                if (addedRecurringBills > 0) {
+                    logger.info('Backfilled missing recurring bill instances', { addedRecurringBills });
+
+                    if (user) {
+                        const paymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
+                        const { error } = await syncUserData(billStore.getAll(), paymentSettings);
+                        if (error) {
+                            logger.error('Cloud sync failed after recurring bill backfill', error);
+                        }
+                    }
+                }
+            } catch (error) {
+                logger.error('Error backfilling recurring bill instances on init', error);
+            }
+
             initializeBillForm(this.categories, {
                 onSaveBill: (billData) => this.handleSaveBill(billData),
                 onMarkPaid: (billId, isPaid) => this.handleMarkPaidFromModal(billId, isPaid)

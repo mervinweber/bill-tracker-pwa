@@ -1,5 +1,7 @@
 import { it, expect } from 'vitest';
 import { paycheckManager } from '../src/utils/paycheckManager.js';
+import { billStore } from '../src/store/BillStore.js';
+import { formatLocalDate } from '../src/utils/dates.js';
 
 const today = new Date();
 const formatDateString = (date) => date.toISOString().split('T')[0];
@@ -55,4 +57,42 @@ it('should handle monthly frequency', () => {
     paycheckManager.updateSettings({ startDate: formatDateString(today), frequency: 'monthly', payPeriodsToShow: 2 });
     const paychecks = paycheckManager.generatePaycheckDates();
     expect(paychecks.length).toBe(2);
+});
+
+it('should backfill multiple weekly recurring instances within a bi-weekly pay period', () => {
+    paycheckManager.updateSettings({
+        startDate: formatDateString(today),
+        frequency: 'bi-weekly',
+        payPeriodsToShow: 3
+    });
+
+    const firstPayDate = paycheckManager.payCheckDates[0];
+    const secondPayDate = paycheckManager.payCheckDates[1];
+
+    billStore.setBills([
+        {
+            id: 'weekly-base',
+            name: 'Gym Membership',
+            category: 'Health',
+            dueDate: formatLocalDate(firstPayDate),
+            amountDue: 25,
+            balance: 25,
+            recurrence: 'Weekly',
+            reminderEnabled: true,
+            isPaid: false,
+            paymentHistory: []
+        }
+    ]);
+
+    const added = paycheckManager.addMissingRecurringBillInstances();
+    const weeklyBillsInFirstPeriod = billStore.getAll().filter((bill) => {
+        if (bill.name !== 'Gym Membership') return false;
+        const due = new Date(bill.dueDate);
+        return due >= firstPayDate && due < secondPayDate;
+    });
+
+    expect(added).toBeGreaterThan(0);
+    expect(weeklyBillsInFirstPeriod.length).toBeGreaterThan(1);
+
+    billStore.setBills([]);
 });

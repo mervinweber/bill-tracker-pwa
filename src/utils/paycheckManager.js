@@ -389,6 +389,48 @@ class PaycheckManager {
     }
 
     /**
+     * Add any missing future recurring bill instances without replacing existing ones.
+     */
+    addMissingRecurringBillInstances() {
+        try {
+            const currentBills = billStore.getAll();
+            const recurringBills = currentBills.filter(b => b.recurrence && b.recurrence !== 'One-time');
+
+            if (recurringBills.length === 0) {
+                return 0;
+            }
+
+            const templateMap = new Map();
+            recurringBills.forEach((bill) => {
+                const key = `${bill.name}-${bill.category}-${bill.recurrence}`;
+                const existing = templateMap.get(key);
+
+                if (!existing || new Date(bill.dueDate).getTime() < new Date(existing.dueDate).getTime()) {
+                    templateMap.set(key, bill);
+                }
+            });
+
+            const generatedBills = [];
+            templateMap.forEach((template) => {
+                const missing = this.generateRecurringBillInstances(template);
+                if (missing?.length) {
+                    generatedBills.push(...missing);
+                }
+            });
+
+            if (generatedBills.length === 0) {
+                return 0;
+            }
+
+            billStore.setBills([...currentBills, ...generatedBills]);
+            return generatedBills.length;
+        } catch (error) {
+            logger.error('Error adding missing recurring bill instances', error);
+            throw error;
+        }
+    }
+
+    /**
      * Regenerate all recurring bills
      */
     regenerateAllRecurringBills() {
