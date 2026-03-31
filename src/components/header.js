@@ -210,6 +210,7 @@ export const initializeHeader = (paychecks, actions) => {
 
     document.getElementById('allBillsScopeFilter').addEventListener('change', (e) => {
         const sel = /** @type {HTMLSelectElement} */ (e.target);
+        actions.onAllBillsSelect?.();
         actions.onAllBillsScopeChange?.(sel.value);
     });
 
@@ -322,6 +323,5 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
 
     if (allBillsScopeFilter) {
         allBillsScopeFilter.value = allBillsScope;
-        allBillsScopeFilter.disabled = viewMode !== 'all';
     }
 };
