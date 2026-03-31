@@ -85,4 +85,45 @@ describe('paycheckPlannerView buildPlannerRows', () => {
         expect(rows[0].shortfallBills[0].name).toBe('Rent');
         expect(rows[0].shortfallBills[1].name).toBe('Car');
     });
+
+    it('loads overdue unpaid bills into first visible paycheck', () => {
+        const bills = [
+            { id: 'old', name: 'Old Water', dueDate: '2026-02-01', amountDue: 80, isPaid: false },
+            { id: 'in-period', name: 'Current Rent', dueDate: '2026-03-31', amountDue: 700, isPaid: false }
+        ];
+
+        const rows = buildPlannerRows({
+            bills,
+            payCheckDates: [localDate('2026-03-30'), localDate('2026-04-13')],
+            frequency: 'bi-weekly',
+            paycheckAmount: 1000,
+            adjustmentsByDate: {}
+        });
+
+        expect(rows[0].totalDue).toBe(780);
+        expect(rows[1].totalDue).toBe(0);
+    });
+
+    it('supports legacy timestamp dueDate and falls back to balance when amountDue is missing', () => {
+        const bills = [
+            {
+                id: 'legacy',
+                name: 'Legacy Bill',
+                dueDate: '2026-03-30T00:00:00.000Z',
+                balance: 120,
+                isPaid: false
+            }
+        ];
+
+        const rows = buildPlannerRows({
+            bills,
+            payCheckDates: [localDate('2026-03-30')],
+            frequency: 'weekly',
+            paycheckAmount: 500,
+            adjustmentsByDate: {}
+        });
+
+        expect(rows[0].totalDue).toBe(120);
+        expect(rows[0].remaining).toBe(380);
+    });
 });

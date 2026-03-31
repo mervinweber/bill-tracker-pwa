@@ -18,12 +18,50 @@ const getPeriodEndDate = (payCheckDates, index, frequency) => {
     return fallback;
 };
 
-const getUnpaidBillsForPeriod = (bills, startDate, endDate) => {
-    return bills.filter((bill) => {
-        if (bill.isPaid) return false;
-        const dueDate = createLocalDate(bill.dueDate);
-        return dueDate >= startDate && dueDate < endDate;
-    });
+const parseBillDueDate = (rawDate) => {
+    if (typeof rawDate !== 'string' || rawDate.trim() === '') {
+        return null;
+    }
+
+    const trimmed = rawDate.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return createLocalDate(trimmed);
+    }
+
+    // Backward-compatibility for legacy/imported timestamps like 2026-03-30T00:00:00.000Z
+    const parsed = new Date(trimmed);
+    if (Number.isNaN(parsed.getTime())) {
+        return null;
+    }
+
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+};
+
+const getBillAmountForPlanning = (bill) => {
+    const amountDue = Number.parseFloat(bill.amountDue);
+    if (Number.isFinite(amountDue) && amountDue >= 0) {
+        return amountDue;
+    }
+
+    const balance = Number.parseFloat(bill.balance);
+    if (Number.isFinite(balance) && balance >= 0) {
+        return balance;
+    }
+
+    return 0;
+};
+
+const getBillPlanningKey = (bill) => {
+    if (bill.id) {
+        return String(bill.id);
+    }
+
+    return [
+        bill.name || '',
+        bill.category || '',
+        bill.dueDate || '',
+        getBillAmountForPlanning(bill)
+    ].join('|');
 };
 
 const sanitizeAdjustmentMap = (adjustmentsByDate = {}) => {
@@ -52,14 +90,32 @@ const toPercent = (value, total) => {
 export function buildPlannerRows({ bills, payCheckDates, frequency, paycheckAmount, adjustmentsByDate = {} }) {
     const normalizedAdjustments = sanitizeAdjustmentMap(adjustmentsByDate);
     let rollingCarry = 0;
+    const consumedBillIds = new Set();
 
     return payCheckDates.map((payDate, index) => {
         const startDate = new Date(payDate);
         const endDate = getPeriodEndDate(payCheckDates, index, frequency);
         const payDateKey = formatLocalDate(startDate);
 
-        const periodBills = getUnpaidBillsForPeriod(bills, startDate, endDate);
-        const totalDue = periodBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
+        const periodBills = bills.filter((bill) => {
+            const billKey = getBillPlanningKey(bill);
+            if (bill.isPaid || consumedBillIds.has(billKey)) {
+                return false;
+            }
+
+            const dueDate = parseBillDueDate(bill.dueDate);
+            if (!dueDate) {
+                return false;
+            }
+
+            const isInPeriod = dueDate >= startDate && dueDate < endDate;
+            const isOverdueForFirstPeriod = index === 0 && dueDate < startDate;
+            return isInPeriod || isOverdueForFirstPeriod;
+        });
+
+        periodBills.forEach((bill) => consumedBillIds.add(getBillPlanningKey(bill)));
+
+        const totalDue = periodBills.reduce((sum, bill) => sum + getBillAmountForPlanning(bill), 0);
         const adjustments = normalizedAdjustments[payDateKey] || [];
         const adjustmentTotal = adjustments.reduce((sum, entry) => sum + entry.amount, 0);
         const carryIn = Number.isFinite(paycheckAmount) ? rollingCarry : null;
@@ -78,7 +134,7 @@ export function buildPlannerRows({ bills, payCheckDates, frequency, paycheckAmou
                 .map((bill) => ({
                     id: bill.id,
                     name: bill.name,
-                    amountDue: bill.amountDue || 0,
+                    amountDue: getBillAmountForPlanning(bill),
                     category: bill.category
                 }))
             : [];
