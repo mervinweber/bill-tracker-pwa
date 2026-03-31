@@ -413,6 +413,61 @@ export function bulkMarkAsPaid(billIds, skipConfirm = false) {
 }
 
 /**
+ * Bulk mark bills as unpaid
+ */
+export function bulkMarkAsUnpaid(billIds, skipConfirm = false) {
+    try {
+        logger.debug('bulkMarkAsUnpaid called', { billIds });
+        if (!billIds || billIds.length === 0) {
+            showErrorNotification('No bills currently showing to mark as unpaid.', 'Bulk Action');
+            return false;
+        }
+
+        if (!skipConfirm && !confirm(`Mark ${billIds.length} bills as unpaid?`)) {
+            return false;
+        }
+
+        const currentBills = [...billStore.getAll()];
+        let updateCount = 0;
+
+        billIds.forEach(id => {
+            const index = currentBills.findIndex(b => b.id === id);
+            if (index !== -1 && currentBills[index].isPaid) {
+                const bill = { ...currentBills[index] };
+                bill.isPaid = false;
+                bill.lastPaymentDate = null;
+
+                currentBills[index] = bill;
+                updateCount++;
+            }
+        });
+
+        logger.debug('Bulk mark as unpaid summary', {
+            updateCount,
+            totalBills: currentBills.length
+        });
+
+        if (updateCount > 0) {
+            billStore.setBills(currentBills);
+            recordAuditEvent('bill.bulk_marked_unpaid', {
+                entityType: 'bill',
+                summary: `Bulk marked ${updateCount} bills as unpaid`,
+                metadata: { count: updateCount }
+            });
+            showSuccessNotification(`Marked ${updateCount} bills as unpaid`);
+            return true;
+        } else {
+            showErrorNotification('All selected bills are already marked as unpaid.', 'Bulk Action');
+            return false;
+        }
+    } catch (error) {
+        logger.error('Error in bulk mark as unpaid', error);
+        showErrorNotification(error.message, 'Bulk Update Failed');
+        return false;
+    }
+}
+
+/**
  * Bulk fill zero balances back to amountDue for unpaid bills
  * Used to recover balance information after upgrades
  * @returns {boolean} True if successful, false otherwise

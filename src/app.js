@@ -28,6 +28,7 @@ import {
     validateBill,
     bulkDelete,
     bulkMarkAsPaid,
+    bulkMarkAsUnpaid,
     bulkFillZeroBalances,
     migrateBillsToPaymentHistory
 } from './handlers/billActionHandlers.js';
@@ -1158,30 +1159,49 @@ class AppOrchestrator {
             }
         }
 
-
-        // Apply same payment filter as grid (though mark paid only makes sense for unpaid)
+        // Apply same payment filter as grid
         if (paymentFilter === 'unpaid') {
             visibleBills = visibleBills.filter(bill => !bill.isPaid);
         } else if (paymentFilter === 'paid') {
             visibleBills = visibleBills.filter(bill => bill.isPaid);
         }
 
-        const ids = visibleBills.filter(b => !b.isPaid).map(b => b.id);
+        if (visibleBills.length === 0) {
+            billActionHandlers.showErrorNotification('No bills to update.', 'Bulk Action');
+            return;
+        }
+
+        // Determine action based on majority state
+        const paidCount = visibleBills.filter(b => b.isPaid).length;
+        const unpaidCount = visibleBills.length - paidCount;
+        const shouldMarkPaid = unpaidCount >= paidCount;
+
+        const ids = shouldMarkPaid
+            ? visibleBills.filter(b => !b.isPaid).map(b => b.id)
+            : visibleBills.filter(b => b.isPaid).map(b => b.id);
 
         if (ids.length === 0) {
-            billActionHandlers.showErrorNotification(ERROR_CODES.BULK_NO_UNPAID_VISIBLE.message, 'Bulk Action');
+            const message = shouldMarkPaid
+                ? ERROR_CODES.BULK_NO_UNPAID_VISIBLE.message
+                : 'All visible bills are already marked as unpaid.';
+            billActionHandlers.showErrorNotification(message, 'Bulk Action');
             return;
         }
 
         const confirmed = await showConfirmationModal({
-            title: 'Mark bills as paid?',
-            message: `This will mark ${ids.length} visible unpaid bill${ids.length === 1 ? '' : 's'} as paid.`,
-            confirmText: 'Mark Paid',
+            title: shouldMarkPaid ? 'Mark bills as paid?' : 'Mark bills as unpaid?',
+            message: `This will mark ${ids.length} visible bill${ids.length === 1 ? '' : 's'} as ${shouldMarkPaid ? 'paid' : 'unpaid'}.`,
+            confirmText: shouldMarkPaid ? 'Mark Paid' : 'Mark Unpaid',
             confirmVariant: 'primary'
         });
 
-        if (confirmed && bulkMarkAsPaid(ids, true)) {
-            this.rerender();
+        if (confirmed) {
+            const success = shouldMarkPaid
+                ? bulkMarkAsPaid(ids, true)
+                : bulkMarkAsUnpaid(ids, true);
+            if (success) {
+                this.rerender();
+            }
         }
     }
 
