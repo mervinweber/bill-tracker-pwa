@@ -28,6 +28,7 @@ import {
     validateBill,
     bulkDelete,
     bulkMarkAsPaid,
+    bulkFillZeroBalances,
     migrateBillsToPaymentHistory
 } from './handlers/billActionHandlers.js';
 import { filterBillsByPeriod } from './utils/billHelpers.js';
@@ -168,6 +169,7 @@ class AppOrchestrator {
                 onLogout: handleLogout,
                 onBulkDelete: () => this.handleBulkDelete(),
                 onBulkMarkPaid: () => this.handleBulkMarkPaid(),
+                onBulkFillBalances: () => this.handleBulkFillBalances(),
                 onShowSettings: () => this.handleShowSettings()
             });
 
@@ -1179,6 +1181,12 @@ class AppOrchestrator {
         });
 
         if (confirmed && bulkMarkAsPaid(ids, true)) {
+            this.rerender();
+        }
+    }
+
+    handleBulkFillBalances() {
+        if (bulkFillZeroBalances()) {
             this.rerender();
         }
     }

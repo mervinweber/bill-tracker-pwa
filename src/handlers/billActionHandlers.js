@@ -213,6 +213,7 @@ export function updateBillBalance(billId, newBalance) {
 
 /**
  * Toggle payment status with validation
+ * When marking as unpaid, resets balance to amountDue if balance is 0
  */
 export function togglePaymentStatus(billId, isPaid) {
     try {
@@ -227,6 +228,11 @@ export function togglePaymentStatus(billId, isPaid) {
     const mostRecentPaymentDate = getMostRecentPaymentDate(bill);
         updated.isPaid = isPaid;
         updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
+
+        // When marking unpaid, reset balance to amountDue if it's zero or missing
+        if (!isPaid && (updated.balance === 0 || !updated.balance)) {
+            updated.balance = updated.amountDue;
+        }
 
         // Handle splitting if enabled
         if (updated.split?.enabled) {
@@ -401,6 +407,53 @@ export function bulkMarkAsPaid(billIds, skipConfirm = false) {
         }
     } catch (error) {
         logger.error('Error in bulk mark as paid', error);
+        showErrorNotification(error.message, 'Bulk Update Failed');
+        return false;
+    }
+}
+
+/**
+ * Bulk fill zero balances back to amountDue for unpaid bills
+ * Used to recover balance information after upgrades
+ * @returns {boolean} True if successful, false otherwise
+ */
+export function bulkFillZeroBalances() {
+    try {
+        logger.debug('bulkFillZeroBalances called');
+        const currentBills = [...billStore.getAll()];
+        let updateCount = 0;
+
+        currentBills.forEach((bill, index) => {
+            // Only update unpaid bills with zero or missing balance
+            if (!bill.isPaid && (bill.balance === 0 || !bill.balance)) {
+                currentBills[index] = {
+                    ...bill,
+                    balance: bill.amountDue
+                };
+                updateCount++;
+            }
+        });
+
+        logger.debug('Bulk fill zero balances summary', {
+            updateCount,
+            totalBills: currentBills.length
+        });
+
+        if (updateCount > 0) {
+            billStore.setBills(currentBills);
+            recordAuditEvent('bill.bulk_balance_filled', {
+                entityType: 'bill',
+                summary: `Bulk filled ${updateCount} zero balances`,
+                metadata: { count: updateCount }
+            });
+            showSuccessNotification(`Filled balance for ${updateCount} bill${updateCount === 1 ? '' : 's'}`);
+            return true;
+        } else {
+            showErrorNotification('No unpaid bills with zero balance found.', 'Bulk Action');
+            return false;
+        }
+    } catch (error) {
+        logger.error('Error in bulk fill zero balances', error);
         showErrorNotification(error.message, 'Bulk Update Failed');
         return false;
     }

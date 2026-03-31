@@ -13,6 +13,7 @@
  * @param {Function} actions.onShowSettings - Called when user clicks "Settings" button
  * @param {Function} actions.onBulkDelete - Called when user clicks "Clear All Data" button
  * @param {Function} actions.onBulkMarkPaid - Called when user clicks "Mark All Paid" button
+ * @param {Function} actions.onBulkFillBalances - Called when user clicks "Fill Balance" button
  * @returns {void}
  * @description Sets up the sidebar with:
  *   - Category list with keyboard navigation (arrow keys)
@@ -181,6 +182,15 @@ export const initializeSidebar = (categories, actions) => {
     bulkPaidBtn.innerHTML = `<span class="${dataIconClass}">✅</span> <span>Mark All Paid</span>`;
     bulkPaidBtn.addEventListener('click', () => actions.onBulkMarkPaid());
     dataDiv.appendChild(bulkPaidBtn);
+
+    const bulkFillBtn = document.createElement('button');
+    bulkFillBtn.id = 'bulkFillBalancesBtn';
+    bulkFillBtn.type = 'button';
+    bulkFillBtn.className = `${btnOutline} ${dataBtnClass}`;
+    bulkFillBtn.ariaLabel = 'Fill zero balances with bill amounts';
+    bulkFillBtn.innerHTML = `<span class="${dataIconClass}">💰</span> <span>Fill Balance</span>`;
+    bulkFillBtn.addEventListener('click', () => actions.onBulkFillBalances());
+    dataDiv.appendChild(bulkFillBtn);
 
     const bulkDelBtn = document.createElement('button');
     bulkDelBtn.id = 'bulkDeleteBtn';
