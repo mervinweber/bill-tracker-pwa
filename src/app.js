@@ -21,6 +21,7 @@ import { initializeBillForm, openBillForm, closeBillForm } from './components/bi
 import { initializeAuthModal, openAuthModal } from './components/authModal.js';
 
 import { initializeUpcomingBillsView, renderUpcomingBills } from './views/upcomingBillsView.js';
+import { initializePaycheckPlannerView, renderPaycheckPlanner } from './views/paycheckPlannerView.js';
 
 import {
     billActionHandlers,
@@ -65,6 +66,7 @@ import {
     handleToggleCarriedForward,
     handleAllBillsSelect,
     handleUpcomingBillsSelect,
+    handlePaycheckPlannerSelect,
     handleCategorySelect,
     handleDisplayModeSelect,
     handleOpenAddBill
@@ -141,6 +143,7 @@ class AppOrchestrator {
 
             // Initialize baseline views
             initializeUpcomingBillsView();
+            initializePaycheckPlannerView();
 
             // Initialize components with callbacks
             initializeHeader(paycheckLabels, {
@@ -148,6 +151,7 @@ class AppOrchestrator {
                 onFilterChange: handleFilterChange,
                 onAllBillsSelect: handleAllBillsSelect,
                 onUpcomingBillsSelect: handleUpcomingBillsSelect,
+                onPaycheckPlannerSelect: handlePaycheckPlannerSelect,
                 onDisplayModeSelect: handleDisplayModeSelect,
                 onToggleCarriedForward: handleToggleCarriedForward
             });
@@ -348,6 +352,152 @@ class AppOrchestrator {
         }
     }
 
+    getPaycheckAdjustments() {
+        const raw = StorageManager.get(STORAGE_KEYS.PAYCHECK_ADJUSTMENTS, {});
+        if (!raw || typeof raw !== 'object') {
+            return {};
+        }
+
+        const sanitized = {};
+        Object.entries(raw).forEach(([payDateKey, entries]) => {
+            if (!Array.isArray(entries)) {
+                return;
+            }
+
+            const validEntries = entries.filter((entry) => {
+                return entry && typeof entry.id === 'string' && Number.isFinite(entry.amount);
+            });
+
+            if (validEntries.length > 0) {
+                sanitized[payDateKey] = validEntries;
+            }
+        });
+
+        return sanitized;
+    }
+
+    savePaycheckAdjustments(adjustmentsByDate) {
+        StorageManager.set(STORAGE_KEYS.PAYCHECK_ADJUSTMENTS, adjustmentsByDate);
+    }
+
+    handleSavePaycheckAmount(amount) {
+        try {
+            const currentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, paycheckManager.paymentSettings);
+            const updatedSettings = {
+                ...currentSettings,
+                amount
+            };
+
+            paycheckManager.updateSettings(updatedSettings);
+            StorageManager.set(STORAGE_KEYS.PAYMENT_SETTINGS, updatedSettings);
+            billActionHandlers.showSuccessNotification('Paycheck amount updated.');
+            this.rerender();
+        } catch (error) {
+            logger.error('Failed saving paycheck amount from planner', error);
+            billActionHandlers.showErrorNotification(error.message, 'Planner Update Failed');
+        }
+    }
+
+    handleAddPaycheckAdjustment(payDate, amount, note) {
+        try {
+            if (!Number.isFinite(amount) || amount === 0) {
+                billActionHandlers.showErrorNotification('Adjustment amount must not be 0.', 'Invalid Amount');
+                return;
+            }
+
+            const adjustmentsByDate = this.getPaycheckAdjustments();
+            const current = adjustmentsByDate[payDate] || [];
+            current.push({
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                amount,
+                note: note || '',
+                createdAt: new Date().toISOString()
+            });
+            adjustmentsByDate[payDate] = current;
+
+            this.savePaycheckAdjustments(adjustmentsByDate);
+            this.rerender();
+        } catch (error) {
+            logger.error('Failed adding paycheck adjustment', error);
+            billActionHandlers.showErrorNotification(error.message, 'Planner Update Failed');
+        }
+    }
+
+    handleRemovePaycheckAdjustment(payDate, adjustmentId) {
+        try {
+            const adjustmentsByDate = this.getPaycheckAdjustments();
+            const current = adjustmentsByDate[payDate] || [];
+            adjustmentsByDate[payDate] = current.filter((entry) => entry.id !== adjustmentId);
+
+            if (adjustmentsByDate[payDate].length === 0) {
+                delete adjustmentsByDate[payDate];
+            }
+
+            this.savePaycheckAdjustments(adjustmentsByDate);
+            this.rerender();
+        } catch (error) {
+            logger.error('Failed removing paycheck adjustment', error);
+            billActionHandlers.showErrorNotification(error.message, 'Planner Update Failed');
+        }
+    }
+
+    handleExportPaycheckAdjustments(format) {
+        try {
+            const adjustmentsByDate = this.getPaycheckAdjustments();
+            const hasEntries = Object.values(adjustmentsByDate).some(entries => Array.isArray(entries) && entries.length > 0);
+
+            if (!hasEntries) {
+                billActionHandlers.showErrorNotification('No planner adjustments to export.', 'Export Failed');
+                return;
+            }
+
+            const stamp = new Date().toISOString().slice(0, 10);
+            let fileName = `paycheck-adjustments-${stamp}.json`;
+            let contentType = 'application/json;charset=utf-8';
+            let payload = JSON.stringify(adjustmentsByDate, null, 2);
+
+            if (format === 'csv') {
+                fileName = `paycheck-adjustments-${stamp}.csv`;
+                contentType = 'text/csv;charset=utf-8';
+
+                const escapeCsv = (value) => {
+                    const raw = value === null || typeof value === 'undefined' ? '' : String(value);
+                    if (!/[",\n]/.test(raw)) return raw;
+                    return `"${raw.replace(/"/g, '""')}"`;
+                };
+
+                const rows = ['payDate,adjustmentId,amount,note,createdAt'];
+                Object.entries(adjustmentsByDate).forEach(([payDate, entries]) => {
+                    entries.forEach((entry) => {
+                        rows.push([
+                            escapeCsv(payDate),
+                            escapeCsv(entry.id),
+                            escapeCsv(entry.amount),
+                            escapeCsv(entry.note || ''),
+                            escapeCsv(entry.createdAt || '')
+                        ].join(','));
+                    });
+                });
+                payload = rows.join('\n');
+            }
+
+            const blob = new Blob([payload], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            URL.revokeObjectURL(url);
+
+            billActionHandlers.showSuccessNotification(`Planner adjustments exported as ${format.toUpperCase()}.`);
+        } catch (error) {
+            logger.error('Failed exporting paycheck adjustments', error);
+            billActionHandlers.showErrorNotification(error.message, 'Export Failed');
+        }
+    }
+
     handleDueBillReminders() {
         try {
             const result = checkAndSendDueBillReminders(billStore.getAll());
@@ -440,6 +590,7 @@ class AppOrchestrator {
             const calendarView = document.getElementById('calendarView');
             const analyticsView = document.getElementById('analyticsView');
             const upcomingBillsView = document.getElementById('upcomingBillsView');
+            const paycheckPlannerView = document.getElementById('paycheckPlannerView');
 
             // Hide all views first
             const dashboard = document.getElementById('dashboard');
@@ -447,6 +598,7 @@ class AppOrchestrator {
             if (calendarView) calendarView.style.display = 'none';
             if (analyticsView) analyticsView.style.display = 'none';
             if (upcomingBillsView) upcomingBillsView.style.display = 'none';
+            if (paycheckPlannerView) paycheckPlannerView.style.display = 'none';
             if (dashboard) dashboard.style.display = 'none';
 
             if (state.displayMode !== 'analytics' && this.analyticsViewModule?.cleanupCharts) {
@@ -478,6 +630,23 @@ class AppOrchestrator {
                             onEditBill: (billId) => this.handleEditBill(billId),
                             onUpdateDueDate: (billId, dueDate) => this.handleUpdateDueDate(billId, dueDate),
                             paycheckAmount: paycheckManager.paymentSettings?.amount
+                        }
+                    );
+                } else if (state.viewMode === 'planner') {
+                    if (paycheckPlannerView) paycheckPlannerView.style.display = 'block';
+                    renderPaycheckPlanner(
+                        {
+                            bills,
+                            payCheckDates: paycheckManager.payCheckDates,
+                            paymentSettings: paycheckManager.paymentSettings,
+                            adjustmentsByDate: this.getPaycheckAdjustments()
+                        },
+                        {
+                            onSavePaycheckAmount: (amount) => this.handleSavePaycheckAmount(amount),
+                            onAddAdjustment: (payDate, amount, note) => this.handleAddPaycheckAdjustment(payDate, amount, note),
+                            onRemoveAdjustment: (payDate, adjustmentId) => this.handleRemovePaycheckAdjustment(payDate, adjustmentId),
+                            onExportAdjustments: (format) => this.handleExportPaycheckAdjustments(format),
+                            onInvalidAmount: (message) => billActionHandlers.showErrorNotification(message, 'Planner Input')
                         }
                     );
                 } else {

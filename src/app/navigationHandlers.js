@@ -36,6 +36,11 @@ export function handleUpcomingBillsSelect() {
     appState.setDisplayMode('list');
 }
 
+export function handlePaycheckPlannerSelect() {
+    appState.setViewMode('planner');
+    appState.setDisplayMode('list');
+}
+
 export function handleCategorySelect(category) {
     appState.setSelectedCategory(category);
     appState.setViewMode('filtered');
