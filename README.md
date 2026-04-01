@@ -6,9 +6,9 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 
 **Version**: 1.0.0  
 **Architecture**: Modular, production-ready  
-**Test Coverage**: 24+ unit tests  
+**Test Coverage**: 290 automated tests  
 **Accessibility**: WCAG 2.1 Level AA compliant  
-**Latest Update**: March 2026 - Modernized Calendar/Analytics views with Tailwind CSS, refined sidebar alignment, and verified codebase stability.
+**Latest Update**: March 2026 - Added credit balance tracking, recovery tools for zeroed balances, and bidirectional bulk paid/unpaid actions.
 
 ## 🚀 Features
 
@@ -22,10 +22,18 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 
 ### Payment Management
 *   Track partial payments with full payment history
+*   **Credit Balance Support**: Overpayments and refunds are preserved as bill credit instead of being lost when a balance reaches $0
+*   **Credit-Aware Dashboard**: Total Credit and Net Due metrics show how credits reduce what is still owed
+*   **Credit Visibility Tools**: Dedicated Credit column, credit filter, and payment modal summary make credits easy to find
 *   Auto-select current pay period
-*   **Bulk Actions**: Mark all visible bills as paid or clear all data with one click
+*   **Bulk Actions**: Mark all visible bills as paid or unpaid depending on current bill state, fill zero balances from bill amounts, or clear all data with one click
 *   **Smart Overdue Tracking**: Unpaid bills carry forward automatically into your next planning window
 *   **Carried Forward Toggle**: Show/hide bills from past periods in current view
+
+### Recent Workflow Improvements
+*   **Mark Unpaid Defaults Balance**: Marking a bill unpaid restores its balance to `amountDue` when the stored balance is zero or missing
+*   **Fill Balance Recovery Tool**: Sidebar action repairs unpaid bills whose balances were zeroed during older upgrades or imports
+*   **Recurring Credit Carry-Forward**: Extra payment credit follows recurring bills into the next cycle instead of disappearing
 
 ### Data Management
 *   **Persistent Storage**: Local storage with automatic backup
@@ -66,7 +74,7 @@ This project has undergone a **major refactoring** (Phase 4 complete):
 - **Modular architecture** with clear separation of concerns
 - **Comprehensive error handling** with user-friendly notifications
 - **Reactive state management** using subscriber pattern
-- **Full test coverage** with 24+ unit tests
+- **Full test coverage** with 290 automated tests
 
 ### Project Structure
 ```
@@ -98,7 +106,7 @@ bill-tracker-pwa/
 │   ├── services/             # External services
 │   │   └── supabase.js       # Cloud sync integration
 │   └── index.css             # Styles with dark mode support
-├── tests/                    # Unit tests (24+ tests)
+├── tests/                    # Unit and integration tests (290 tests)
 ├── scripts/                  # Utility scripts
 │   └── csv_to_json.py        # CSV conversion tool
 └── public/
@@ -198,14 +206,15 @@ Legacy planning/session summary docs are preserved in **[docs/archive](docs/arch
 - ✅ **Cloud Sync**: Supabase integration with Google authentication
 - ✅ **Analytics View**: Spending breakdown and 6-month trend charts
 - ✅ **Calendar View**: Monthly grid with color-coded bill indicators
-- ✅ **Bulk Actions**: Mark all as paid, clear all data
+- ✅ **Bulk Actions**: Smart bulk paid/unpaid toggle, balance recovery fill, clear all data
 - ✅ **Carried Forward Logic**: Smart overdue tracking with toggle
 - ✅ **Import/Export**: JSON import with auto-ID, CSV conversion utility
 - ✅ **Custom Categories**: User-defined bill categories
-- ✅ **Unit Testing**: 24+ comprehensive tests
+- ✅ **Unit Testing**: 290 automated tests covering core workflows and regressions
 - ✅ **Accessibility**: WCAG 2.1 Level AA compliance
 - ✅ **IndexedDB Sync Queue**: Offline-first sync reliability
 - ✅ **Bill Reminders MVP**: Global reminders, per-bill opt-out, test reminder, reminder history, and inline grid toggles
+- ✅ **Credit Balances**: Overpayment credit tracking, credit filter, credit column, Total Credit, and Net Due metrics
 
 ## 🔮 Future Enhancements
 
@@ -236,6 +245,8 @@ For validation and lifecycle details, see **[docs/guides/JSON_IMPORT_PROCESS_FLO
 
 You can bulk import bills by uploading a JSON file. The system automatically handles unique ID generation.
 
+Optional fields such as `balance`, `creditBalance`, `isPaid`, `paymentHistory`, `notes`, and `split` are also accepted. When `balance` is omitted, the app defaults it to `amountDue`. `creditBalance` must be `0` or greater.
+
 ### Basic Payload Format
 ```json
 {
@@ -245,6 +256,8 @@ You can bulk import bills by uploading a JSON file. The system automatically han
       "category": "Utilities",
       "dueDate": "2026-02-01",
       "amountDue": 150.00,
+            "balance": 150.00,
+            "creditBalance": 0,
       "recurrence": "Monthly"
     },
     {
@@ -252,6 +265,8 @@ You can bulk import bills by uploading a JSON file. The system automatically han
       "category": "Rent",
       "dueDate": "2026-02-01",
       "amountDue": 1200.00,
+            "balance": 1200.00,
+            "creditBalance": 0,
       "recurrence": "Monthly"
     }
   ]
@@ -270,6 +285,7 @@ You can bulk import bills by uploading a JSON file. The system automatically han
 | **`notes`** | String | No | Optional additional details. |
 | **`website`** | String | No | Optional URL for payment/login. |
 | **`balance`** | Number | No | Defaults to `amountDue` if omitted. |
+| **`creditBalance`** | Number | No | Optional stored credit. Must be `0` or greater. |
 | **`isPaid`** | Boolean| No | Defaults to `false` if omitted. |
 | **`id`** | String | No | **Auto-generated** if omitted. Safe to leave blank. |
 
