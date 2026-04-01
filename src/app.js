@@ -60,6 +60,7 @@ import {
     syncPaymentSettingsFromCloud
 } from './utils/cloudSyncManager.js';
 import { getLoginAttemptStatus } from './utils/loginAttemptGuard.js';
+import { getBillReconciliationIssues, RECONCILIATION_ISSUES } from './utils/reconciliation.js';
 
 import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
 import {
@@ -764,11 +765,12 @@ class AppOrchestrator {
                                 this.handleUpdateBalance(billId, balance),
                             onTogglePayment: (billId, isPaid) =>
                                 this.handleTogglePayment(billId, isPaid),
-                                     onRecordPayment: (billId) => openRecordPaymentModal(billId),
+                            onRecordPayment: (billId) => openRecordPaymentModal(billId),
                             onViewHistory: (billId) => this.handleViewHistory(billId),
                             onDeleteBill: (billId) => this.handleDeleteBill(billId),
                             onEditBill: (billId) => this.handleEditBill(billId),
-                            onToggleReminder: (billId, enabled) => this.handleToggleReminder(billId, enabled)
+                            onToggleReminder: (billId, enabled) => this.handleToggleReminder(billId, enabled),
+                            onApplyReconcileFix: (billId, issueCode) => this.handleApplyReconcileFix(billId, issueCode)
                         }
                     );
                 }
@@ -1252,6 +1254,58 @@ class AppOrchestrator {
                 }
             );
             this.rerender();
+        }
+    }
+
+    handleApplyReconcileFix(billId, issueCode = null) {
+        try {
+            const bill = billStore.getAll().find((entry) => entry.id === billId);
+            if (!bill) {
+                billActionHandlers.showErrorNotification('Bill not found.', 'Reconcile');
+                return;
+            }
+
+            const detectedIssues = getBillReconciliationIssues(bill);
+            if (detectedIssues.length === 0) {
+                billActionHandlers.showSuccessNotification('No reconcile issues detected for this bill.');
+                return;
+            }
+
+            const targetIssue = detectedIssues.find((issue) => issue.code === issueCode) || detectedIssues[0];
+            const updated = { ...bill };
+
+            switch (targetIssue.code) {
+                case RECONCILIATION_ISSUES.PAID_WITH_BALANCE:
+                    updated.isPaid = false;
+                    updated.lastPaymentDate = null;
+                    break;
+                case RECONCILIATION_ISSUES.UNPAID_WITH_ZERO_BALANCE:
+                    updated.balance = Math.max(0, Number.parseFloat(updated.amountDue) || 0);
+                    break;
+                case RECONCILIATION_ISSUES.INVALID_NEGATIVE_VALUE:
+                    updated.amountDue = Math.max(0, Number.parseFloat(updated.amountDue) || 0);
+                    updated.balance = Math.max(0, Number.parseFloat(updated.balance ?? updated.amountDue) || 0);
+                    updated.creditBalance = Math.max(0, Number.parseFloat(updated.creditBalance) || 0);
+                    break;
+                default:
+                    billActionHandlers.showErrorNotification('Unsupported reconcile issue.', 'Reconcile');
+                    return;
+            }
+
+            billStore.update(updated);
+            recordAuditEvent('bill.reconcile.fixed', {
+                entityType: 'bill',
+                entityId: bill.id,
+                summary: `Applied reconcile fix (${targetIssue.code}) for ${bill.name}`,
+                metadata: {
+                    issueCode: targetIssue.code
+                }
+            });
+            billActionHandlers.showSuccessNotification(`Reconcile fix applied for "${bill.name}".`);
+            this.rerender();
+        } catch (error) {
+            logger.error('Failed to apply reconcile fix', error);
+            billActionHandlers.showErrorNotification(error.message, 'Reconcile');
         }
     }
 

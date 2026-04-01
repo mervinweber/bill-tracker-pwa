@@ -1,6 +1,7 @@
 import { createLocalDate } from '../utils/dates.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import { filterBillsByPeriod } from '../utils/billHelpers.js';
+import { getBillReconciliationIssues } from '../utils/reconciliation.js';
 import { initializeSwipeDelete, isTouchDevice, isMobileViewport } from '../utils/mobileGestures.js';
 
 let billGridCleanupFns = [];
@@ -45,7 +46,11 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     billGrid.className = "flex flex-col gap-4 p-4 sm:p-6";
     billGrid.innerHTML = '';
 
-    const dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
+    let dueBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
+
+    if (paymentFilter === 'reconcile') {
+        dueBills = dueBills.filter((bill) => getBillReconciliationIssues(bill).length > 0);
+    }
 
     if (viewMode !== 'all' && (selectedPaycheck === null || selectedCategory === null)) {
         initializeBillGrid();
@@ -98,6 +103,8 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     dueBills.forEach(bill => {
         const isPaid = bill.isPaid || false;
         const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
+        const reconciliationIssues = getBillReconciliationIssues(bill);
+        const primaryReconciliationIssue = reconciliationIssues[0] || null;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const dueDate = new Date(bill.dueDate);
@@ -115,6 +122,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             <div class="flex flex-col">
                 <span class="font-semibold text-foreground">${bill.name}</span>
                 <span class="text-[10px] text-muted-foreground truncate max-w-[150px]">${bill.notes || '-'}</span>
+                ${primaryReconciliationIssue ? '<span class="text-[10px] text-amber-700 font-semibold uppercase tracking-wide">Needs Reconcile</span>' : ''}
             </div>
         `;
         row.appendChild(nameCell);
@@ -224,6 +232,15 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         deleteBtn.innerHTML = "🗑️";
         deleteBtn.addEventListener('click', () => actions.onDeleteBill(bill.id));
         actionGroup.appendChild(deleteBtn);
+
+        if (primaryReconciliationIssue && typeof actions.onApplyReconcileFix === 'function') {
+            const fixBtn = document.createElement('button');
+            fixBtn.className = `${btnStyle} hover:text-amber-700`;
+            fixBtn.title = `Apply reconcile fix: ${primaryReconciliationIssue.message}`;
+            fixBtn.innerHTML = '🩹';
+            fixBtn.addEventListener('click', () => actions.onApplyReconcileFix(bill.id, primaryReconciliationIssue.code));
+            actionGroup.appendChild(fixBtn);
+        }
 
         actionsCell.appendChild(actionGroup);
         row.appendChild(actionsCell);
