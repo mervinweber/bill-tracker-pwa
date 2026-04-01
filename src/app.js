@@ -61,6 +61,7 @@ import {
 } from './utils/cloudSyncManager.js';
 import { getLoginAttemptStatus } from './utils/loginAttemptGuard.js';
 import { getBillReconciliationIssues, RECONCILIATION_ISSUES } from './utils/reconciliation.js';
+import { buildBillTimeline } from './utils/historyTimeline.js';
 
 import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
 import {
@@ -998,6 +999,7 @@ class AppOrchestrator {
         const payments = (bill.paymentHistory || []).sort(
             (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
+        const timeline = buildBillTimeline(bill);
 
         const historyContent = document.getElementById('historyContent');
         historyContent.innerHTML = ''; // safe to clear
@@ -1077,6 +1079,62 @@ class AppOrchestrator {
         }
 
         historyContent.appendChild(listContainer);
+
+        const timelineContainer = document.createElement('div');
+        timelineContainer.className = 'history-list mt-4';
+
+        const timelineHeading = document.createElement('h4');
+        timelineHeading.textContent = 'Timeline';
+        timelineHeading.style.margin = '0 0 8px 0';
+        timelineContainer.appendChild(timelineHeading);
+
+        if (timeline.length > 0) {
+            timeline.forEach((entry) => {
+                const item = document.createElement('div');
+                item.className = 'history-payment-item';
+
+                const header = document.createElement('div');
+                header.className = 'history-payment-header';
+
+                const dateStrong = document.createElement('strong');
+                dateStrong.textContent = new Date(entry.timestamp).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                header.appendChild(dateStrong);
+
+                const typeBadge = document.createElement('span');
+                typeBadge.textContent = entry.kind === 'payment' ? 'PAYMENT' : 'AUDIT';
+                typeBadge.className = entry.kind === 'payment'
+                    ? 'history-payment-amount'
+                    : 'history-payment-method';
+                header.appendChild(typeBadge);
+
+                item.appendChild(header);
+
+                const title = document.createElement('div');
+                title.className = 'history-payment-method';
+                title.textContent = entry.title;
+                item.appendChild(title);
+
+                const detail = document.createElement('div');
+                detail.className = 'history-payment-method';
+                detail.textContent = entry.amount !== null
+                    ? `${entry.details} | $${entry.amount.toFixed(2)}`
+                    : entry.details;
+                item.appendChild(detail);
+
+                timelineContainer.appendChild(item);
+            });
+        } else {
+            const emptyTimeline = document.createElement('p');
+            emptyTimeline.className = 'history-empty-state';
+            emptyTimeline.textContent = 'No timeline events yet';
+            timelineContainer.appendChild(emptyTimeline);
+        }
+
+        historyContent.appendChild(timelineContainer);
         document.getElementById('viewHistoryModal').style.display = 'block';
     }
 
