@@ -38,6 +38,10 @@ it('Header: Payment filter dropdown event listener is attached', () => {
     expect(headerContent).toContain('actions.onFilterChange');
 });
 
+it('Header: Reconcile filter option is available', () => {
+    expect(headerContent).toContain('<option value="reconcile">Needs Reconcile</option>');
+});
+
 it('Header: Mobile controls toggle is wired for progressive disclosure', () => {
     expect(headerContent).toContain('mobileControlsToggle');
     expect(headerContent).toContain("mobileControlsToggle.addEventListener('click'");
@@ -129,6 +133,12 @@ it('Bill Grid: History button listeners are attached', () => {
 it('Bill Grid: Delete button listeners are attached', () => {
     expect(billGridContent).toContain("deleteBtn.addEventListener('click'");
     expect(billGridContent).toContain('actions.onDeleteBill');
+});
+
+it('Bill Grid: Reconcile quick-fix button is wired when issues exist', () => {
+    expect(billGridContent).toContain('getBillReconciliationIssues');
+    expect(billGridContent).toContain('actions.onApplyReconcileFix');
+    expect(billGridContent).toContain('Needs Reconcile');
 });
 
 it('Bill Grid: Keyboard delete alternative is attached', () => {
