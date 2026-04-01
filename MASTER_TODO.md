@@ -5,8 +5,87 @@
 > `docs/archive/legacy-planning/CODE_REVIEW_IMPROVEMENTS.md`, `docs/archive/legacy-planning/FEATURE_REQUEST_CODE_QUALITY.md`,
 > `docs/archive/legacy-planning/PHASE_1_2_IMPROVEMENTS.md`, `VERCEL_DEPLOYMENT_CHECKLIST.md`
 >
-> **Last Updated**: March 18, 2026
+> **Last Updated**: April 1, 2026
 > Contains both completed and pending items to preserve implementation history and remaining actions.
+
+## 🎯 Next Additions Focus (April 2026)
+
+### A. Undo for Bulk Actions *(High impact / low risk)*
+- [ ] Add undo toast (8-10 seconds) for:
+  - Bulk mark paid/unpaid
+  - Bulk fill balances
+- [ ] Restore prior bill snapshots on undo and re-render current view
+- [ ] Track undo events in audit log (`bulk.undo.applied`)
+
+### B. Bill History Timeline *(Trust and transparency)*
+- [ ] Add bill-level timeline modal/tab combining payment history + key audit events
+- [ ] Include status flips, balance edits/fills, and credit balance changes
+- [ ] Sort timeline descending by timestamp with clear action labels
+
+### C. Reconcile Mode *(Data quality and confidence)*
+- [ ] Add "Reconcile" filter/view for mismatched bill state
+- [ ] Detect common mismatches:
+  - `isPaid = true` but remaining balance > 0
+  - `isPaid = false` with zero balance and no credit
+  - Negative/invalid amount states from legacy data
+- [ ] Provide one-click fixes (set paid/unpaid, reset balance, clear invalid values)
+
+### D. Reminder System v2 *(Retention feature)*
+- [ ] Add due-soon and overdue reminder cadence options
+- [ ] Add quiet hours and reminder channel preferences
+- [ ] Add "last sent" metadata to prevent duplicate same-day reminders
+
+### E. Setup Health Card *(Onboarding + recovery)*
+- [ ] Add dashboard card showing setup health score
+- [ ] Include checks for: sync enabled, reminder permission, recent backup/export, security env readiness
+- [ ] Add direct CTA links from each failed check to the appropriate setting/action
+
+---
+
+## 🗓️ Two-Week Delivery Roadmap (April Sprint)
+
+### Week 1 — Core Reliability + Confidence
+
+#### Day 1-2: Undo Infrastructure
+- [ ] Implement reusable undo queue utility and toast action wiring
+- [ ] Integrate undo into bulk mark paid/unpaid and bulk fill balances
+- [ ] Add tests for undo happy path and timeout expiry
+
+#### Day 3: Reconcile Rule Engine
+- [ ] Implement reconciliation detectors in helper module
+- [ ] Add unit tests for mismatch detection rules
+
+#### Day 4: Reconcile UI + Quick Fixes
+- [ ] Add reconcile filter entry point and action buttons
+- [ ] Add safe patch handlers for one-click fixes
+
+#### Day 5: Stabilization Pass
+- [ ] UX pass on bulk/reconcile flows (desktop + mobile)
+- [ ] Regression test run and release notes draft
+
+### Week 2 — Product Polish + Retention
+
+#### Day 6-7: Bill History Timeline
+- [ ] Build timeline data adapter (payments + audit events)
+- [ ] Add timeline UI in bill modal/view
+- [ ] Add tests for ordering and event labels
+
+#### Day 8-9: Reminder System v2
+- [ ] Add reminder cadence settings and quiet hours
+- [ ] Implement dedupe guard (`lastSentAt`) and related tests
+
+#### Day 10: Setup Health Card
+- [ ] Add health checks and score algorithm
+- [ ] Add dashboard card with CTA deep-links
+
+#### Day 11: Production Hardening
+- [ ] Run live smoke checklist in deployment section
+- [ ] Validate service worker + manifest + cloud sync flows
+
+#### Day 12-14: Buffer + Ship
+- [ ] Fix carryover bugs and polish copy/accessibility
+- [ ] Final regression suite + release candidate tag
+- [ ] Update README + changelog + master checklist statuses
 
 ## ✅ User Steps You Need To Complete
 

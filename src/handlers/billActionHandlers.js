@@ -225,7 +225,7 @@ export function togglePaymentStatus(billId, isPaid) {
         }
 
         const updated = { ...bill };
-    const mostRecentPaymentDate = getMostRecentPaymentDate(bill);
+        const mostRecentPaymentDate = getMostRecentPaymentDate(bill);
         updated.isPaid = isPaid;
         updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
 
@@ -943,6 +943,8 @@ export const billActionHandlers = {
     validateBill,
     bulkDelete,
     bulkMarkAsPaid,
+    bulkMarkAsUnpaid,
+    bulkFillZeroBalances,
     showErrorNotification,
     showSuccessNotification
 };
