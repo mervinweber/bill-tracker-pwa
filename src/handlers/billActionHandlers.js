@@ -115,14 +115,47 @@ export function showErrorNotification(message, title = 'Error') {
 /**
  * Show success notification
  */
-export function showSuccessNotification(message) {
+export function showSuccessNotification(message, options = {}) {
+    const {
+        actionLabel,
+        onAction,
+        durationMs = 3000
+    } = options;
+
     const notification = document.createElement('div');
     notification.className = 'success-notification';
-    notification.innerHTML = `
-        <div class="notification-content">
-            <p>${message}</p>
-        </div>
-    `;
+    const content = document.createElement('div');
+    content.className = 'notification-content';
+
+    const messageNode = document.createElement('p');
+    messageNode.textContent = message;
+    content.appendChild(messageNode);
+
+    if (actionLabel && typeof onAction === 'function') {
+        const actionButton = document.createElement('button');
+        actionButton.type = 'button';
+        actionButton.textContent = actionLabel;
+        actionButton.style.cssText = `
+            margin-left: 12px;
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 4px;
+            background: transparent;
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 8px;
+        `;
+        actionButton.addEventListener('click', () => {
+            try {
+                onAction();
+            } finally {
+                notification.remove();
+            }
+        });
+        content.appendChild(actionButton);
+    }
+
+    notification.appendChild(content);
     notification.style.cssText = `
         position: fixed;
         bottom: 20px;
@@ -142,7 +175,7 @@ export function showSuccessNotification(message) {
         if (notification.parentNode) {
             notification.remove();
         }
-    }, 3000);
+    }, durationMs);
 }
 
 function getRecurringPaymentStrategy(bill, updated, paymentDate, preferredStrategy = 'single-cycle') {
@@ -344,8 +377,9 @@ export function bulkDelete(billIds, skipConfirm = false) {
 /**
  * Bulk mark bills as paid
  */
-export function bulkMarkAsPaid(billIds, skipConfirm = false) {
+export function bulkMarkAsPaid(billIds, skipConfirm = false, options = {}) {
     try {
+        const { suppressSuccessNotification = false } = options;
         logger.debug('bulkMarkAsPaid called', { billIds });
         if (!billIds || billIds.length === 0) {
             showErrorNotification('No bills currently showing to mark as paid.', 'Bulk Action');
@@ -399,7 +433,9 @@ export function bulkMarkAsPaid(billIds, skipConfirm = false) {
                 summary: `Bulk marked ${updateCount} bills as paid`,
                 metadata: { count: updateCount }
             });
-            showSuccessNotification(`Marked ${updateCount} bills as paid`);
+            if (!suppressSuccessNotification) {
+                showSuccessNotification(`Marked ${updateCount} bills as paid`);
+            }
             return true;
         } else {
             showErrorNotification('All selected bills are already marked as paid.', 'Bulk Action');
@@ -415,8 +451,9 @@ export function bulkMarkAsPaid(billIds, skipConfirm = false) {
 /**
  * Bulk mark bills as unpaid
  */
-export function bulkMarkAsUnpaid(billIds, skipConfirm = false) {
+export function bulkMarkAsUnpaid(billIds, skipConfirm = false, options = {}) {
     try {
+        const { suppressSuccessNotification = false } = options;
         logger.debug('bulkMarkAsUnpaid called', { billIds });
         if (!billIds || billIds.length === 0) {
             showErrorNotification('No bills currently showing to mark as unpaid.', 'Bulk Action');
@@ -454,7 +491,9 @@ export function bulkMarkAsUnpaid(billIds, skipConfirm = false) {
                 summary: `Bulk marked ${updateCount} bills as unpaid`,
                 metadata: { count: updateCount }
             });
-            showSuccessNotification(`Marked ${updateCount} bills as unpaid`);
+            if (!suppressSuccessNotification) {
+                showSuccessNotification(`Marked ${updateCount} bills as unpaid`);
+            }
             return true;
         } else {
             showErrorNotification('All selected bills are already marked as unpaid.', 'Bulk Action');
@@ -472,8 +511,9 @@ export function bulkMarkAsUnpaid(billIds, skipConfirm = false) {
  * Used to recover balance information after upgrades
  * @returns {boolean} True if successful, false otherwise
  */
-export function bulkFillZeroBalances() {
+export function bulkFillZeroBalances(options = {}) {
     try {
+        const { suppressSuccessNotification = false } = options;
         logger.debug('bulkFillZeroBalances called');
         const currentBills = [...billStore.getAll()];
         let updateCount = 0;
@@ -501,7 +541,9 @@ export function bulkFillZeroBalances() {
                 summary: `Bulk filled ${updateCount} zero balances`,
                 metadata: { count: updateCount }
             });
-            showSuccessNotification(`Filled balance for ${updateCount} bill${updateCount === 1 ? '' : 's'}`);
+            if (!suppressSuccessNotification) {
+                showSuccessNotification(`Filled balance for ${updateCount} bill${updateCount === 1 ? '' : 's'}`);
+            }
             return true;
         } else {
             showErrorNotification('No unpaid bills with zero balance found.', 'Bulk Action');

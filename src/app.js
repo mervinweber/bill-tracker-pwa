@@ -1196,17 +1196,61 @@ class AppOrchestrator {
         });
 
         if (confirmed) {
+            const previousBills = structuredClone(billStore.getAll());
             const success = shouldMarkPaid
-                ? bulkMarkAsPaid(ids, true)
-                : bulkMarkAsUnpaid(ids, true);
+                ? bulkMarkAsPaid(ids, true, { suppressSuccessNotification: true })
+                : bulkMarkAsUnpaid(ids, true, { suppressSuccessNotification: true });
             if (success) {
+                const actionLabel = shouldMarkPaid ? 'marked paid' : 'marked unpaid';
+                billActionHandlers.showSuccessNotification(
+                    `Bulk update applied: ${ids.length} bill${ids.length === 1 ? '' : 's'} ${actionLabel}.`,
+                    {
+                        actionLabel: 'Undo',
+                        durationMs: 10000,
+                        onAction: () => {
+                            billStore.setBills(previousBills);
+                            recordAuditEvent('bill.bulk_undo.applied', {
+                                entityType: 'bill',
+                                summary: `Undo applied for bulk ${shouldMarkPaid ? 'paid' : 'unpaid'} action`,
+                                metadata: {
+                                    count: ids.length,
+                                    action: shouldMarkPaid ? 'paid' : 'unpaid'
+                                }
+                            });
+                            billActionHandlers.showSuccessNotification('Bulk update undone.');
+                            this.rerender();
+                        }
+                    }
+                );
                 this.rerender();
             }
         }
     }
 
     handleBulkFillBalances() {
-        if (bulkFillZeroBalances()) {
+        const previousBills = structuredClone(billStore.getAll());
+        if (bulkFillZeroBalances({ suppressSuccessNotification: true })) {
+            const restoredCount = previousBills.filter(bill => !bill.isPaid && (bill.balance === 0 || !bill.balance)).length;
+            billActionHandlers.showSuccessNotification(
+                `Filled balances for ${restoredCount} bill${restoredCount === 1 ? '' : 's'}.`,
+                {
+                    actionLabel: 'Undo',
+                    durationMs: 10000,
+                    onAction: () => {
+                        billStore.setBills(previousBills);
+                        recordAuditEvent('bill.bulk_undo.applied', {
+                            entityType: 'bill',
+                            summary: 'Undo applied for bulk fill balances action',
+                            metadata: {
+                                count: restoredCount,
+                                action: 'fill-balances'
+                            }
+                        });
+                        billActionHandlers.showSuccessNotification('Bulk balance fill undone.');
+                        this.rerender();
+                    }
+                }
+            );
             this.rerender();
         }
     }
