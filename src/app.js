@@ -1188,7 +1188,7 @@ class AppOrchestrator {
         }
 
         historyContent.appendChild(timelineContainer);
-        document.getElementById('viewHistoryModal').style.display = 'block';
+        document.getElementById('viewHistoryModal').style.display = 'flex';
     }
 
     handleRegenerateBills() {

@@ -82,7 +82,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     table.setAttribute('role', 'table');
 
     const thead = document.createElement('thead');
-    thead.className = "[&_tr]:border-b";
+    thead.className = "[&_tr]:border-b sticky top-0 z-10 bg-card";
     thead.innerHTML = `
         <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
             <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Bill</th>

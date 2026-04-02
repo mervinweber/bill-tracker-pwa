@@ -51,54 +51,90 @@ export function initializePaymentModals(onRerender) {
     if (!container) return;
     const g = (id) => /** @type {any} */ (document.getElementById(id));
 
+    const inputBase = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    const labelBase = "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70";
+    const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2";
+    const btnPrimary = `${btnBase} bg-primary text-primary-foreground hover:bg-primary/90`;
+    const btnSecondary = `${btnBase} bg-secondary text-secondary-foreground hover:bg-secondary/80`;
+    const closeBtn = `absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
+    const closeIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg><span class="sr-only">Close</span>`;
+
     container.innerHTML = `
-        <div id="recordPaymentModal" class="modal">
-            <div class="modal-content">
-                <span class="close" id="closeRecordPayment">&times;</span>
-                <h2>Record Payment</h2>
-                <form id="recordPaymentForm">
-                    <input type="hidden" id="paymentBillId">
-                    <div class="payment-summary-card" aria-live="polite">
-                        <p class="payment-summary-bill">Bill: <strong id="paymentBillName">-</strong></p>
-                        <p class="payment-summary-remaining">Remaining: <strong id="paymentRemainingAmount">$0.00</strong></p>
+        <div id="recordPaymentModal" class="fixed inset-0 z-50 overflow-y-auto bg-background/80 backdrop-blur-sm" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="recordPaymentTitle">
+            <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
+                <div class="relative w-full max-w-md border bg-background shadow-lg sm:rounded-lg">
+                    <div class="flex flex-col space-y-1.5 p-6 pb-4 border-b">
+                        <h2 id="recordPaymentTitle" class="text-lg font-semibold leading-none tracking-tight">Record Payment</h2>
+                        <p class="text-sm text-muted-foreground">Enter the amount and date for this payment.</p>
                     </div>
-                    <div id="monthlyStrategySection" class="payment-strategy-section" style="display:none;">
-                        <p id="monthlyStrategyHint" class="payment-strategy-hint"></p>
-                        <div class="payment-strategy-options" role="radiogroup" aria-label="Overdue recurring payment strategy">
-                            <label>
-                                <input type="radio" id="paymentStrategySingleCycle" name="paymentRecurrenceStrategy" value="single-cycle" checked>
-                                <span id="paymentStrategySingleCycleLabel">Clear one cycle only</span>
-                            </label>
-                            <label>
-                                <input type="radio" id="paymentStrategyCatchUp" name="paymentRecurrenceStrategy" value="catch-up-to-current">
-                                <span id="paymentStrategyCatchUpLabel">Catch up to current schedule</span>
-                            </label>
+                    <button type="button" class="${closeBtn}" id="closeRecordPayment" aria-label="Close dialog">${closeIcon}</button>
+                    <form id="recordPaymentForm" class="p-6 pt-4 space-y-4">
+                        <input type="hidden" id="paymentBillId">
+                        <div class="rounded-lg border bg-muted/50 p-3 space-y-1" aria-live="polite">
+                            <p class="text-sm text-muted-foreground">Bill: <strong class="text-foreground" id="paymentBillName">-</strong></p>
+                            <p class="text-sm text-muted-foreground">Remaining: <strong class="text-foreground" id="paymentRemainingAmount">$0.00</strong></p>
                         </div>
-                    </div>
-                    <div class="form-group"><label>Amount Paid:</label><input type="number" id="paymentAmount" step="0.01" required></div>
-                    <div class="form-group"><label>Payment Date:</label><input type="date" id="paymentDate" required></div>
-                    <div class="payment-modal-actions">
-                        <button type="button" id="quickPayFullBtn" class="submit-btn">⚡ Pay Full Today</button>
-                        <button type="submit" class="action-btn">💾 Save Payment</button>
-                    </div>
-                    <details id="paymentOptionalDetails" class="payment-optional-details">
-                        <summary>Optional details</summary>
-                        <div class="form-group"><label>Payment Method:</label><select id="paymentMethod">
-                            <option value="Credit Card">💳 Credit Card</option>
-                            <option value="Debit Card">💳 Debit Card</option>
-                            <option value="Bank Transfer">🏦 Bank Transfer</option>
-                            <option value="Cash">💵 Cash</option>
-                            <option value="Check">📝 Check</option>
-                            <option value="PayPal">💰 PayPal</option>
-                            <option value="Venmo">💸 Venmo</option>
-                        </select></div>
-                        <div class="form-group"><label>Confirmation # (Optional):</label><input type="text" id="paymentConfirmation"></div>
-                    </details>
-                </form>
+                        <div id="monthlyStrategySection" class="rounded-lg border bg-muted/40 p-3 space-y-2" style="display:none;">
+                            <p id="monthlyStrategyHint" class="text-sm text-muted-foreground"></p>
+                            <div class="space-y-1" role="radiogroup" aria-label="Overdue recurring payment strategy">
+                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="radio" id="paymentStrategySingleCycle" name="paymentRecurrenceStrategy" value="single-cycle" checked class="accent-primary">
+                                    <span id="paymentStrategySingleCycleLabel">Clear one cycle only</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input type="radio" id="paymentStrategyCatchUp" name="paymentRecurrenceStrategy" value="catch-up-to-current" class="accent-primary">
+                                    <span id="paymentStrategyCatchUpLabel">Catch up to current schedule</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="paymentAmount" class="${labelBase}">Amount Paid <span class="text-destructive">*</span></label>
+                            <input type="number" id="paymentAmount" step="0.01" required class="${inputBase}" inputmode="decimal">
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="paymentDate" class="${labelBase}">Payment Date <span class="text-destructive">*</span></label>
+                            <input type="date" id="paymentDate" required class="${inputBase}">
+                        </div>
+                        <div class="flex gap-2 flex-col-reverse sm:flex-row">
+                            <button type="button" id="quickPayFullBtn" class="${btnSecondary} flex-1">⚡ Pay Full Today</button>
+                            <button type="submit" class="${btnPrimary} flex-1">💾 Save Payment</button>
+                        </div>
+                        <details id="paymentOptionalDetails" class="pt-1">
+                            <summary class="text-sm text-muted-foreground cursor-pointer select-none">Optional details</summary>
+                            <div class="pt-3 space-y-3">
+                                <div class="grid gap-2">
+                                    <label for="paymentMethod" class="${labelBase}">Payment Method</label>
+                                    <select id="paymentMethod" class="${inputBase}">
+                                        <option value="Credit Card">💳 Credit Card</option>
+                                        <option value="Debit Card">💳 Debit Card</option>
+                                        <option value="Bank Transfer">🏦 Bank Transfer</option>
+                                        <option value="Cash">💵 Cash</option>
+                                        <option value="Check">📝 Check</option>
+                                        <option value="PayPal">💰 PayPal</option>
+                                        <option value="Venmo">💸 Venmo</option>
+                                    </select>
+                                </div>
+                                <div class="grid gap-2">
+                                    <label for="paymentConfirmation" class="${labelBase}">Confirmation # (optional)</label>
+                                    <input type="text" id="paymentConfirmation" class="${inputBase}" placeholder="Optional">
+                                </div>
+                            </div>
+                        </details>
+                    </form>
+                </div>
             </div>
         </div>
-        <div id="viewHistoryModal" class="modal">
-            <div class="modal-content"><span class="close" id="closeViewHistory">&times;</span><h2>📜 Payment History</h2><div id="historyContent"></div></div>
+
+        <div id="viewHistoryModal" class="fixed inset-0 z-50 overflow-y-auto bg-background/80 backdrop-blur-sm" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="viewHistoryTitle">
+            <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
+                <div class="relative w-full max-w-lg border bg-background shadow-lg sm:rounded-lg">
+                    <div class="flex flex-col space-y-1.5 p-6 pb-4 border-b">
+                        <h2 id="viewHistoryTitle" class="text-lg font-semibold leading-none tracking-tight">📜 Payment History</h2>
+                    </div>
+                    <button type="button" class="${closeBtn}" id="closeViewHistory" aria-label="Close dialog">${closeIcon}</button>
+                    <div id="historyContent" class="p-6 pt-4 max-h-[70vh] overflow-y-auto space-y-4"></div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -107,6 +143,25 @@ export function initializePaymentModals(onRerender) {
     });
     document.getElementById('closeViewHistory').addEventListener('click', () => {
         document.getElementById('viewHistoryModal').style.display = 'none';
+    });
+
+    // Click-outside and Escape to close
+    document.getElementById('recordPaymentModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('recordPaymentModal')) {
+            g('recordPaymentModal').style.display = 'none';
+        }
+    });
+    document.getElementById('viewHistoryModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('viewHistoryModal')) {
+            g('viewHistoryModal').style.display = 'none';
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const rp = g('recordPaymentModal');
+        if (rp && rp.style.display !== 'none') { rp.style.display = 'none'; return; }
+        const vh = g('viewHistoryModal');
+        if (vh && vh.style.display !== 'none') { vh.style.display = 'none'; }
     });
 
     const submitPayment = (billId, paymentData) => {
@@ -197,7 +252,7 @@ export function openRecordPaymentModal(billId) {
     f('paymentAmount').value = remaining.toFixed(2);
     f('paymentDate').value = new Date().toISOString().split('T')[0];
     f('paymentOptionalDetails').open = false;
-    f('recordPaymentModal').style.display = 'block';
+    f('recordPaymentModal').style.display = 'flex';
 }
 
 /**
