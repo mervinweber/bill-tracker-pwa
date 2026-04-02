@@ -59,12 +59,53 @@ async function tryRecoverFromStaleServiceWorker(reason = 'unknown') {
     }
 }
 
-window.addEventListener('error', () => {
-    tryRecoverFromStaleServiceWorker('window-error');
+function normalizeErrorText(value) {
+    if (!value) {
+        return '';
+    }
+
+    if (value instanceof Error) {
+        return `${value.name || ''} ${value.message || ''}`.trim().toLowerCase();
+    }
+
+    return String(value).toLowerCase();
+}
+
+function isServiceWorkerOrChunkFailure(errorText = '') {
+    return (
+        errorText.includes('chunkloaderror')
+        || errorText.includes('loading chunk')
+        || errorText.includes('failed to fetch dynamically imported module')
+        || errorText.includes('dynamically imported module')
+        || errorText.includes('importing a module script failed')
+        || errorText.includes('service worker')
+        || errorText.includes('failed to register a serviceworker')
+    );
+}
+
+window.addEventListener('error', (event) => {
+    const errorText = [
+        normalizeErrorText(event?.message),
+        normalizeErrorText(event?.filename),
+        normalizeErrorText(event?.error)
+    ].join(' ');
+
+    if (isServiceWorkerOrChunkFailure(errorText)) {
+        tryRecoverFromStaleServiceWorker('window-error:sw-chunk');
+    }
 });
 
-window.addEventListener('unhandledrejection', () => {
-    tryRecoverFromStaleServiceWorker('unhandled-rejection');
+window.addEventListener('unhandledrejection', (event) => {
+    const reason = event?.reason;
+    const errorText = [
+        normalizeErrorText(reason),
+        normalizeErrorText(reason?.message),
+        normalizeErrorText(reason?.stack)
+    ].join(' ');
+
+    if (isServiceWorkerOrChunkFailure(errorText)) {
+        tryRecoverFromStaleServiceWorker('unhandled-rejection:sw-chunk');
+    }
 });
 
 /**

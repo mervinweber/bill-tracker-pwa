@@ -97,6 +97,51 @@ function findManifestHref(html) {
   return html.match(reverseManifestRegex)?.[1] || null;
 }
 
+function checkSecurityHeaders(headers = {}, prefix = 'Security headers') {
+  const normalized = Object.fromEntries(
+    Object.entries(headers).map(([k, v]) => [String(k).toLowerCase(), String(v || '')])
+  );
+
+  const expected = [
+    {
+      key: 'strict-transport-security',
+      validate: (v) => v.includes('max-age=') && v.includes('includesubdomains'),
+      detail: 'must include max-age and includeSubDomains'
+    },
+    {
+      key: 'x-content-type-options',
+      validate: (v) => v.trim().toLowerCase() === 'nosniff',
+      detail: 'must be nosniff'
+    },
+    {
+      key: 'x-frame-options',
+      validate: (v) => v.trim().toUpperCase() === 'DENY',
+      detail: 'must be DENY'
+    },
+    {
+      key: 'referrer-policy',
+      validate: (v) => v.trim().toLowerCase() === 'strict-origin-when-cross-origin',
+      detail: 'must be strict-origin-when-cross-origin'
+    },
+    {
+      key: 'permissions-policy',
+      validate: (v) => v.includes('camera=()') && v.includes('microphone=()') && v.includes('geolocation=()'),
+      detail: 'must disable camera/microphone/geolocation'
+    },
+    {
+      key: 'content-security-policy',
+      validate: (v) => v.includes("default-src 'self'") && v.includes("script-src 'self'") && v.includes('connect-src'),
+      detail: 'must include baseline CSP directives'
+    }
+  ];
+
+  for (const item of expected) {
+    const value = String(normalized[item.key] || '');
+    const pass = Boolean(value) && item.validate(value.toLowerCase());
+    pushResult(`${prefix}: ${item.key}`, pass, pass ? value : `${item.detail}; actual=${value || 'missing'}`);
+  }
+}
+
 async function checkEndpoint(path) {
   const url = absoluteUrl(path);
   if (!url) {
@@ -118,6 +163,9 @@ async function run() {
     const res = await requestUrl(`${root}/`);
     html = res.text;
     pushResult('Home page reachable', res.ok, `HTTP ${res.status}`);
+    if (res.ok) {
+      checkSecurityHeaders(res.headers, 'Root response security headers');
+    }
   } catch (error) {
     pushResult('Home page reachable', false, error?.message || 'Request failed');
   }

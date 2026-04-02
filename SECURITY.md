@@ -253,33 +253,39 @@ async function handleLogin(email, password) {
 
 ### Dependency Management
 
-**Minimal dependencies for security**:
+The app now includes a small set of audited runtime dependencies.
+
+**Current runtime dependencies**:
 ```json
 {
-  "dependencies": {},
-  "devDependencies": {
-    "vite": "^4.5.14"  // Build tool only, not bundled
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.2",
+    "chart.js": "^4.5.1",
+    "dompurify": "^3.3.3",
+    "tailwindcss": "^3.4.17"
   }
 }
 ```
 
-**Benefits**:
-- ✅ No external code in production
-- ✅ No supply chain attacks possible
-- ✅ Full control over code
-- ✅ Easier security audits
+**Security expectations**:
+- ✅ Pin and review dependency versions during release prep
+- ✅ Run `npm audit` in CI/local before production deploys
+- ✅ Prefer well-maintained libraries with active security response
+- ✅ Keep the runtime dependency surface intentionally small
 
-### Optional Dependencies
+### Runtime Dependency Notes
 
-**Chart.js** (for analytics):
-- Loaded dynamically when analytics view shown
-- From CDN or bundled
-- Well-maintained, security-focused
+**DOMPurify** (`dompurify`):
+- Used for robust HTML sanitization in user-provided text paths
+- Helps prevent XSS payload injection beyond regex-only filtering
 
-**Supabase JS Client** (for cloud sync):
-- Optional
-- Only loaded if configured
-- Security maintained by Supabase team
+**Chart.js** (`chart.js`):
+- Used for visualization features
+- Treat chart labels/datasets as untrusted input and sanitize upstream
+
+**Supabase JS Client** (`@supabase/supabase-js`):
+- Used for optional cloud sync and authentication
+- Security still depends on correctly configured Supabase RLS and auth settings
 
 ### Error Handling Security
 
