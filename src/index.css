@@ -118,11 +118,6 @@
     display: none;
 }
 
-/* Sticky bill-grid column headers sit just below the sticky app header */
-#billGrid thead th.sticky {
-    top: var(--header-height, 0px);
-}
-
 #dashboard,
 #mainContent,
 #billGrid {
