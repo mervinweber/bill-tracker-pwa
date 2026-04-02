@@ -1,5 +1,9 @@
 import { filterBillsByPeriod } from '../utils/billHelpers.js';
 import { isDebtSnowballCandidate } from '../utils/debtSnowball.js';
+import { isSupabaseConfigured } from '../services/supabase.js';
+import { getNotificationSettings } from '../utils/notifications.js';
+import StorageManager from '../utils/StorageManager.js';
+import { STORAGE_KEYS } from '../utils/constants.js';
 
 /**
  * Dashboard Component
@@ -19,6 +23,89 @@ import { isDebtSnowballCandidate } from '../utils/debtSnowball.js';
  * 
  * @module dashboard
  */
+
+/**
+ * Build the Setup Health Card HTML strip.
+ * Runs 4 synchronous health checks and returns an HTML string.
+ * Returns empty string when all checks pass and there's nothing to flag.
+ *
+ * @returns {string} HTML string for the health card
+ */
+function buildHealthCardHtml() {
+    const checks = [];
+
+    // 1. Cloud sync configured
+    const syncOk = isSupabaseConfigured();
+    checks.push({
+        label: 'Cloud Sync',
+        ok: syncOk,
+        icon: '☁️',
+        ctaLabel: syncOk ? null : 'Configure',
+        ctaTarget: 'settingsBtn'
+    });
+
+    // 2. Reminders enabled + permission granted
+    const notifSettings = getNotificationSettings();
+    const hasNotifPermission = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    const remindersOk = notifSettings.enabled && hasNotifPermission;
+    checks.push({
+        label: 'Reminders',
+        ok: remindersOk,
+        icon: '🔔',
+        ctaLabel: remindersOk ? null : 'Enable',
+        ctaTarget: 'settingsBtn'
+    });
+
+    // 3. Recent backup (within 30 days)
+    const lastExport = StorageManager.get(STORAGE_KEYS.LAST_EXPORT_DATE, null);
+    const backupOk = !!lastExport && (Date.now() - new Date(lastExport).getTime()) < 30 * 24 * 60 * 60 * 1000;
+    checks.push({
+        label: 'Backup',
+        ok: backupOk,
+        icon: '💾',
+        ctaLabel: backupOk ? null : 'Export Now',
+        ctaTarget: 'exportDataBtn'
+    });
+
+    // 4. Turnstile security configured
+    const turnstileOk = !!(typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TURNSTILE_SITE_KEY);
+    checks.push({
+        label: 'Security',
+        ok: turnstileOk,
+        icon: '🔒',
+        ctaLabel: turnstileOk ? null : 'Review',
+        ctaTarget: 'settingsBtn'
+    });
+
+    const failCount = checks.filter(c => !c.ok).length;
+    const allOk = failCount === 0;
+
+    const badgeClass = allOk
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+        : 'border-amber-200 bg-amber-50 text-amber-800';
+    const dotColor = allOk ? 'bg-emerald-500' : 'bg-amber-400';
+
+    const checkBadges = checks.map(c => {
+        const cls = c.ok
+            ? 'inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700'
+            : 'inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 cursor-pointer hover:bg-amber-200';
+        const icon = c.ok ? '✓' : '!';
+        return `<span class="${cls}">${c.icon} ${c.label} <span class="font-bold">${icon}</span></span>`;
+    }).join('');
+
+    const ctaHtml = allOk
+        ? ''
+        : `<button type="button" id="healthCardSettingsLink" class="ml-auto inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">Review Setup →</button>`;
+
+    return `
+        <div class="mt-2 flex flex-wrap items-center gap-2 rounded-xl border ${badgeClass} px-4 py-2.5 text-xs">
+            <span class="inline-block h-2 w-2 rounded-full ${dotColor}"></span>
+            <span class="font-semibold">Setup Health</span>
+            <span class="text-xs opacity-60">•</span>
+            ${checkBadges}
+            ${ctaHtml}
+        </div>`;
+}
 
 /**
  * Initialize dashboard component
@@ -121,6 +208,8 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     const allZero = totalBills === 0 && totalAmountDue === 0 && unpaidBills.length === 0 && overdueBills.length === 0;
 
     // Compact layout when no data matches the current filter
+    const healthCardHtml = buildHealthCardHtml();
+
     if (allZero) {
         dashboard.className = "w-full pt-3 pb-1";
         dashboard.innerHTML = `
@@ -145,7 +234,12 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                 </div>
             </div>
             ${debtWidgetHtml}
+            ${healthCardHtml}
         `;
+        // Wire CTA button to open settings
+        document.getElementById('healthCardSettingsLink')?.addEventListener('click', () => {
+            document.getElementById('settingsBtn')?.click();
+        });
         return;
     }
 
@@ -223,5 +317,10 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
             </div>
         </div>
         ${debtWidgetHtml}
+        ${healthCardHtml}
     `;
+    // Wire CTA button to open settings
+    document.getElementById('healthCardSettingsLink')?.addEventListener('click', () => {
+        document.getElementById('settingsBtn')?.click();
+    });
 };

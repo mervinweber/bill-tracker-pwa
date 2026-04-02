@@ -1,4 +1,5 @@
-import { it, expect } from 'vitest';
+import { it, expect, describe } from 'vitest';
+import { isInQuietHours } from '../src/utils/notifications.js';
 
 // In-memory notification tracker helpers (unit testing business logic)
 const makeHistory = () => {
@@ -87,4 +88,60 @@ it('notification dismissal returns false for missing id', () => {
 it('special characters preserved in notification content', () => {
     const content = 'Bill $$$ 💰 ✓';
     expect(content).toBe('Bill $$$ 💰 ✓');
+});
+
+// ─── isInQuietHours ─────────────────────────────────────────────────────────
+
+function makeTime(h, m = 0) {
+    const d = new Date(2026, 0, 1); // fixed date, timezone-safe
+    d.setHours(h, m, 0, 0);
+    return d;
+}
+
+describe('isInQuietHours', () => {
+    it('returns false when quiet hours disabled', () => {
+        expect(isInQuietHours({ quietHoursEnabled: false, quietHoursStart: '22:00', quietHoursEnd: '08:00' }, makeTime(23))).toBe(false);
+    });
+
+    it('returns false when settings missing', () => {
+        expect(isInQuietHours(null, makeTime(23))).toBe(false);
+    });
+
+    // Overnight window: 22:00–08:00
+    it('returns true at 23:00 in overnight window', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '22:00', quietHoursEnd: '08:00' }, makeTime(23))).toBe(true);
+    });
+
+    it('returns true at 00:00 in overnight window', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '22:00', quietHoursEnd: '08:00' }, makeTime(0))).toBe(true);
+    });
+
+    it('returns true at 07:59 in overnight window', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '22:00', quietHoursEnd: '08:00' }, makeTime(7, 59))).toBe(true);
+    });
+
+    it('returns false at 08:00 in overnight window (boundary excluded)', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '22:00', quietHoursEnd: '08:00' }, makeTime(8))).toBe(false);
+    });
+
+    it('returns false at noon in overnight window', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '22:00', quietHoursEnd: '08:00' }, makeTime(12))).toBe(false);
+    });
+
+    it('returns true at 22:00 exactly (start boundary)', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '22:00', quietHoursEnd: '08:00' }, makeTime(22))).toBe(true);
+    });
+
+    // Same-day window: 09:00–17:00
+    it('returns true at 13:00 in same-day window', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '09:00', quietHoursEnd: '17:00' }, makeTime(13))).toBe(true);
+    });
+
+    it('returns false at 08:59 in same-day window', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '09:00', quietHoursEnd: '17:00' }, makeTime(8, 59))).toBe(false);
+    });
+
+    it('returns false at 17:00 in same-day window (end boundary excluded)', () => {
+        expect(isInQuietHours({ quietHoursEnabled: true, quietHoursStart: '09:00', quietHoursEnd: '17:00' }, makeTime(17))).toBe(false);
+    });
 });

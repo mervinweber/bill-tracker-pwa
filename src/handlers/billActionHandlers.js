@@ -784,6 +784,8 @@ export function exportData() {
             metadata: { billCount: bills.length }
         });
 
+        StorageManager.set(STORAGE_KEYS.LAST_EXPORT_DATE, new Date().toISOString());
+
         showSuccessNotification('Data exported successfully');
         return true;
     } catch (error) {

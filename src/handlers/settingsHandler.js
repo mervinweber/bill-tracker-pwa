@@ -151,6 +151,30 @@ export function showSettingsModal(categoriesList) {
                     <option value="7" ${notificationSettings.daysBefore === 7 ? 'selected' : ''}>7 days before</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label class="settings-inline-label">
+                    <input type="checkbox" id="settingsOverdueReminders" ${notificationSettings.overdueEnabled !== false ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
+                    <strong>Remind about overdue unpaid bills</strong>
+                </label>
+                <div class="settings-help-text" style="margin-top: 6px;">
+                    Sends a daily reminder for any bills that are past their due date and still unpaid.
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="settings-inline-label">
+                    <input type="checkbox" id="settingsQuietHoursEnabled" ${notificationSettings.quietHoursEnabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
+                    <strong>Enable quiet hours</strong>
+                </label>
+                <div class="settings-help-text" style="margin-top: 6px;">
+                    No reminders will be sent during quiet hours.
+                </div>
+            </div>
+            <div class="form-group settings-inline-group" id="settingsQuietHoursFields" style="${notificationSettings.quietHoursEnabled ? '' : 'opacity: 0.5; pointer-events: none'}">
+                <label><strong>From:</strong></label>
+                <input type="time" id="settingsQuietHoursStart" value="${notificationSettings.quietHoursStart || '22:00'}" ${isNotificationSupported() ? '' : 'disabled'}>
+                <label style="margin-left: 12px;"><strong>Until:</strong></label>
+                <input type="time" id="settingsQuietHoursEnd" value="${notificationSettings.quietHoursEnd || '08:00'}" ${isNotificationSupported() ? '' : 'disabled'}>
+            </div>
             <div class="form-group settings-inline-group">
                 <button type="button" id="sendTestReminderBtn" class="view-btn" ${isNotificationSupported() ? '' : 'disabled'}>
                     🔔 Send Test Reminder
@@ -310,6 +334,18 @@ export function showSettingsModal(categoriesList) {
         if (sendTestReminderBtn) {
             sendTestReminderBtn.addEventListener('click', async () => {
                 await handleSendTestReminder();
+            });
+        }
+
+        // Toggle quiet hours fields opacity when checkbox changes
+        const quietHoursCheckbox = document.getElementById('settingsQuietHoursEnabled');
+        if (quietHoursCheckbox) {
+            quietHoursCheckbox.addEventListener('change', () => {
+                const fields = document.getElementById('settingsQuietHoursFields');
+                if (fields) {
+                    /** @type {HTMLElement} */ (fields).style.opacity = /** @type {HTMLInputElement} */ (quietHoursCheckbox).checked ? '1' : '0.5';
+                    /** @type {HTMLElement} */ (fields).style.pointerEvents = /** @type {HTMLInputElement} */ (quietHoursCheckbox).checked ? '' : 'none';
+                }
             });
         }
 
@@ -850,7 +886,15 @@ async function handleSettingsSave(e, modal) {
 
         StorageManager.set(STORAGE_KEYS.NOTIFICATION_SETTINGS, {
             enabled: notificationsEnabled,
-            daysBefore: Number.isNaN(reminderDays) ? 1 : reminderDays
+            daysBefore: Number.isNaN(reminderDays) ? 1 : reminderDays,
+            overdueEnabled: !!(document.getElementById('settingsOverdueReminders'))
+                ? /** @type {HTMLInputElement} */ (document.getElementById('settingsOverdueReminders')).checked
+                : true,
+            quietHoursEnabled: !!(document.getElementById('settingsQuietHoursEnabled'))
+                ? /** @type {HTMLInputElement} */ (document.getElementById('settingsQuietHoursEnabled')).checked
+                : false,
+            quietHoursStart: /** @type {HTMLInputElement|null} */ (document.getElementById('settingsQuietHoursStart'))?.value || '22:00',
+            quietHoursEnd: /** @type {HTMLInputElement|null} */ (document.getElementById('settingsQuietHoursEnd'))?.value || '08:00'
         });
 
         // Update paycheck manager
