@@ -55,13 +55,18 @@ import {
 import { safeJSONParse } from './utils/validation.js';
 import { checkAndSendDueBillReminders } from './utils/notifications.js';
 import { recordAuditEvent } from './utils/auditTracker.js';
+import { enqueueUndoAction } from './utils/undoQueue.js';
 import {
     syncBillsFromCloud,
     syncLocalDataToCloudIfNeeded,
     syncPaymentSettingsFromCloud
 } from './utils/cloudSyncManager.js';
 import { getLoginAttemptStatus } from './utils/loginAttemptGuard.js';
-import { getBillReconciliationIssues, RECONCILIATION_ISSUES } from './utils/reconciliation.js';
+import {
+    getBillReconciliationIssues,
+    applyReconciliationFix,
+    RECONCILIATION_ISSUES
+} from './utils/reconciliation.js';
 import { buildBillTimeline } from './utils/historyTimeline.js';
 
 import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
@@ -1369,23 +1374,30 @@ class AppOrchestrator {
                 : bulkMarkAsUnpaid(ids, true, { suppressSuccessNotification: true });
             if (success) {
                 const actionLabel = shouldMarkPaid ? 'marked paid' : 'marked unpaid';
+                const undoAction = enqueueUndoAction({
+                    durationMs: 10000,
+                    onUndo: () => {
+                        billStore.setBills(previousBills);
+                        recordAuditEvent('bulk.undo.applied', {
+                            entityType: 'bill',
+                            summary: `Undo applied for bulk ${shouldMarkPaid ? 'paid' : 'unpaid'} action`,
+                            metadata: {
+                                count: ids.length,
+                                action: shouldMarkPaid ? 'paid' : 'unpaid'
+                            }
+                        });
+                        billActionHandlers.showSuccessNotification('Bulk update undone.');
+                        this.rerender();
+                    }
+                });
+
                 billActionHandlers.showSuccessNotification(
                     `Bulk update applied: ${ids.length} bill${ids.length === 1 ? '' : 's'} ${actionLabel}.`,
                     {
                         actionLabel: 'Undo',
                         durationMs: 10000,
                         onAction: () => {
-                            billStore.setBills(previousBills);
-                            recordAuditEvent('bill.bulk_undo.applied', {
-                                entityType: 'bill',
-                                summary: `Undo applied for bulk ${shouldMarkPaid ? 'paid' : 'unpaid'} action`,
-                                metadata: {
-                                    count: ids.length,
-                                    action: shouldMarkPaid ? 'paid' : 'unpaid'
-                                }
-                            });
-                            billActionHandlers.showSuccessNotification('Bulk update undone.');
-                            this.rerender();
+                            undoAction.consume();
                         }
                     }
                 );
@@ -1398,23 +1410,30 @@ class AppOrchestrator {
         const previousBills = structuredClone(billStore.getAll());
         if (bulkFillZeroBalances({ suppressSuccessNotification: true })) {
             const restoredCount = previousBills.filter(bill => !bill.isPaid && (bill.balance === 0 || !bill.balance)).length;
+            const undoAction = enqueueUndoAction({
+                durationMs: 10000,
+                onUndo: () => {
+                    billStore.setBills(previousBills);
+                    recordAuditEvent('bulk.undo.applied', {
+                        entityType: 'bill',
+                        summary: 'Undo applied for bulk fill balances action',
+                        metadata: {
+                            count: restoredCount,
+                            action: 'fill-balances'
+                        }
+                    });
+                    billActionHandlers.showSuccessNotification('Bulk balance fill undone.');
+                    this.rerender();
+                }
+            });
+
             billActionHandlers.showSuccessNotification(
                 `Filled balances for ${restoredCount} bill${restoredCount === 1 ? '' : 's'}.`,
                 {
                     actionLabel: 'Undo',
                     durationMs: 10000,
                     onAction: () => {
-                        billStore.setBills(previousBills);
-                        recordAuditEvent('bill.bulk_undo.applied', {
-                            entityType: 'bill',
-                            summary: 'Undo applied for bulk fill balances action',
-                            metadata: {
-                                count: restoredCount,
-                                action: 'fill-balances'
-                            }
-                        });
-                        billActionHandlers.showSuccessNotification('Bulk balance fill undone.');
-                        this.rerender();
+                        undoAction.consume();
                     }
                 }
             );
@@ -1436,25 +1455,10 @@ class AppOrchestrator {
                 return;
             }
 
-            const targetIssue = detectedIssues.find((issue) => issue.code === issueCode) || detectedIssues[0];
-            const updated = { ...bill };
-
-            switch (targetIssue.code) {
-                case RECONCILIATION_ISSUES.PAID_WITH_BALANCE:
-                    updated.isPaid = false;
-                    updated.lastPaymentDate = null;
-                    break;
-                case RECONCILIATION_ISSUES.UNPAID_WITH_ZERO_BALANCE:
-                    updated.balance = Math.max(0, Number.parseFloat(updated.amountDue) || 0);
-                    break;
-                case RECONCILIATION_ISSUES.INVALID_NEGATIVE_VALUE:
-                    updated.amountDue = Math.max(0, Number.parseFloat(updated.amountDue) || 0);
-                    updated.balance = Math.max(0, Number.parseFloat(updated.balance ?? updated.amountDue) || 0);
-                    updated.creditBalance = Math.max(0, Number.parseFloat(updated.creditBalance) || 0);
-                    break;
-                default:
-                    billActionHandlers.showErrorNotification('Unsupported reconcile issue.', 'Reconcile');
-                    return;
+            const { updatedBill: updated, appliedIssue: targetIssue } = applyReconciliationFix(bill, issueCode);
+            if (!updated || !targetIssue || !Object.values(RECONCILIATION_ISSUES).includes(targetIssue.code)) {
+                billActionHandlers.showErrorNotification('Unsupported reconcile issue.', 'Reconcile');
+                return;
             }
 
             billStore.update(updated);

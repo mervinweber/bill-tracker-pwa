@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     getBillReconciliationIssues,
     getReconciliationReport,
+    applyReconciliationFix,
     RECONCILIATION_ISSUES
 } from '../src/utils/reconciliation.js';
 
@@ -59,5 +60,36 @@ describe('reconciliation rule engine', () => {
         expect(report.billsWithIssues).toBe(2);
         expect(report.issueCount).toBe(2);
         expect(report.items.map((item) => item.billId)).toEqual(['a', 'c']);
+    });
+
+    it('applies paid-with-balance fix by marking bill unpaid', () => {
+        const original = buildBill({
+            isPaid: true,
+            lastPaymentDate: '2026-04-01',
+            paymentHistory: [{ id: 'p1', date: '2026-04-01', amount: 10 }]
+        });
+
+        const result = applyReconciliationFix(original, RECONCILIATION_ISSUES.PAID_WITH_BALANCE);
+        expect(result.appliedIssue?.code).toBe(RECONCILIATION_ISSUES.PAID_WITH_BALANCE);
+        expect(result.updatedBill?.isPaid).toBe(false);
+        expect(result.updatedBill?.lastPaymentDate).toBeNull();
+    });
+
+    it('applies unpaid-with-zero-balance fix by restoring amountDue to balance', () => {
+        const original = buildBill({ isPaid: false, amountDue: 145, balance: 0, paymentHistory: [] });
+
+        const result = applyReconciliationFix(original, RECONCILIATION_ISSUES.UNPAID_WITH_ZERO_BALANCE);
+        expect(result.appliedIssue?.code).toBe(RECONCILIATION_ISSUES.UNPAID_WITH_ZERO_BALANCE);
+        expect(result.updatedBill?.balance).toBe(145);
+    });
+
+    it('applies invalid-negative-value fix by clamping monetary values to zero', () => {
+        const original = buildBill({ amountDue: -10, balance: -3, creditBalance: -2, paymentHistory: [] });
+
+        const result = applyReconciliationFix(original, RECONCILIATION_ISSUES.INVALID_NEGATIVE_VALUE);
+        expect(result.appliedIssue?.code).toBe(RECONCILIATION_ISSUES.INVALID_NEGATIVE_VALUE);
+        expect(result.updatedBill?.amountDue).toBe(0);
+        expect(result.updatedBill?.balance).toBe(0);
+        expect(result.updatedBill?.creditBalance).toBe(0);
     });
 });

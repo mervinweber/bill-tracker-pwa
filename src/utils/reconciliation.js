@@ -83,3 +83,45 @@ export function getReconciliationReport(bills) {
         items
     };
 }
+
+/**
+ * Applies a one-click fix for a detected reconciliation issue.
+ * @param {import('../types/domainTypes.js').Bill & { creditBalance?: number }} bill
+ * @param {string|null} issueCode
+ * @returns {{ updatedBill: (import('../types/domainTypes.js').Bill & { creditBalance?: number }) | null, appliedIssue: {code: string, message: string} | null }}
+ */
+export function applyReconciliationFix(bill, issueCode = null) {
+    if (!bill) {
+        return { updatedBill: null, appliedIssue: null };
+    }
+
+    const detectedIssues = getBillReconciliationIssues(bill);
+    if (detectedIssues.length === 0) {
+        return { updatedBill: null, appliedIssue: null };
+    }
+
+    const targetIssue = detectedIssues.find((issue) => issue.code === issueCode) || detectedIssues[0];
+    const updated = { ...bill };
+
+    switch (targetIssue.code) {
+        case RECONCILIATION_ISSUES.PAID_WITH_BALANCE:
+            updated.isPaid = false;
+            updated.lastPaymentDate = null;
+            break;
+        case RECONCILIATION_ISSUES.UNPAID_WITH_ZERO_BALANCE:
+            updated.balance = Math.max(0, Number(updated.amountDue) || 0);
+            break;
+        case RECONCILIATION_ISSUES.INVALID_NEGATIVE_VALUE:
+            updated.amountDue = Math.max(0, Number(updated.amountDue) || 0);
+            updated.balance = Math.max(0, Number(updated.balance ?? updated.amountDue) || 0);
+            updated.creditBalance = Math.max(0, Number(updated.creditBalance) || 0);
+            break;
+        default:
+            return { updatedBill: null, appliedIssue: null };
+    }
+
+    return {
+        updatedBill: updated,
+        appliedIssue: targetIssue
+    };
+}

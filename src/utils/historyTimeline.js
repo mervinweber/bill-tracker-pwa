@@ -15,6 +15,61 @@ function toTimestamp(value) {
     return Number.isFinite(ms) ? ms : 0;
 }
 
+function toMoney(value) {
+    const amount = Number.parseFloat(value);
+    return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : null;
+}
+
+function mapAuditTitle(eventType, summary) {
+    if (summary) return summary;
+
+    switch (eventType) {
+        case 'bill.payment.recorded':
+            return 'Payment recorded';
+        case 'bill.payment_status.toggled':
+            return 'Payment status updated';
+        case 'bill.balance.updated':
+            return 'Balance updated';
+        case 'bill.reconcile.fixed':
+            return 'Reconcile fix applied';
+        case 'bill.due_date.updated':
+            return 'Due date updated';
+        default:
+            return eventType;
+    }
+}
+
+function mapAuditDetails(event) {
+    const metadata = event?.metadata || {};
+
+    switch (event.eventType) {
+        case 'bill.balance.updated': {
+            const balance = toMoney(metadata.balance);
+            return balance ? `New balance: ${balance}` : event.eventType;
+        }
+        case 'bill.due_date.updated': {
+            const previous = metadata.previousDueDate;
+            const next = metadata.newDueDate;
+            if (previous && next) {
+                return `${previous} -> ${next}`;
+            }
+            return event.eventType;
+        }
+        case 'bill.reconcile.fixed':
+            return metadata.issueCode ? `Issue fixed: ${metadata.issueCode}` : event.eventType;
+        case 'bill.payment_status.toggled':
+            return typeof metadata.isPaid === 'boolean'
+                ? `Marked ${metadata.isPaid ? 'paid' : 'unpaid'}`
+                : event.eventType;
+        case 'bill.payment.recorded': {
+            const amount = toMoney(metadata.amount);
+            return amount ? `Payment amount: ${amount}` : event.eventType;
+        }
+        default:
+            return event.eventType;
+    }
+}
+
 /** @returns {BillTimelineEntry} */
 function mapPaymentEvent(payment) {
     const amount = Number.parseFloat(payment.amount) || 0;
@@ -38,8 +93,8 @@ function mapAuditEvent(event) {
         kind: 'audit',
         timestamp: event.timestamp,
         sortTime: toTimestamp(event.timestamp),
-        title: event.summary || event.eventType,
-        details: event.eventType,
+        title: mapAuditTitle(event.eventType, event.summary),
+        details: mapAuditDetails(event),
         amount: null
     };
 }

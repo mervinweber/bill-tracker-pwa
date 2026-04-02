@@ -7,7 +7,8 @@ vi.mock('../src/utils/auditTracker.js', () => ({
             entityId: 'bill-1',
             timestamp: '2026-04-01T10:00:00.000Z',
             eventType: 'bill.balance.updated',
-            summary: 'Balance updated for Internet'
+            summary: 'Balance updated for Internet',
+            metadata: { balance: 77.5 }
         },
         {
             entityType: 'bill',
@@ -49,7 +50,7 @@ describe('history timeline adapter', () => {
         expect(timeline.length).toBe(2);
         expect(timeline[0].kind).toBe('payment');
         expect(timeline[1].kind).toBe('audit');
-        expect(timeline[1].details).toBe('bill.balance.updated');
+        expect(timeline[1].details).toBe('New balance: $77.50');
     });
 
     it('returns empty for missing bill', () => {
