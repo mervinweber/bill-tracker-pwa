@@ -66,6 +66,20 @@ function validateImportedBillCandidate(bill) {
         }
     }
 
+    if (bill.debtTotal !== undefined) {
+        const debtTotalValidation = validateAmount(bill.debtTotal);
+        if (!debtTotalValidation.isValid) {
+            errors.push('Debt Total: ' + debtTotalValidation.error);
+        }
+    }
+
+    if (bill.interestRate !== undefined) {
+        const parsedInterestRate = Number.parseFloat(bill.interestRate);
+        if (!Number.isFinite(parsedInterestRate) || parsedInterestRate < 0) {
+            errors.push('Interest Rate must be a valid non-negative number');
+        }
+    }
+
     return {
         isValid: errors.length === 0,
         errors
@@ -179,6 +193,30 @@ export function normalizeImportPayload(data, options = {}) {
             }
             newBill.creditBalance = parsedCreditBalance;
         }
+
+        if (newBill.debtTotal === undefined) {
+            newBill.debtTotal = 0;
+        } else {
+            const parsedDebtTotal = Number.parseFloat(newBill.debtTotal);
+            if (!Number.isFinite(parsedDebtTotal) || parsedDebtTotal < 0) {
+                importErrors.push(`Bill ${index + 1}: Debt total must be a valid non-negative number`);
+                return null;
+            }
+            newBill.debtTotal = parsedDebtTotal;
+        }
+
+        if (newBill.interestRate === undefined) {
+            newBill.interestRate = 0;
+        } else {
+            const parsedInterestRate = Number.parseFloat(newBill.interestRate);
+            if (!Number.isFinite(parsedInterestRate) || parsedInterestRate < 0) {
+                importErrors.push(`Bill ${index + 1}: Interest rate must be a valid non-negative number`);
+                return null;
+            }
+            newBill.interestRate = parsedInterestRate;
+        }
+
+        newBill.includeInDebtSnowball = Boolean(newBill.includeInDebtSnowball);
 
         const billValidation = validateImportedBillCandidate(newBill);
         if (!billValidation.isValid) {

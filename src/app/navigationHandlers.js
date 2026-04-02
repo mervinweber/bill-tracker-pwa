@@ -45,6 +45,11 @@ export function handlePaycheckPlannerSelect() {
     appState.setDisplayMode('list');
 }
 
+export function handleDebtSnowballSelect() {
+    appState.setViewMode('debt-snowball');
+    appState.setDisplayMode('list');
+}
+
 export function handleCategorySelect(category) {
     appState.setSelectedCategory(category);
     appState.setViewMode('filtered');

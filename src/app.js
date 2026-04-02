@@ -22,6 +22,7 @@ import { initializeAuthModal, openAuthModal } from './components/authModal.js';
 
 import { initializeUpcomingBillsView, renderUpcomingBills } from './views/upcomingBillsView.js';
 import { initializePaycheckPlannerView, renderPaycheckPlanner } from './views/paycheckPlannerView.js';
+import { initializeDebtSnowballView, renderDebtSnowballView } from './views/debtSnowballView.js';
 
 import {
     billActionHandlers,
@@ -72,6 +73,7 @@ import {
     handleAllBillsSelect,
     handleUpcomingBillsSelect,
     handlePaycheckPlannerSelect,
+    handleDebtSnowballSelect,
     handleCategorySelect,
     handleDisplayModeSelect,
     handleOpenAddBill
@@ -149,6 +151,7 @@ class AppOrchestrator {
             // Initialize baseline views
             initializeUpcomingBillsView();
             initializePaycheckPlannerView();
+            initializeDebtSnowballView();
 
             // Initialize components with callbacks
             initializeHeader(paycheckLabels, {
@@ -158,6 +161,7 @@ class AppOrchestrator {
                 onAllBillsSelect: handleAllBillsSelect,
                 onUpcomingBillsSelect: handleUpcomingBillsSelect,
                 onPaycheckPlannerSelect: handlePaycheckPlannerSelect,
+                onDebtSnowballSelect: handleDebtSnowballSelect,
                 onDisplayModeSelect: handleDisplayModeSelect,
                 onToggleCarriedForward: handleToggleCarriedForward
             });
@@ -404,6 +408,30 @@ class AppOrchestrator {
         StorageManager.set(STORAGE_KEYS.PAYCHECK_ADJUSTMENTS, adjustmentsByDate);
     }
 
+    getDebtSnowballSettings() {
+        const raw = StorageManager.get(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, { extraPayment: 0 });
+        return {
+            extraPayment: Number.parseFloat(raw?.extraPayment) || 0
+        };
+    }
+
+    saveDebtSnowballSettings(settings) {
+        StorageManager.set(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, {
+            extraPayment: Math.max(0, Number.parseFloat(settings?.extraPayment) || 0)
+        });
+    }
+
+    handleSaveDebtSnowballExtraPayment(amount) {
+        try {
+            this.saveDebtSnowballSettings({ extraPayment: amount });
+            billActionHandlers.showSuccessNotification('Debt snowball extra payment updated.');
+            this.rerender();
+        } catch (error) {
+            logger.error('Failed saving debt snowball settings', error);
+            billActionHandlers.showErrorNotification(error.message, 'Debt Snowball');
+        }
+    }
+
     handleSavePaycheckAmount(amount) {
         try {
             const currentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, paycheckManager.paymentSettings);
@@ -615,6 +643,7 @@ class AppOrchestrator {
             const analyticsView = document.getElementById('analyticsView');
             const upcomingBillsView = document.getElementById('upcomingBillsView');
             const paycheckPlannerView = document.getElementById('paycheckPlannerView');
+            const debtSnowballView = document.getElementById('debtSnowballView');
 
             // Hide all views first
             const dashboard = document.getElementById('dashboard');
@@ -623,6 +652,7 @@ class AppOrchestrator {
             if (analyticsView) analyticsView.style.display = 'none';
             if (upcomingBillsView) upcomingBillsView.style.display = 'none';
             if (paycheckPlannerView) paycheckPlannerView.style.display = 'none';
+            if (debtSnowballView) debtSnowballView.style.display = 'none';
             if (dashboard) dashboard.style.display = 'none';
 
             if (state.displayMode !== 'analytics' && this.analyticsViewModule?.cleanupCharts) {
@@ -671,6 +701,18 @@ class AppOrchestrator {
                             onRemoveAdjustment: (payDate, adjustmentId) => this.handleRemovePaycheckAdjustment(payDate, adjustmentId),
                             onExportAdjustments: (format) => this.handleExportPaycheckAdjustments(format),
                             onInvalidAmount: (message) => billActionHandlers.showErrorNotification(message, 'Planner Input')
+                        }
+                    );
+                } else if (state.viewMode === 'debt-snowball') {
+                    if (debtSnowballView) debtSnowballView.style.display = 'block';
+                    renderDebtSnowballView(
+                        {
+                            bills,
+                            settings: this.getDebtSnowballSettings()
+                        },
+                        {
+                            onSaveExtraPayment: (amount) => this.handleSaveDebtSnowballExtraPayment(amount),
+                            onEditBill: (billId) => this.handleEditBill(billId)
                         }
                     );
                 } else {
@@ -828,6 +870,13 @@ class AppOrchestrator {
                 balance: billData?.balance || (g('billBalance').value
                     ? parseFloat(g('billBalance').value)
                     : parseFloat(g('billAmountDue').value)),
+                debtTotal: billData?.debtTotal ?? (g('billDebtTotal').value
+                    ? parseFloat(g('billDebtTotal').value)
+                    : (existingBill?.debtTotal || 0)),
+                interestRate: billData?.interestRate ?? (g('billInterestRate').value
+                    ? parseFloat(g('billInterestRate').value)
+                    : (existingBill?.interestRate || 0)),
+                includeInDebtSnowball: billData?.includeInDebtSnowball ?? g('billIncludeInDebtSnowball').checked,
                 recurrence: billData?.recurrence || g('billRecurrence').value,
                 reminderEnabled: billData?.reminderEnabled ?? g('billReminderEnabled').checked,
                 notes: billData?.notes || g('billNotes').value,

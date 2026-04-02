@@ -8,6 +8,7 @@
  * @returns {void}
  * @description Creates a modal form with:
  *   - All required fields: category, name, due date, amount due, balance, recurrence, notes
+ *   - Optional debt tracking fields for snowball planning
  *   - Form validation with proper error messages
  *   - Proper dialog semantics and WCAG 2.1 Level AA accessibility
  *   - Close button and Escape key handler
@@ -92,6 +93,27 @@ export const initializeBillForm = (categories, actions) => {
                         <option value="Quarterly">Every 3 months (Quarterly)</option>
                         <option value="Yearly">Yearly</option>
                     </select>
+                </div>
+
+                <div class="rounded-lg border bg-muted/20 p-4 space-y-3">
+                    <div>
+                        <h3 class="text-sm font-semibold text-foreground">Debt Snowball Details</h3>
+                        <p class="text-xs text-muted-foreground">Use for credit cards, loans, mortgages, or any debt you want reviewed.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="grid gap-2">
+                            <label for="billDebtTotal" class="${labelBase}">Total Debt</label>
+                            <input type="number" id="billDebtTotal" step="0.01" min="0" placeholder="0.00" class="${inputBase}" inputmode="decimal">
+                        </div>
+                        <div class="grid gap-2">
+                            <label for="billInterestRate" class="${labelBase}">Interest Rate %</label>
+                            <input type="number" id="billInterestRate" step="0.01" min="0" placeholder="0.00" class="${inputBase}" inputmode="decimal">
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="billIncludeInDebtSnowball" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
+                        <label for="billIncludeInDebtSnowball" class="text-sm font-medium leading-none cursor-pointer">Include this bill in debt snowball review</label>
+                    </div>
                 </div>
 
                 <div class="flex items-center space-x-2 py-2">
@@ -268,6 +290,9 @@ export const initializeBillForm = (categories, actions) => {
             dueDate: g('billDueDate').value,
             amountDue: amount,
             balance: parseFloat(g('billBalance').value),
+            debtTotal: parseFloat(g('billDebtTotal').value) || 0,
+            interestRate: parseFloat(g('billInterestRate').value) || 0,
+            includeInDebtSnowball: g('billIncludeInDebtSnowball').checked,
             recurrence: g('billRecurrence').value,
             reminderEnabled: g('billReminderEnabled').checked,
             notes: g('billNotes').value,
@@ -287,6 +312,9 @@ export const openBillForm = (bill) => {
         dueDate: '',
         amountDue: 0,
         balance: 0,
+        debtTotal: 0,
+        interestRate: 0,
+        includeInDebtSnowball: false,
         recurrence: 'One-time',
         reminderEnabled: true,
         notes: '',
@@ -302,6 +330,9 @@ export const openBillForm = (bill) => {
     g('billDueDate').value = billData.dueDate;
     g('billAmountDue').value = billData.amountDue || 0;
     g('billBalance').value = billData.balance || 0;
+    g('billDebtTotal').value = billData.debtTotal || 0;
+    g('billInterestRate').value = billData.interestRate || 0;
+    g('billIncludeInDebtSnowball').checked = billData.includeInDebtSnowball || false;
 
     g('billRecurrence').value = billData.recurrence;
     g('billReminderEnabled').checked = billData.reminderEnabled !== false;
@@ -359,6 +390,9 @@ export const resetBillForm = () => {
     g('billCategory').value = '';
     g('billFormElement').reset();
     g('billReminderEnabled').checked = true;
+    g('billDebtTotal').value = '';
+    g('billInterestRate').value = '';
+    g('billIncludeInDebtSnowball').checked = false;
     g('billSplitEnabled').checked = false;
     document.getElementById('splitSection').classList.add('hidden');
     document.getElementById('payersList').innerHTML = '';

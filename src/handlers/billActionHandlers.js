@@ -954,6 +954,20 @@ export function validateBill(billData) {
         }
     }
 
+    if (billData.debtTotal !== undefined) {
+        const debtTotalValidation = validateAmount(billData.debtTotal);
+        if (!debtTotalValidation.isValid) {
+            errors.push('Debt Total: ' + debtTotalValidation.error);
+        }
+    }
+
+    if (billData.interestRate !== undefined) {
+        const parsedInterestRate = Number.parseFloat(billData.interestRate);
+        if (!Number.isFinite(parsedInterestRate) || parsedInterestRate < 0) {
+            errors.push('Interest Rate must be a valid non-negative number');
+        }
+    }
+
     // Validate split data if provided
     if (billData.split && billData.split.enabled) {
         if (!Array.isArray(billData.split.payers) || billData.split.payers.length === 0) {

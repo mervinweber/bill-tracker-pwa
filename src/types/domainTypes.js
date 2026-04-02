@@ -41,6 +41,9 @@
  * @property {string|null} [lastPaymentDate]
  * @property {PaymentHistoryEntry[]} [paymentHistory]
  * @property {BillSplit} [split]
+ * @property {number} [debtTotal]
+ * @property {number} [interestRate]
+ * @property {boolean} [includeInDebtSnowball]
  */
 
 /**

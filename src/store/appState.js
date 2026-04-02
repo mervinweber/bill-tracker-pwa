@@ -5,7 +5,7 @@
  * Manages:
  * - selectedPaycheck: Current paycheck index for filtering
  * - selectedCategory: Current category filter
- * - viewMode: 'filtered' (paycheck+category view), 'all' (all bills), or 'upcoming'
+ * - viewMode: 'filtered' (paycheck+category view), 'all' (all bills), 'upcoming', 'planner', or 'debt-snowball'
  * - displayMode: 'list', 'calendar', or 'analytics'
  * - paymentFilter: 'all', 'paid', 'unpaid', 'credit', or 'reconcile'
  * - isLoading: Loading state for async operations
@@ -26,7 +26,7 @@ class AppState {
         this.state = {
             selectedPaycheck: null,
             selectedCategory: null,
-            viewMode: 'filtered', // 'filtered', 'all', or 'upcoming'
+            viewMode: 'filtered', // 'filtered', 'all', 'upcoming', 'planner', or 'debt-snowball'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
             paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'credit', 'reconcile'
             allBillsScope: 'everything', // 'everything', 'open-through-next-pay-date', 'open-only'
@@ -119,12 +119,12 @@ class AppState {
     /**
      * Set view mode (filtered or all bills)
      * 
-     * @param {string} mode - View mode: 'filtered', 'all', or 'upcoming'
+    * @param {string} mode - View mode: 'filtered', 'all', 'upcoming', 'planner', or 'debt-snowball'
      * @returns {void}
      * @description Updates viewMode and notifies subscribers
      */
     setViewMode(mode) {
-        this.state.viewMode = mode; // 'filtered', 'all', or 'upcoming'
+        this.state.viewMode = mode; // 'filtered', 'all', 'upcoming', 'planner', or 'debt-snowball'
         this.notifySubscribers();
     }
 

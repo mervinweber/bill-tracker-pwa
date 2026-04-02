@@ -79,3 +79,28 @@ it('should reject negative credit balance', () => {
     }
     expect(rejected).toBe(true);
 });
+
+it('should normalize debt fields', () => {
+    const result = normalizeImportPayload({
+        bills: [{
+            ...validPayload.bills[0],
+            debtTotal: 1200,
+            interestRate: 18.99,
+            includeInDebtSnowball: true
+        }]
+    });
+    expect(result.processedBills[0].debtTotal).toBe(1200);
+    expect(result.processedBills[0].interestRate).toBe(18.99);
+    expect(result.processedBills[0].includeInDebtSnowball).toBe(true);
+});
+
+it('should reject negative debt total', () => {
+    const badPayload = { bills: [{ ...validPayload.bills[0], debtTotal: -50 }] };
+    let rejected = false;
+    try {
+        normalizeImportPayload(badPayload);
+    } catch (err) {
+        rejected = /debt total|invalid bill entries|non-negative number/i.test(err.message);
+    }
+    expect(rejected).toBe(true);
+});

@@ -10,6 +10,7 @@
  * @param {Function} [actions.onUpcomingBillsSelect] - Called when user clicks "Upcoming" button
  * @param {Function} [actions.onToggleCarriedForward] - Called when carried forward toggle changes
  * @param {Function} [actions.onPaycheckPlannerSelect] - Called when user clicks "Planner" button
+ * @param {Function} [actions.onDebtSnowballSelect] - Called when user clicks "Debt Snowball" button
  * @param {Function} [actions.onDisplayModeSelect] - Called when display mode button is clicked
  * @returns {void}
  * @description Sets up the header with:
@@ -48,6 +49,7 @@ export const initializeHeader = (paychecks, actions) => {
                     <button id="allBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
                     <button id="upcomingBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View upcoming bills" aria-pressed="false">📅 Upcoming</button>
                     <button id="paycheckPlannerBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View paycheck planner" aria-pressed="false">💵 Planner</button>
+                    <button id="debtSnowballBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View debt snowball planner" aria-pressed="false">🏔️ Debt</button>
                 </div>
 
                 <button
@@ -103,6 +105,7 @@ export const initializeHeader = (paychecks, actions) => {
     const allBillsBtn = document.getElementById('allBillsBtn');
     const upcomingBillsBtn = document.getElementById('upcomingBillsBtn');
     const paycheckPlannerBtn = document.getElementById('paycheckPlannerBtn');
+    const debtSnowballBtn = document.getElementById('debtSnowballBtn');
     const headerStatus = document.getElementById('headerStatus');
     const listViewBtn = document.getElementById('listViewBtn');
     const calendarViewBtn = document.getElementById('calendarViewBtn');
@@ -164,6 +167,8 @@ export const initializeHeader = (paychecks, actions) => {
         upcomingBillsBtn.setAttribute('aria-pressed', 'false');
         paycheckPlannerBtn.classList.remove('active');
         paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
+        debtSnowballBtn.classList.remove('active');
+        debtSnowballBtn.setAttribute('aria-pressed', 'false');
         const selectedText = sel.options[sel.selectedIndex].text;
         headerStatus.textContent = `Viewing bills for: ${selectedText}`;
         actions.onPaycheckSelect(parseInt(sel.value));
@@ -176,6 +181,8 @@ export const initializeHeader = (paychecks, actions) => {
         upcomingBillsBtn.setAttribute('aria-pressed', 'false');
         paycheckPlannerBtn.classList.remove('active');
         paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
+        debtSnowballBtn.classList.remove('active');
+        debtSnowballBtn.setAttribute('aria-pressed', 'false');
         payPeriodSelect.value = '';
         headerStatus.textContent = 'Viewing all bills';
         actions.onAllBillsSelect();
@@ -188,6 +195,8 @@ export const initializeHeader = (paychecks, actions) => {
         allBillsBtn.setAttribute('aria-pressed', 'false');
         paycheckPlannerBtn.classList.remove('active');
         paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
+        debtSnowballBtn.classList.remove('active');
+        debtSnowballBtn.setAttribute('aria-pressed', 'false');
         headerStatus.textContent = 'Viewing upcoming bills';
         actions.onUpcomingBillsSelect();
     });
@@ -199,8 +208,23 @@ export const initializeHeader = (paychecks, actions) => {
         allBillsBtn.setAttribute('aria-pressed', 'false');
         upcomingBillsBtn.classList.remove('active');
         upcomingBillsBtn.setAttribute('aria-pressed', 'false');
+        debtSnowballBtn.classList.remove('active');
+        debtSnowballBtn.setAttribute('aria-pressed', 'false');
         headerStatus.textContent = 'Viewing paycheck planner';
         actions.onPaycheckPlannerSelect?.();
+    });
+
+    debtSnowballBtn.addEventListener('click', () => {
+        debtSnowballBtn.classList.add('active');
+        debtSnowballBtn.setAttribute('aria-pressed', 'true');
+        allBillsBtn.classList.remove('active');
+        allBillsBtn.setAttribute('aria-pressed', 'false');
+        upcomingBillsBtn.classList.remove('active');
+        upcomingBillsBtn.setAttribute('aria-pressed', 'false');
+        paycheckPlannerBtn.classList.remove('active');
+        paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
+        headerStatus.textContent = 'Viewing debt snowball planner';
+        actions.onDebtSnowballSelect?.();
     });
 
     document.getElementById('paymentFilter').addEventListener('change', (e) => {
@@ -256,6 +280,7 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
     const allBillsBtn = document.getElementById('allBillsBtn');
     const upcomingBillsBtn = document.getElementById('upcomingBillsBtn');
     const paycheckPlannerBtn = document.getElementById('paycheckPlannerBtn');
+    const debtSnowballBtn = document.getElementById('debtSnowballBtn');
     const listViewBtn = document.getElementById('listViewBtn');
     const calendarViewBtn = document.getElementById('calendarViewBtn');
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
@@ -277,6 +302,10 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
             paycheckPlannerBtn.classList.remove('active');
             paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
         }
+        if (debtSnowballBtn) {
+            debtSnowballBtn.classList.remove('active');
+            debtSnowballBtn.setAttribute('aria-pressed', 'false');
+        }
     } else if (viewMode === 'upcoming') {
         allBillsBtn.classList.remove('active');
         allBillsBtn.setAttribute('aria-pressed', 'false');
@@ -287,6 +316,10 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
         if (paycheckPlannerBtn) {
             paycheckPlannerBtn.classList.remove('active');
             paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
+        }
+        if (debtSnowballBtn) {
+            debtSnowballBtn.classList.remove('active');
+            debtSnowballBtn.setAttribute('aria-pressed', 'false');
         }
     } else if (viewMode === 'planner') {
         allBillsBtn.classList.remove('active');
@@ -299,6 +332,25 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
             paycheckPlannerBtn.classList.add('active');
             paycheckPlannerBtn.setAttribute('aria-pressed', 'true');
         }
+        if (debtSnowballBtn) {
+            debtSnowballBtn.classList.remove('active');
+            debtSnowballBtn.setAttribute('aria-pressed', 'false');
+        }
+    } else if (viewMode === 'debt-snowball') {
+        allBillsBtn.classList.remove('active');
+        allBillsBtn.setAttribute('aria-pressed', 'false');
+        if (upcomingBillsBtn) {
+            upcomingBillsBtn.classList.remove('active');
+            upcomingBillsBtn.setAttribute('aria-pressed', 'false');
+        }
+        if (paycheckPlannerBtn) {
+            paycheckPlannerBtn.classList.remove('active');
+            paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
+        }
+        if (debtSnowballBtn) {
+            debtSnowballBtn.classList.add('active');
+            debtSnowballBtn.setAttribute('aria-pressed', 'true');
+        }
     } else {
         allBillsBtn.classList.remove('active');
         allBillsBtn.setAttribute('aria-pressed', 'false');
@@ -309,6 +361,10 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
         if (paycheckPlannerBtn) {
             paycheckPlannerBtn.classList.remove('active');
             paycheckPlannerBtn.setAttribute('aria-pressed', 'false');
+        }
+        if (debtSnowballBtn) {
+            debtSnowballBtn.classList.remove('active');
+            debtSnowballBtn.setAttribute('aria-pressed', 'false');
         }
     }
 

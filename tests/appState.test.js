@@ -39,6 +39,11 @@ it('should set view mode', () => {
     expect(appState.getState().viewMode).toBe('calendar');
 });
 
+it('should support debt snowball view mode', () => {
+    appState.setViewMode('debt-snowball');
+    expect(appState.getState().viewMode).toBe('debt-snowball');
+});
+
 it('should handle multiple subscribers independently', () => {
     let count1 = 0, count2 = 0;
     const unsub1 = appState.subscribe(() => count1++);

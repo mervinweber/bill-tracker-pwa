@@ -20,6 +20,7 @@ const headerContent = fs.readFileSync(headerPath, 'utf8');
 const sidebarContent = fs.readFileSync(sidebarPath, 'utf8');
 const billGridContent = fs.readFileSync(billGridPath, 'utf8');
 const billFormContent = fs.readFileSync(billFormPath, 'utf8');
+const appContent = fs.readFileSync(path.join(__dirname, '../src/app.js'), 'utf8');
 
 // ============ HEADER TESTS ============
 
@@ -40,6 +41,11 @@ it('Header: Payment filter dropdown event listener is attached', () => {
 
 it('Header: Reconcile filter option is available', () => {
     expect(headerContent).toContain('<option value="reconcile">Needs Reconcile</option>');
+});
+
+it('Header: Debt snowball navigation button is available', () => {
+    expect(headerContent).toContain('id="debtSnowballBtn"');
+    expect(headerContent).toContain('actions.onDebtSnowballSelect');
 });
 
 it('Header: Mobile controls toggle is wired for progressive disclosure', () => {
@@ -204,6 +210,15 @@ it('Bill Form: Form fields are present', () => {
     expect(billFormContent).toContain('id="billDueDate"');
     expect(billFormContent).toContain('id="billAmountDue"');
     expect(billFormContent).toContain('id="billBalance"');
+    expect(billFormContent).toContain('id="billDebtTotal"');
+    expect(billFormContent).toContain('id="billInterestRate"');
+    expect(billFormContent).toContain('id="billIncludeInDebtSnowball"');
+});
+
+it('App: Debt snowball view is wired into rendering flow', () => {
+    expect(appContent).toContain('initializeDebtSnowballView');
+    expect(appContent).toContain("state.viewMode === 'debt-snowball'");
+    expect(appContent).toContain('renderDebtSnowballView');
 });
 
 it('Bill Form: Form validation exists', () => {

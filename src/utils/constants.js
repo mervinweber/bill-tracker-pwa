@@ -5,6 +5,7 @@
 export const STORAGE_KEYS = {
     PAYMENT_SETTINGS: 'paymentSettings',
     PAYCHECK_ADJUSTMENTS: 'paycheckAdjustments',
+    DEBT_SNOWBALL_SETTINGS: 'debtSnowballSettings',
     ALL_BILLS_SCOPE: 'allBillsScope',
     BILLS: 'bills',
     CUSTOM_CATEGORIES: 'customCategories',
