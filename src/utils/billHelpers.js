@@ -183,7 +183,7 @@ export const getTotalPaid = (bill) => {
  */
 export const getRemainingBalance = (bill) => {
     const totalDue = bill.balance || bill.amountDue || 0;
-    const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
+    const creditBalance = Math.max(0, Number(bill.creditBalance) || 0);
     const effectiveDue = Math.max(0, totalDue - creditBalance);
     const totalPaid = getTotalPaid(bill);
     return Math.max(0, effectiveDue - totalPaid);
