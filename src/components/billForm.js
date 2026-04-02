@@ -35,11 +35,12 @@ export const initializeBillForm = (categories, actions) => {
     const btnOutline = `${btnBase} border border-input bg-background hover:bg-accent hover:text-accent-foreground`;
     const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground h-9 w-9 p-0`;
 
-    form.className = "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0";
+    form.className = "fixed inset-0 z-50 overflow-y-auto bg-background/80 backdrop-blur-sm";
     form.style.display = 'none'; // Controlled by open/close functions
 
     form.innerHTML = `
-        <div class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg md:w-full">
+        <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div class="relative w-full max-w-lg border bg-background p-6 shadow-lg sm:rounded-lg">
             <div class="flex flex-col space-y-1.5 text-center sm:text-left">
                 <h2 id="billFormTitle" class="text-lg font-semibold leading-none tracking-tight">Add/Edit Bill</h2>
                 <p class="text-sm text-muted-foreground">Fill in the details for your bill. Click save when you're done.</p>
@@ -159,6 +160,7 @@ export const initializeBillForm = (categories, actions) => {
                     <button type="submit" class="${btnPrimary}">Save Bill</button>
                 </div>
             </form>
+        </div>
         </div>
     `;
 
@@ -378,8 +380,7 @@ export const openBillForm = (bill) => {
     }
 
     const form = document.getElementById('billForm');
-    form.style.display = 'block';
-    form.classList.add('animate-in', 'fade-in-0');
+    form.style.display = 'flex';
     document.getElementById('billCategory').focus();
 };
 

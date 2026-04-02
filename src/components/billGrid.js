@@ -85,14 +85,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     thead.className = "[&_tr]:border-b";
     thead.innerHTML = `
         <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Bill</th>
-            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Due</th>
-            ${viewMode === 'all' ? '<th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Category</th>' : ''}
-            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Amount</th>
-            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Balance</th>
-            <th class="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Credit</th>
-            <th class="h-10 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
-            <th class="h-10 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
+            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Bill</th>
+            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Due</th>
+            ${viewMode === 'all' ? '<th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Category</th>' : ''}
+            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Amount</th>
+            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Balance</th>
+            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Credit</th>
+            <th class="sticky top-0 z-10 h-10 px-4 text-center align-middle font-medium text-muted-foreground bg-card">Status</th>
+            <th class="sticky top-0 z-10 h-10 px-4 text-right align-middle font-medium text-muted-foreground bg-card">Actions</th>
         </tr>
     `;
     table.appendChild(thead);

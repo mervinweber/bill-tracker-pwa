@@ -182,7 +182,7 @@ function openViewHistory(billId) {
     }
 
     historyContent.appendChild(listDiv);
-    document.getElementById('viewHistoryModal').style.display = 'block';
+    document.getElementById('viewHistoryModal').style.display = 'flex';
 }
 
 function closeViewHistory() {
