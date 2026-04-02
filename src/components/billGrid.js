@@ -75,24 +75,23 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     const inputBase = "flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
     const tableWrapper = document.createElement('div');
-    tableWrapper.className = "relative w-full overflow-auto rounded-lg border bg-card shadow-sm";
+    tableWrapper.className = "relative w-full overflow-x-auto overflow-y-visible rounded-lg border bg-card shadow-sm";
 
     const table = document.createElement('table');
-    table.className = "w-full caption-bottom text-sm";
+    table.className = "w-full caption-bottom text-sm min-w-max sm:min-w-full";
     table.setAttribute('role', 'table');
 
     const thead = document.createElement('thead');
     thead.className = "[&_tr]:border-b";
     thead.innerHTML = `
         <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Bill</th>
-            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Due</th>
-            ${viewMode === 'all' ? '<th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Category</th>' : ''}
-            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Amount</th>
-            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Balance</th>
-            <th class="sticky top-0 z-10 h-10 px-4 text-left align-middle font-medium text-muted-foreground bg-card">Credit</th>
-            <th class="sticky top-0 z-10 h-10 px-4 text-center align-middle font-medium text-muted-foreground bg-card">Status</th>
-            <th class="sticky top-0 z-10 h-10 px-4 text-right align-middle font-medium text-muted-foreground bg-card">Actions</th>
+            <th class="sticky top-0 z-20 h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Bill</th>
+            <th class="sticky top-0 z-20 h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Due</th>
+            ${viewMode === 'all' ? '<th class="sticky top-0 z-20 h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Category</th>' : ''}
+            <th class="sticky top-0 z-20 h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Amount</th>\n            <th class="sticky top-0 z-20 h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Balance</th>
+            <th class="sticky top-0 z-20 h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Credit</th>
+            <th class="sticky top-0 z-20 h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Status</th>
+            <th class="sticky top-0 z-20 h-9 px-3 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Actions</th>
         </tr>
     `;
     table.appendChild(thead);

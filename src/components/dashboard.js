@@ -149,76 +149,76 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         return;
     }
 
-    dashboard.className = "w-full pt-4 pb-2";
+    dashboard.className = "w-full pt-3 pb-1";
     dashboard.innerHTML = `
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-7 sm:gap-4 mb-2">
-            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Total Bills</span>
-                    <span class="text-sm">📋</span>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-7 sm:gap-3 mb-2">
+            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-0.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Total Bills</span>
+                    <span class="text-xs">📋</span>
                 </div>
-                <div class="flex items-center pt-1">
-                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">${totalBills}</span>
+                <div class="flex items-center pt-0.5">
+                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg">${totalBills}</span>
                 </div>
             </div>
             
-            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Total Due</span>
-                    <span class="text-sm">💰</span>
+            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-0.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Total Due</span>
+                    <span class="text-xs">💰</span>
                 </div>
-                <div class="flex items-center pt-1">
-                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">$${totalAmountDue.toFixed(2)}</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Net Due</span>
-                    <span class="text-sm">🧮</span>
-                </div>
-                <div class="flex items-center pt-1">
-                    <span class="text-xl font-bold tracking-tight ${netDue > 0 ? 'text-foreground' : 'text-emerald-700'} sm:text-2xl">$${netDue.toFixed(2)}</span>
+                <div class="flex items-center pt-0.5">
+                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg">$${totalAmountDue.toFixed(2)}</span>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-1 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 sm:text-xs">Total Credit</span>
-                    <span class="text-sm">💚</span>
+            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-0.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Net Due</span>
+                    <span class="text-xs">🧮</span>
                 </div>
-                <div class="flex items-center pt-1">
-                    <span class="text-xl font-bold tracking-tight text-emerald-800 sm:text-2xl">$${totalCredit.toFixed(2)}</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Unpaid</span>
-                    <span class="text-sm">⚠️</span>
-                </div>
-                <div class="flex items-center pt-1">
-                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">${unpaidBills.length}</span>
+                <div class="flex items-center pt-0.5">
+                    <span class="text-base font-bold tracking-tight ${netDue > 0 ? 'text-foreground' : 'text-emerald-700'} sm:text-lg">$${netDue.toFixed(2)}</span>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">Unpaid Amt</span>
-                    <span class="text-sm">💳</span>
+            <div class="flex flex-col gap-0.5 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-0.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-700 sm:text-[10px]">Total Credit</span>
+                    <span class="text-xs">💚</span>
                 </div>
-                <div class="flex items-center pt-1">
-                    <span class="text-xl font-bold tracking-tight text-foreground sm:text-2xl text-destructive">$${totalUnpaidAmount.toFixed(2)}</span>
+                <div class="flex items-center pt-0.5">
+                    <span class="text-base font-bold tracking-tight text-emerald-800 sm:text-lg">$${totalCredit.toFixed(2)}</span>
                 </div>
             </div>
 
-            <div class="col-span-2 flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-sm sm:col-span-1 border-destructive/20 bg-destructive/5">
-                <div class="flex items-center justify-between space-y-0 pb-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-destructive sm:text-xs">Overdue</span>
-                    <span class="text-sm">🔴</span>
+            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-0.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Unpaid</span>
+                    <span class="text-xs">⚠️</span>
                 </div>
-                <div class="flex items-center pt-1">
-                    <span class="text-xl font-bold tracking-tight text-destructive sm:text-2xl">${overdueBills.length}</span>
+                <div class="flex items-center pt-0.5">
+                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg">${unpaidBills.length}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
+                <div class="flex items-center justify-between space-y-0 pb-0.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Unpaid Amt</span>
+                    <span class="text-xs">💳</span>
+                </div>
+                <div class="flex items-center pt-0.5">
+                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg text-destructive">$${totalUnpaidAmount.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <div class="col-span-2 flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm sm:col-span-1 border-destructive/20 bg-destructive/5">
+                <div class="flex items-center justify-between space-y-0 pb-0.5">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-destructive sm:text-[10px]">Overdue</span>
+                    <span class="text-xs">🔴</span>
+                </div>
+                <div class="flex items-center pt-0.5">
+                    <span class="text-base font-bold tracking-tight text-destructive sm:text-lg">${overdueBills.length}</span>
                 </div>
             </div>
         </div>
