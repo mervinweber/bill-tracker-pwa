@@ -123,6 +123,13 @@
     top: var(--header-height, 0px);
 }
 
+#dashboard,
+#mainContent,
+#billGrid {
+    position: relative;
+    z-index: 0;
+}
+
 /* Shared modal overlay styles for settings, payment, and history dialogs */
 .modal {
     position: fixed;

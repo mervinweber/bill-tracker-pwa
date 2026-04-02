@@ -117,10 +117,11 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         // Name & Notes hidden
         const nameCell = document.createElement('td');
         nameCell.className = "p-4 align-middle";
+        const hasNotes = typeof bill.notes === 'string' && bill.notes.trim().length > 0;
         nameCell.innerHTML = `
             <div class="flex flex-col">
                 <span class="font-semibold text-foreground">${bill.name}</span>
-                <span class="text-[10px] text-muted-foreground truncate max-w-[150px]">${bill.notes || '-'}</span>
+                ${hasNotes ? `<span class="text-[10px] text-muted-foreground truncate max-w-[150px]">${bill.notes}</span>` : ''}
                 ${primaryReconciliationIssue ? '<span class="text-[10px] text-amber-700 font-semibold uppercase tracking-wide">Needs Reconcile</span>' : ''}
             </div>
         `;
