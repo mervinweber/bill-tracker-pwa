@@ -409,22 +409,24 @@ class AppOrchestrator {
     }
 
     getDebtSnowballSettings() {
-        const raw = StorageManager.get(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, { extraPayment: 0 });
+        const raw = StorageManager.get(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, { extraPayment: 0, strategy: 'snowball' });
         return {
-            extraPayment: Number.parseFloat(raw?.extraPayment) || 0
+            extraPayment: Number.parseFloat(raw?.extraPayment) || 0,
+            strategy: raw?.strategy === 'avalanche' ? 'avalanche' : 'snowball'
         };
     }
 
     saveDebtSnowballSettings(settings) {
         StorageManager.set(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, {
-            extraPayment: Math.max(0, Number.parseFloat(settings?.extraPayment) || 0)
+            extraPayment: Math.max(0, Number.parseFloat(settings?.extraPayment) || 0),
+            strategy: settings?.strategy === 'avalanche' ? 'avalanche' : 'snowball'
         });
     }
 
-    handleSaveDebtSnowballExtraPayment(amount) {
+    handleSaveDebtSnowballSettings(settings) {
         try {
-            this.saveDebtSnowballSettings({ extraPayment: amount });
-            billActionHandlers.showSuccessNotification('Debt snowball extra payment updated.');
+            this.saveDebtSnowballSettings(settings);
+            billActionHandlers.showSuccessNotification('Debt snowball settings updated.');
             this.rerender();
         } catch (error) {
             logger.error('Failed saving debt snowball settings', error);
@@ -711,7 +713,7 @@ class AppOrchestrator {
                             settings: this.getDebtSnowballSettings()
                         },
                         {
-                            onSaveExtraPayment: (amount) => this.handleSaveDebtSnowballExtraPayment(amount),
+                            onSaveSettings: (s) => this.handleSaveDebtSnowballSettings(s),
                             onEditBill: (billId) => this.handleEditBill(billId)
                         }
                     );
@@ -732,6 +734,7 @@ class AppOrchestrator {
                                 state.showCarriedForward,
                                 state.allBillsScope
                             );
+                            document.getElementById('dashboardDebtLink')?.addEventListener('click', () => handleDebtSnowballSelect());
                         }
                         billGrid.className = 'flex flex-col gap-4 p-4 sm:p-6';
                         billGrid.innerHTML = `
@@ -791,6 +794,7 @@ class AppOrchestrator {
 
                     if (dashboard) dashboard.style.display = 'block';
                     renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward, state.allBillsScope);
+                    document.getElementById('dashboardDebtLink')?.addEventListener('click', () => handleDebtSnowballSelect());
 
                     renderBillGrid(
                         {

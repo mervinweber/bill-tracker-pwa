@@ -1,4 +1,5 @@
 import { filterBillsByPeriod } from '../utils/billHelpers.js';
+import { isDebtSnowballCandidate } from '../utils/debtSnowball.js';
 
 /**
  * Dashboard Component
@@ -80,6 +81,26 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     // Use shared filtering logic to ensure consistency with grid
     const displayBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
 
+    // Debt overview widget — uses ALL bills (not filtered) to show full debt picture
+    const debtCandidates = (bills || []).filter(isDebtSnowballCandidate);
+    const totalDebtAmount = debtCandidates.reduce((sum, b) => sum + Math.max(0, Number.parseFloat(b.debtTotal) || 0), 0);
+    const totalDebtMonthlyInterest = debtCandidates.reduce((sum, b) => {
+        const rate = Math.max(0, Number.parseFloat(b.interestRate) || 0);
+        const debt = Math.max(0, Number.parseFloat(b.debtTotal) || 0);
+        return sum + (debt * (rate / 100) / 12);
+    }, 0);
+    const debtWidgetHtml = debtCandidates.length > 0 ? `
+        <div class="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            <span class="text-base">🏔️</span>
+            <span class="font-semibold">Debt Overview</span>
+            <span class="text-amber-600">•</span>
+            <span>${debtCandidates.length} tracked debt${debtCandidates.length !== 1 ? 's' : ''}</span>
+            <span class="text-amber-600">•</span>
+            <span>Total: <strong>$${totalDebtAmount.toFixed(2)}</strong></span>
+            <span class="text-amber-600">•</span>
+            <span>Est. Monthly Interest: <strong>$${totalDebtMonthlyInterest.toFixed(2)}</strong></span>
+            <button id="dashboardDebtLink" type="button" class="ml-auto inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">View Debt Snowball →</button>
+        </div>` : '';
 
     const totalBills = displayBills.length;
     const totalAmountDue = displayBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
@@ -123,6 +144,7 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                     <span>🔴</span><span class="font-medium">Overdue</span><span class="font-bold text-foreground">0</span>
                 </div>
             </div>
+            ${debtWidgetHtml}
         `;
         return;
     }
@@ -200,5 +222,6 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                 </div>
             </div>
         </div>
+        ${debtWidgetHtml}
     `;
 };
