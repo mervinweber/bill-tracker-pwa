@@ -22,9 +22,9 @@ describe('undo toast behavior', () => {
             durationMs: 10000
         });
 
-        const button = document.querySelector('.success-notification button');
+        const button = /** @type {HTMLButtonElement|null} */ (document.querySelector('.success-notification button'));
         expect(button).toBeTruthy();
-        button.click();
+        button?.click();
         expect(onAction).toHaveBeenCalledTimes(1);
         expect(document.querySelector('.success-notification')).toBeNull();
     });

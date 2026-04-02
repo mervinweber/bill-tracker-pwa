@@ -157,6 +157,7 @@ export const getTotalPaid = (bill) => {
  * @param {Object} bill - Bill object with balance/amountDue and paymentHistory
  * @param {number} [bill.balance] - Current balance (primary, checked first; omit to fall back to amountDue)
  * @param {number} bill.amountDue - Amount originally due (fallback if balance missing)
+ * @param {number|string} [bill.creditBalance] - Optional stored credit to subtract from total due
  * @param {Array<Object>} [bill.paymentHistory] - Payment history for deduction
  * 
  * @returns {number} Remaining balance after deducting payments.
