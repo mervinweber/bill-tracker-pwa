@@ -242,7 +242,11 @@ export function openRecordPaymentModal(billId) {
     /** @type {HTMLInputElement} */ (singleCycleOption).checked = true;
     const f = (id) => /** @type {any} */ (document.getElementById(id));
     const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
-    const remaining = billActionHandlers.getRemainingBalance(bill);
+    // Use bill.balance (kept current by recordPayment each cycle) rather than
+    // recomputing from paymentHistory, which accumulates across all recurring cycles
+    // and would cause the remaining to appear as $0 on subsequent cycles.
+    const currentBalance = (bill.balance > 0) ? Number(bill.balance) : Math.max(0, Number(bill.amountDue) || 0);
+    const remaining = Math.max(0, currentBalance - creditBalance);
     f('paymentBillName').textContent = bill.name;
     f('paymentRemainingAmount').textContent =
         creditBalance > 0
