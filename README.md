@@ -4,11 +4,11 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 
 ## ✨ Current Status
 
-**Version**: 1.0.0  
+**Version**: 1.1.0  
 **Architecture**: Modular, production-ready  
-**Test Coverage**: 290 automated tests  
+**Test Coverage**: 312 automated tests  
 **Accessibility**: WCAG 2.1 Level AA compliant  
-**Latest Update**: March 2026 - Added credit balance tracking, recovery tools for zeroed balances, and bidirectional bulk paid/unpaid actions.
+**Latest Update**: April 2026 - Added Debt Snowball Planner, avalanche/snowball strategy toggle, projected payoff months, debt dashboard widget, reconciliation rule engine, unified bill history timeline, and bulk-action undo.
 
 ## 🚀 Features
 
@@ -52,7 +52,7 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
 *   **Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 *   **Accessibility**: Full keyboard navigation and screen reader support
 
-### Advanced Analytics (NEW)
+### Advanced Analytics
 *   **Spending Forecasts**: Predicts next month's bills based on recurring bill patterns
 *   **Trend Analysis**: 3-month spending direction with percentage change indicators
 *   **Intelligent Alerts**: 
@@ -61,11 +61,51 @@ A robust, offline-capable Progressive Web App for tracking recurring bills, mana
     *   Due-soon notifications within 7 days
 *   **Real-time Metrics**: Avg monthly spending, spend trends, forecast categories
 
-### Mobile Optimizations (NEW)
+### Mobile Optimizations
 *   **Touch Gestures**: Swipe-to-delete on bill rows (with button fallback)
 *   **Mobile-Friendly Form**: Optimized inputs, keyboard hints, responsive modals
 *   **Offline Operations Queue**: Queue bulk edits when offline (max 250 operations)
 *   **Responsive Design**: Auto-detects viewport and applies mobile viewport class
+
+### 🏔️ Debt Snowball Planner (NEW)
+A dedicated planning area for paying down credit cards, loans, and mortgages.
+
+*   **Debt Tracking Fields on Bills**: Each bill can now store a `Debt Total` (outstanding balance) and `APR / Interest Rate (%)`, plus an `Include in Debt Snowball` flag. These live inside a collapsible "Debt Snowball Details" section in the Add/Edit Bill form.
+*   **Automatic Candidate Detection**: Any bill with a non-zero debt total, a non-zero interest rate, *or* the snowball flag checked is automatically included in the planner — no manual list to maintain.
+*   **Strategy Toggle**: Choose between
+    *   🔵 **Snowball** — smallest balance first (psychological wins)
+    *   🔴 **Avalanche** — highest interest rate first (mathematically optimal)
+*   **Extra Monthly Payment**: Enter an amount to throw at your priority target each month; it stacks on top of the minimum payment.
+*   **Projected Payoff Months**: Each debt card shows an estimated month count to pay off that balance at the suggested payment, accounting for monthly interest.
+*   **Ranked Debt Cards**: Debts are sorted and numbered by the chosen strategy. The #1 card is highlighted "Focus First" and receives the extra snowball payment.
+*   **Debt Overview Widget on Dashboard**: When any debt exists, a summary banner appears on the main dashboard showing total tracked debt, estimated monthly interest, and a one-click link to the Debt Snowball Planner.
+
+#### How to populate the Debt Snowball Planner
+1. **Add or edit a bill** (click the ✏️ Edit button on any bill row, or use "+ Add Bill").
+2. Scroll to the **Debt Snowball Details** section in the bill form.
+3. Enter values for any or all of:
+   - **Debt Total ($)** — the current outstanding balance (e.g. `4250.00`)
+   - **APR / Interest Rate (%)** — the annual interest rate (e.g. `22.99`)
+   - **Include in Debt Snowball** — check this to force the bill into the planner even with `$0` debt
+4. Save the bill.
+5. Click **🏔️ Debt** in the navigation bar — the planner will now show your debt(s) sorted by your chosen strategy.
+6. Optionally enter an **Extra Monthly Payment** and pick a **Strategy** in the settings bar, then click **Save Settings**.
+
+> **Tip**: The `amountDue` field on a bill is used as the minimum payment in the planner. Make sure it reflects your actual minimum monthly payment.
+
+### 🩹 Reconciliation Engine (NEW)
+*   **Needs Reconcile Filter**: A "Needs Reconcile" option in the payment filter dropdown highlights bills with data inconsistencies.
+*   **Detected Issues**:
+    *   `PAID_WITH_BALANCE` — bill is marked paid but still carries a non-zero balance
+    *   `UNPAID_WITH_ZERO_BALANCE` — bill is unpaid but balance is `$0`
+    *   `INVALID_NEGATIVE_VALUE` — balance or amount is negative
+*   **Quick-Fix Button**: Each flagged bill shows a 🩹 button that applies the correct fix automatically and logs an audit event.
+
+### 📜 Unified Bill History Timeline (NEW)
+*   The History modal for each bill now combines **payment records** and **audit log events** into a single chronological timeline, making it easy to see the full life of a bill in one view.
+
+### ↩️ Bulk-Action Undo (NEW)
+*   Bulk operations (mark all paid, mark all unpaid, fill zero balances) now show a 10-second undo toast. Clicking **Undo** fully restores the previous state before the change was committed.
 
 ## 🏗️ Architecture
 
@@ -74,7 +114,7 @@ This project has undergone a **major refactoring** (Phase 4 complete):
 - **Modular architecture** with clear separation of concerns
 - **Comprehensive error handling** with user-friendly notifications
 - **Reactive state management** using subscriber pattern
-- **Full test coverage** with 290 automated tests
+- **Full test coverage** with 312 automated tests
 
 ### Project Structure
 ```
@@ -91,7 +131,10 @@ bill-tracker-pwa/
 │   │   └── authModal.js      # Login/signup UI
 │   ├── views/                # View modules
 │   │   ├── calendarView.js   # Calendar rendering
-│   │   └── analyticsView.js  # Chart.js visualizations
+│   │   ├── analyticsView.js  # Chart.js visualizations
+│   │   ├── upcomingBillsView.js  # Upcoming bills list
+│   │   ├── paycheckPlannerView.js# Paycheck planner
+│   │   └── debtSnowballView.js   # Debt Snowball Planner UI
 │   ├── store/                # State management
 │   │   ├── BillStore.js      # Bill data (single source of truth)
 │   │   └── appState.js       # UI state with subscriber pattern
@@ -102,11 +145,14 @@ bill-tracker-pwa/
 │   │   ├── paycheckManager.js     # Paycheck logic
 │   │   ├── dateHelpers.js         # Date helpers
 │   │   ├── billHelpers.js         # Bill filtering
-│   │   └── StorageManager.js      # Storage abstraction
+│   │   ├── StorageManager.js      # Storage abstraction
+│   │   ├── debtSnowball.js        # Debt Snowball calculation engine
+│   │   ├── reconciliation.js      # Reconciliation rule engine
+│   │   └── historyTimeline.js     # Unified payment+audit timeline adapter
 │   ├── services/             # External services
 │   │   └── supabase.js       # Cloud sync integration
 │   └── index.css             # Styles with dark mode support
-├── tests/                    # Unit and integration tests (290 tests)
+├── tests/                    # Unit and integration tests (312 tests)
 ├── scripts/                  # Utility scripts
 │   └── csv_to_json.py        # CSV conversion tool
 └── public/
@@ -210,11 +256,15 @@ Legacy planning/session summary docs are preserved in **[docs/archive](docs/arch
 - ✅ **Carried Forward Logic**: Smart overdue tracking with toggle
 - ✅ **Import/Export**: JSON import with auto-ID, CSV conversion utility
 - ✅ **Custom Categories**: User-defined bill categories
-- ✅ **Unit Testing**: 290 automated tests covering core workflows and regressions
+- ✅ **Unit Testing**: 312 automated tests covering core workflows and regressions
 - ✅ **Accessibility**: WCAG 2.1 Level AA compliance
 - ✅ **IndexedDB Sync Queue**: Offline-first sync reliability
 - ✅ **Bill Reminders MVP**: Global reminders, per-bill opt-out, test reminder, reminder history, and inline grid toggles
 - ✅ **Credit Balances**: Overpayment credit tracking, credit filter, credit column, Total Credit, and Net Due metrics
+- ✅ **Bulk-Action Undo**: 10-second undo toast for bulk paid/unpaid/fill operations
+- ✅ **Reconciliation Engine**: Detect and quick-fix PAID_WITH_BALANCE, UNPAID_WITH_ZERO_BALANCE, INVALID_NEGATIVE_VALUE
+- ✅ **Unified Bill History Timeline**: Payment records and audit events merged into one chronological view
+- ✅ **Debt Snowball Planner**: Debt tracking fields, snowball/avalanche strategy, projected payoff months, and dashboard debt widget
 
 ## 🔮 Future Enhancements
 
@@ -268,6 +318,18 @@ Optional fields such as `balance`, `creditBalance`, `isPaid`, `paymentHistory`, 
             "balance": 1200.00,
             "creditBalance": 0,
       "recurrence": "Monthly"
+    },
+    {
+      "name": "Visa Credit Card",
+      "category": "Debt",
+      "dueDate": "2026-02-15",
+      "amountDue": 45.00,
+      "balance": 45.00,
+      "creditBalance": 0,
+      "recurrence": "Monthly",
+      "debtTotal": 3200.00,
+      "interestRate": 22.99,
+      "includeInDebtSnowball": true
     }
   ]
 }
@@ -288,6 +350,9 @@ Optional fields such as `balance`, `creditBalance`, `isPaid`, `paymentHistory`, 
 | **`creditBalance`** | Number | No | Optional stored credit. Must be `0` or greater. |
 | **`isPaid`** | Boolean| No | Defaults to `false` if omitted. |
 | **`id`** | String | No | **Auto-generated** if omitted. Safe to leave blank. |
+| **`debtTotal`** | Number | No | Outstanding debt balance for this bill (e.g. credit card balance). Used by the Debt Snowball Planner. |
+| **`interestRate`** | Number | No | Annual interest rate as a percentage (e.g. `22.99` for 22.99% APR). Used by the Debt Snowball Planner. |
+| **`includeInDebtSnowball`** | Boolean | No | Force-include this bill in the Debt Snowball Planner even if `debtTotal` and `interestRate` are `0`. |
 
 ## 📊 Importing from Spreadsheets (CSV)
 
@@ -316,25 +381,21 @@ This will create a file named `bills-import.json`.
 The project includes comprehensive unit tests covering core functionality:
 
 ```bash
-# Run all tests (open in browser)
-open tests/test-runner.html
-
-# Individual test files
-node tests/appState.test.js
-node tests/billActionHandlers.test.js
-node tests/paycheckManager.test.js
-node tests/importExport.test.js
+# Run all tests with Vitest
+npm test
 ```
 
-**Test Coverage**:
+**Test Coverage** (312 tests across 29 files):
 - ✅ State management (appState)
 - ✅ Bill operations (CRUD, validation)
 - ✅ Paycheck calculations
 - ✅ Import/export functionality
 - ✅ UI accessibility
 - ✅ Functional UX flows
-
-See [TESTING_IMPROVEMENTS.md](TESTING_IMPROVEMENTS.md) for details.
+- ✅ Debt Snowball calculation (snowball sort, avalanche sort, payoff months, interest-only edge case)
+- ✅ Reconciliation rule engine
+- ✅ Unified history timeline adapter
+- ✅ Bulk-action undo behavior
 
 ## 🤝 Contributing
 
@@ -353,6 +414,6 @@ This project is licensed under the MIT License.
 
 ---
 
-**Last Updated**: February 26, 2026  
+**Last Updated**: April 1, 2026  
 **Status**: Production-ready with ongoing enhancements  
 **Maintainer**: Mervin Weber
