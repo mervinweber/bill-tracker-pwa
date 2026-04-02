@@ -901,7 +901,61 @@ class AppOrchestrator {
             }
 
             if (id) {
-                billStore.update(bill);
+                const sameRecurringSeries =
+                    existingBill &&
+                    existingBill.recurrence !== 'One-time' &&
+                    bill.recurrence === existingBill.recurrence &&
+                    bill.name === existingBill.name &&
+                    bill.category === existingBill.category;
+
+                const amountChanged =
+                    existingBill &&
+                    Math.abs((Number.parseFloat(existingBill.amountDue) || 0) - (Number.parseFloat(bill.amountDue) || 0)) > 0.009;
+
+                if (sameRecurringSeries && amountChanged) {
+                    const editedDueTime = new Date(existingBill.dueDate).getTime();
+                    const previousAmount = Number.parseFloat(existingBill.amountDue) || 0;
+                    const nextAmount = Number.parseFloat(bill.amountDue) || 0;
+
+                    const updatedBills = bills.map((existing) => {
+                        if (existing.id === id) {
+                            return bill;
+                        }
+
+                        const isSameSeries =
+                            existing.name === existingBill.name &&
+                            existing.category === existingBill.category &&
+                            existing.recurrence === existingBill.recurrence;
+
+                        if (!isSameSeries) {
+                            return existing;
+                        }
+
+                        const dueTime = new Date(existing.dueDate).getTime();
+                        if (!Number.isFinite(dueTime) || dueTime <= editedDueTime) {
+                            return existing;
+                        }
+
+                        const updatedFuture = {
+                            ...existing,
+                            amountDue: nextAmount
+                        };
+
+                        const hasHistory = Array.isArray(existing.paymentHistory) && existing.paymentHistory.length > 0;
+                        const existingBalance = Number.parseFloat(existing.balance);
+
+                        // Only sync balance automatically when the future instance is still untouched.
+                        if (!existing.isPaid && !hasHistory && (!Number.isFinite(existingBalance) || Math.abs(existingBalance - previousAmount) < 0.01)) {
+                            updatedFuture.balance = nextAmount;
+                        }
+
+                        return updatedFuture;
+                    });
+
+                    billStore.setBills(updatedBills);
+                } else {
+                    billStore.update(bill);
+                }
             } else {
                 billStore.add(bill);
 
