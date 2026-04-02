@@ -22,7 +22,7 @@
  */
 export const initializeHeader = (paychecks, actions) => {
     const header = document.getElementById('header');
-    header.className = "border-b bg-background py-3";
+    header.classList.add('py-3');
     const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
     const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground`;
     const btnOutline = `${btnBase} border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground`;
@@ -158,6 +158,13 @@ export const initializeHeader = (paychecks, actions) => {
 
     window.addEventListener('resize', applyMobileControlsState);
     applyMobileControlsState();
+
+    // Track header height so sticky table column headers can sit just below the app header.
+    const updateHeaderHeight = () => {
+        document.documentElement.style.setProperty('--header-height', `${header.offsetHeight}px`);
+    };
+    updateHeaderHeight();
+    new ResizeObserver(updateHeaderHeight).observe(header);
 
     payPeriodSelect.addEventListener('change', (e) => {
         const sel = /** @type {HTMLSelectElement} */ (e.target);
