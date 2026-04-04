@@ -80,6 +80,11 @@ function buildHealthCardHtml() {
     const failCount = checks.filter(c => !c.ok).length;
     const allOk = failCount === 0;
 
+    // No setup warnings to show.
+    if (allOk) {
+        return '';
+    }
+
     const badgeClass = allOk
         ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
         : 'border-amber-200 bg-amber-50 text-amber-800';
@@ -93,9 +98,7 @@ function buildHealthCardHtml() {
         return `<span class="${cls}">${c.icon} ${c.label} <span class="font-bold">${icon}</span></span>`;
     }).join('');
 
-    const ctaHtml = allOk
-        ? ''
-        : `<button type="button" id="healthCardSettingsLink" class="ml-auto inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">Review Setup →</button>`;
+    const ctaHtml = `<button type="button" id="healthCardSettingsLink" class="ml-auto inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">Review Setup →</button>`;
 
     return `
         <div class="mt-2 flex flex-wrap items-center gap-2 rounded-xl border ${badgeClass} px-4 py-2.5 text-xs">
@@ -317,7 +320,6 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
             </div>
         </div>
         ${debtWidgetHtml}
-        ${healthCardHtml}
     `;
     // Wire CTA button to open settings
     document.getElementById('healthCardSettingsLink')?.addEventListener('click', () => {

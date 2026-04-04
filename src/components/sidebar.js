@@ -39,7 +39,7 @@ export const initializeSidebar = (categories, actions) => {
     const btnDanger = `${btnBase} bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90`;
 
     sidebar.innerHTML = '';
-    sidebar.className = "flex w-full flex-col border-r bg-muted/30 py-6 pl-2 pr-4 md:flex shrink-0";
+    sidebar.className = "hidden w-full shrink-0 self-start overflow-y-auto border-r bg-muted/30 py-4 pl-2 pr-4 md:sticky md:top-[var(--header-height,4.5rem)] md:flex md:max-h-[calc(100vh-var(--header-height,4.5rem)-1rem)]";
 
     const nav = document.createElement('nav');
     nav.className = "flex h-full flex-col gap-6";

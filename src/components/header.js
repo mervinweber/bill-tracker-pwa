@@ -29,13 +29,13 @@ export const initializeHeader = (paychecks, actions) => {
     const inputBase = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
     header.innerHTML = `
-        <div class="px-4 sm:px-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="grid grid-cols-1 gap-4 px-4 sm:px-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center lg:grid-cols-[240px_minmax(0,1fr)]">
             <div class="space-y-1">
                 <h1 class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">💰 Bill Tracker</h1>
                 <p class="text-xs text-muted-foreground sm:text-sm" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>
             </div>
             
-            <div class="header-controls flex flex-wrap items-center gap-3 sm:gap-4">
+            <div class="header-controls flex flex-wrap items-center gap-3 sm:ml-auto sm:w-full sm:justify-end sm:gap-4">
                 <div class="flex items-center gap-2">
                     <label for="payPeriodSelect" class="text-xs font-medium text-foreground sm:text-sm">Pay Period:</label>
                     <select id="payPeriodSelect" class="${inputBase} h-8 w-auto min-w-[180px] sm:h-9" aria-label="Select pay period" aria-describedby="payPeriodHelp">
