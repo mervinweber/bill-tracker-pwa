@@ -35,7 +35,7 @@ export const initializeHeader = (paychecks, actions) => {
                 <p class="text-xs text-muted-foreground sm:text-sm" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>
             </div>
             
-            <div class="header-controls flex w-full items-center gap-2 overflow-x-auto pb-1 sm:ml-auto sm:justify-end sm:gap-3 md:flex-nowrap">
+            <div class="header-controls flex w-full items-center justify-start gap-2 overflow-x-auto pb-1 sm:gap-3 md:flex-nowrap">
                 <div class="flex shrink-0 items-center gap-2">
                     <label for="payPeriodSelect" class="text-xs font-medium text-foreground sm:text-sm">Pay Period:</label>
                     <select id="payPeriodSelect" class="${inputBase} h-8 w-auto min-w-[150px] sm:h-9" aria-label="Select pay period" aria-describedby="payPeriodHelp">
