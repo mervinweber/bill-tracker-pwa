@@ -6,6 +6,7 @@ import { createAppErrorObject } from '../errors/errorCodes.js';
 // Secrets are read from .env file (Vite)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
+const APP_URL = import.meta.env.VITE_APP_URL;
 
 let supabase = null;
 let cachedUser = null;
@@ -28,6 +29,14 @@ const isConfiguredUrl = (url) => {
 
 const isConfiguredKey = (key) => {
     return key && key !== 'YOUR_SUPABASE_ANON_KEY';
+};
+
+const getAuthRedirectUrl = () => {
+    if (isConfiguredUrl(APP_URL)) {
+        return APP_URL;
+    }
+
+    return window.location.origin;
 };
 
 const isSupabaseEndpointReachable = async (url, timeoutMs = SUPABASE_HEALTH_CHECK_TIMEOUT_MS) => {
@@ -83,14 +92,19 @@ export const isSupabaseConfigured = () => {
 // Auth Functions
 export const signUp = async (email, password, options = {}) => {
     if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
+
+    const signUpOptions = {
+        emailRedirectTo: getAuthRedirectUrl()
+    };
+
+    if (options.captchaToken) {
+        signUpOptions.captchaToken = options.captchaToken;
+    }
+
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: options.captchaToken
-            ? {
-                captchaToken: options.captchaToken
-            }
-            : undefined,
+        options: signUpOptions,
     });
     return { data, error };
 };
@@ -120,7 +134,7 @@ export const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.origin
+            redirectTo: getAuthRedirectUrl()
         }
     });
     return { data, error };
@@ -146,7 +160,7 @@ export const resetPassword = async (email) => {
     }
     try {
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin
+            redirectTo: getAuthRedirectUrl()
         });
         logger.info('Reset password response received', { hasError: !!error });
         return { data, error };
