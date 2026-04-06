@@ -265,6 +265,7 @@ class AppOrchestrator {
                 onResetPassword: handleResetPassword
             });
 
+            this._handleAuthRedirectError();
             await this._handlePasswordRecoveryRedirect();
 
             // Initialize payment modals
@@ -1564,7 +1565,41 @@ class AppOrchestrator {
             searchParams.get('code')
         );
 
-        return recoveryType === 'recovery' || hasRecoveryToken;
+        return recoveryType === 'recovery' && hasRecoveryToken;
+    }
+
+    _getAuthRedirectErrorDetails() {
+        const hash = window.location.hash || '';
+        const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+        const searchParams = new URLSearchParams(window.location.search);
+
+        const error = hashParams.get('error') || searchParams.get('error');
+        const errorCode = hashParams.get('error_code') || searchParams.get('error_code');
+        const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
+
+        if (!error && !errorCode && !errorDescription) {
+            return null;
+        }
+
+        return { error, errorCode, errorDescription };
+    }
+
+    _handleAuthRedirectError() {
+        const details = this._getAuthRedirectErrorDetails();
+        if (!details) {
+            return;
+        }
+
+        const { errorCode, errorDescription } = details;
+        const fallbackMessage = 'Authentication link is invalid or has expired. Please request a new one.';
+        const message = errorCode === 'otp_expired'
+            ? 'This email link has expired. Request a new password reset email and try again.'
+            : (errorDescription || fallbackMessage);
+
+        logger.warn('Auth redirect returned error', details);
+        billActionHandlers.showErrorNotification(message, 'Authentication');
+        this._clearAuthRecoveryParamsFromUrl();
+        openAuthModal();
     }
 
     _clearAuthRecoveryParamsFromUrl() {
