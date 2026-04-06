@@ -2,6 +2,8 @@ import { filterBillsByPeriod } from '../utils/billHelpers.js';
 import { isDebtSnowballCandidate } from '../utils/debtSnowball.js';
 import { isSupabaseConfigured } from '../services/supabase.js';
 import { getNotificationSettings } from '../utils/notifications.js';
+import { createLocalDate } from '../utils/dates.js';
+import { paycheckManager } from '../utils/paycheckManager.js';
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
 
@@ -110,6 +112,97 @@ function buildHealthCardHtml() {
         </div>`;
 }
 
+function getNormalizedDate(value = new Date()) {
+    const date = value instanceof Date ? new Date(value) : new Date(value);
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+function getBillDueDate(bill) {
+    if (typeof bill?.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(bill.dueDate)) {
+        return getNormalizedDate(createLocalDate(bill.dueDate));
+    }
+
+    return getNormalizedDate(bill?.dueDate || new Date());
+}
+
+function getNextPaydayDate(payCheckDates = []) {
+    const today = getNormalizedDate();
+    const futurePayday = (payCheckDates || [])
+        .map((date) => getNormalizedDate(date))
+        .find((date) => date > today);
+
+    if (futurePayday) {
+        return futurePayday;
+    }
+
+    const lastKnownPayday = payCheckDates?.length ? getNormalizedDate(payCheckDates[payCheckDates.length - 1]) : null;
+    if (!lastKnownPayday) {
+        return null;
+    }
+
+    const frequency = paycheckManager.paymentSettings?.frequency || 'bi-weekly';
+    const days = frequency === 'weekly' ? 7 : frequency === 'monthly' ? 30 : 14;
+    return getNormalizedDate(new Date(lastKnownPayday.getTime() + (days * 24 * 60 * 60 * 1000)));
+}
+
+function buildTodayOverviewHtml(bills = [], payCheckDates = []) {
+    if (!Array.isArray(bills) || bills.length === 0) {
+        return '';
+    }
+
+    const today = getNormalizedDate();
+    const nextPayday = getNextPaydayDate(payCheckDates);
+    const unpaidBills = bills.filter((bill) => !bill.isPaid);
+
+    const overdueBills = unpaidBills.filter((bill) => getBillDueDate(bill) < today);
+    const beforeNextPaydayBills = unpaidBills.filter((bill) => {
+        const dueDate = getBillDueDate(bill);
+        if (dueDate < today) {
+            return false;
+        }
+        return nextPayday ? dueDate < nextPayday : true;
+    });
+
+    const overdueTotal = overdueBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
+    const beforeNextPaydayTotal = beforeNextPaydayBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
+    const allCaughtUp = overdueBills.length === 0 && beforeNextPaydayBills.length === 0;
+    const nextPaydayLabel = nextPayday
+        ? nextPayday.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        : 'your next pay day';
+
+    const containerClass = allCaughtUp
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+        : overdueBills.length > 0
+            ? 'border-rose-200 bg-rose-50 text-rose-950'
+            : 'border-amber-200 bg-amber-50 text-amber-950';
+    const subtitle = allCaughtUp
+        ? `No unpaid bills are past due or due before ${nextPaydayLabel}.`
+        : `Based on today's date, here's what needs attention before ${nextPaydayLabel}.`;
+
+    return `
+        <section class="mb-3 rounded-2xl border ${containerClass} px-4 py-3 shadow-sm" aria-label="Today's overview">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">Today's Overview</div>
+                    <div class="mt-1 text-sm font-medium">${subtitle}</div>
+                </div>
+                <div class="grid gap-2 sm:grid-cols-2 lg:min-w-[30rem] lg:max-w-[34rem] lg:flex-1">
+                    <div class="rounded-xl border border-current/10 bg-background/70 px-3 py-2">
+                        <div class="text-[11px] uppercase tracking-[0.15em] opacity-65">Past Due</div>
+                        <div class="mt-1 text-lg font-semibold">${overdueBills.length} bill${overdueBills.length === 1 ? '' : 's'}</div>
+                        <div class="text-xs opacity-75">$${overdueTotal.toFixed(2)} total</div>
+                    </div>
+                    <div class="rounded-xl border border-current/10 bg-background/70 px-3 py-2">
+                        <div class="text-[11px] uppercase tracking-[0.15em] opacity-65">Before Next Payday</div>
+                        <div class="mt-1 text-lg font-semibold">${beforeNextPaydayBills.length} bill${beforeNextPaydayBills.length === 1 ? '' : 's'}</div>
+                        <div class="text-xs opacity-75">$${beforeNextPaydayTotal.toFixed(2)} due before ${nextPaydayLabel}</div>
+                    </div>
+                </div>
+            </div>
+        </section>`;
+}
+
 /**
  * Initialize dashboard component
  * 
@@ -212,10 +305,12 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
 
     // Compact layout when no data matches the current filter
     const healthCardHtml = buildHealthCardHtml();
+    const todayOverviewHtml = buildTodayOverviewHtml(bills, payCheckDates);
 
     if (allZero) {
         dashboard.className = "w-full pt-3 pb-1";
         dashboard.innerHTML = `
+            ${todayOverviewHtml}
             <div class="flex flex-wrap gap-2 sm:gap-3 mb-1">
                 <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
                     <span>📋</span><span class="font-medium">Total Bills</span><span class="font-bold text-foreground">0</span>
@@ -248,6 +343,7 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
 
     dashboard.className = "w-full pt-3 pb-1";
     dashboard.innerHTML = `
+        ${todayOverviewHtml}
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-7 sm:gap-3 mb-2">
             <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
                 <div class="flex items-center justify-between space-y-0 pb-0.5">
