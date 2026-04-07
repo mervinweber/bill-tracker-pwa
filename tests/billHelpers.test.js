@@ -204,4 +204,57 @@ describe('filterBillsByPeriod', () => {
             paycheckManager.paymentSettings = originalPaySettings;
         }
     });
+
+    it('supports open-only scope in all-bills view', () => {
+        const bills = [
+            { id: '1', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
+            { id: '2', dueDate: '2025-01-12', isPaid: true, creditBalance: 0 },
+            { id: '3', dueDate: '2025-02-01', isPaid: false, creditBalance: 0 }
+        ];
+
+        const result = filterBillsByPeriod(
+            bills,
+            'all',
+            null,
+            null,
+            'all',
+            [new Date(2025, 0, 1), new Date(2025, 0, 15)],
+            true,
+            'open-only'
+        );
+
+        expect(result.map((bill) => bill.id)).toEqual(['1', '3']);
+    });
+
+    it('supports open-through-next-pay-date scope in all-bills view', () => {
+        const originalPaySettings = { ...paycheckManager.paymentSettings };
+        try {
+            paycheckManager.paymentSettings = {
+                ...originalPaySettings,
+                frequency: 'bi-weekly'
+            };
+
+            const bills = [
+                { id: '1', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
+                { id: '2', dueDate: '2025-01-14', isPaid: false, creditBalance: 0 },
+                { id: '3', dueDate: '2025-01-16', isPaid: false, creditBalance: 0 },
+                { id: '4', dueDate: '2025-01-12', isPaid: true, creditBalance: 0 }
+            ];
+
+            const result = filterBillsByPeriod(
+                bills,
+                'all',
+                0,
+                null,
+                'unpaid',
+                [new Date(2025, 0, 1), new Date(2025, 0, 15), new Date(2025, 0, 29)],
+                true,
+                'open-through-next-pay-date'
+            );
+
+            expect(result.map((bill) => bill.id)).toEqual(['1', '2']);
+        } finally {
+            paycheckManager.paymentSettings = originalPaySettings;
+        }
+    });
 });

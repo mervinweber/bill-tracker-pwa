@@ -1310,13 +1310,13 @@ class AppOrchestrator {
         }
 
         const state = appState.getState();
-        const { viewMode, selectedPaycheck, selectedCategory, paymentFilter } = state;
+        const { viewMode, selectedPaycheck, selectedCategory, paymentFilter, allBillsScope } = state;
         const payCheckDates = paycheckManager.payCheckDates;
 
         let visibleBills = [];
 
         if (viewMode === 'all') {
-            visibleBills = filterBillsByPeriod(bills, 'all', null, null, paymentFilter, payCheckDates);
+            visibleBills = filterBillsByPeriod(bills, 'all', null, null, paymentFilter, payCheckDates, true, allBillsScope);
         } else {
             if (selectedPaycheck === null || selectedCategory === null) {
                 visibleBills = bills;
