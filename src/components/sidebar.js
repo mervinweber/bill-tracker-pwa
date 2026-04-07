@@ -31,7 +31,7 @@ const MOBILE_SIDEBAR_TOGGLE_EVENT = 'billtracker:toggle-mobile-sidebar';
 const isMobileSidebarViewport = () => window.innerWidth < 768;
 
 export const initializeSidebar = (categories, actions) => {
-    const sidebar = document.getElementById('sidebar');
+    const sidebar = /** @type {HTMLElement} */ (document.getElementById('sidebar'));
     const savedTheme = StorageManager.get(STORAGE_KEYS.THEME, 'light');
 
     // Shadcn-like styling constants
@@ -46,9 +46,9 @@ export const initializeSidebar = (categories, actions) => {
     sidebar.className = "fixed inset-y-0 left-0 z-50 flex w-[85vw] max-w-sm shrink-0 flex-col overflow-y-auto border-r bg-background/95 px-3 py-4 shadow-xl backdrop-blur transition-transform duration-200 ease-out -translate-x-full md:sticky md:top-[var(--header-height,4.5rem)] md:z-auto md:w-full md:max-w-none md:self-start md:bg-muted/30 md:px-0 md:py-4 md:shadow-none md:backdrop-blur-0 md:translate-x-0 md:max-h-[calc(100vh-var(--header-height,4.5rem)-1rem)]";
     sidebar.setAttribute('aria-hidden', 'true');
 
-    let mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+    let mobileSidebarOverlay = /** @type {HTMLButtonElement|null} */ (document.getElementById('mobileSidebarOverlay'));
     if (!mobileSidebarOverlay) {
-        mobileSidebarOverlay = document.createElement('button');
+        mobileSidebarOverlay = /** @type {HTMLButtonElement} */ (document.createElement('button'));
         mobileSidebarOverlay.type = 'button';
         mobileSidebarOverlay.id = 'mobileSidebarOverlay';
         mobileSidebarOverlay.className = 'hidden fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[1px] md:hidden';
