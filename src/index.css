@@ -211,7 +211,9 @@
 
 /* Settings modal theme alignment */
 #settingsModal .settings-modal-content {
-    width: min(760px, 100%);
+    width: min(640px, 100%);
+    max-height: calc(100vh - 3rem);
+    padding: 1.1rem;
 }
 
 #settingsModal .settings-modal-title {
@@ -255,6 +257,20 @@
     display: block;
     color: hsl(var(--muted-foreground)) !important;
     font-size: 0.8rem !important;
+}
+
+#settingsModal .settings-reminder-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+#settingsModal .settings-help-inline {
+    margin: 0 !important;
+    white-space: nowrap;
+    font-size: 0.76rem !important;
 }
 
 #settingsModal .settings-divider {
@@ -618,5 +634,9 @@
 
     #settingsModal .settings-button-group button {
         width: 100%;
+    }
+
+    #settingsModal .settings-help-inline {
+        white-space: normal;
     }
 }

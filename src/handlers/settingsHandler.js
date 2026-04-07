@@ -130,15 +130,15 @@ export function showSettingsModal(categoriesList) {
             </div>
             <hr class="settings-divider">
             <h3>Reminders</h3>
-            <div class="form-group">
+            <div class="form-group settings-reminder-row">
                 <label class="settings-inline-label">
                     <input type="checkbox" id="settingsNotificationsEnabled" ${notificationSettings.enabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
-                    <strong>Enable bill due reminders</strong>
+                    <strong>Enable due reminders</strong>
                 </label>
-                <div class="settings-help-text" style="margin-top: 6px;">
+                <div class="settings-help-text settings-help-inline">
                     ${isNotificationSupported()
-                        ? 'Shows browser reminders when unpaid bills are due soon.'
-                        : 'This browser does not support notifications.'}
+                        ? 'Browser alerts for upcoming unpaid bills.'
+                        : 'Notifications are not supported in this browser.'}
                 </div>
             </div>
             <div class="form-group">
@@ -151,22 +151,22 @@ export function showSettingsModal(categoriesList) {
                     <option value="7" ${notificationSettings.daysBefore === 7 ? 'selected' : ''}>7 days before</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group settings-reminder-row">
                 <label class="settings-inline-label">
                     <input type="checkbox" id="settingsOverdueReminders" ${notificationSettings.overdueEnabled !== false ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
-                    <strong>Remind about overdue unpaid bills</strong>
+                    <strong>Overdue reminders</strong>
                 </label>
-                <div class="settings-help-text" style="margin-top: 6px;">
-                    Sends a daily reminder for any bills that are past their due date and still unpaid.
+                <div class="settings-help-text settings-help-inline">
+                    Daily alert for overdue unpaid bills.
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group settings-reminder-row">
                 <label class="settings-inline-label">
                     <input type="checkbox" id="settingsQuietHoursEnabled" ${notificationSettings.quietHoursEnabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
-                    <strong>Enable quiet hours</strong>
+                    <strong>Quiet hours</strong>
                 </label>
-                <div class="settings-help-text" style="margin-top: 6px;">
-                    No reminders will be sent during quiet hours.
+                <div class="settings-help-text settings-help-inline">
+                    Mute reminders during quiet hours.
                 </div>
             </div>
             <div class="form-group settings-inline-group" id="settingsQuietHoursFields" style="${notificationSettings.quietHoursEnabled ? '' : 'opacity: 0.5; pointer-events: none'}">
