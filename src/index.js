@@ -59,6 +59,8 @@ async function tryRecoverFromStaleServiceWorker(reason = 'unknown') {
     }
 }
 
+window.tryRecoverFromStaleServiceWorker = tryRecoverFromStaleServiceWorker;
+
 function normalizeErrorText(value) {
     if (!value) {
         return '';

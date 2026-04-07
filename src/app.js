@@ -100,6 +100,36 @@ class AppOrchestrator {
         this.viewRenderToken = 0;
     }
 
+    _isDynamicImportFailure(error) {
+        const text = [
+            error?.name,
+            error?.message,
+            error?.stack
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        return (
+            text.includes('chunkloaderror')
+            || text.includes('loading chunk')
+            || text.includes('failed to fetch dynamically imported module')
+            || text.includes('dynamically imported module')
+            || text.includes('importing a module script failed')
+        );
+    }
+
+    _recoverFromDynamicImportFailure(reason, error) {
+        if (!this._isDynamicImportFailure(error)) {
+            return false;
+        }
+
+        const recover = window.tryRecoverFromStaleServiceWorker;
+        if (typeof recover === 'function') {
+            recover(reason);
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Initialize app - called on DOMContentLoaded
      */
@@ -360,6 +390,9 @@ class AppOrchestrator {
             renderCalendar();
         } catch (error) {
             logger.error('Error loading calendar view', error);
+            if (this._recoverFromDynamicImportFailure('calendar-view-load-failure', error)) {
+                return;
+            }
             billActionHandlers.showErrorNotification(ERROR_CODES.VIEW_CALENDAR_LOAD_FAILED.message, 'View Error');
         }
     }
@@ -382,6 +415,9 @@ class AppOrchestrator {
             });
         } catch (error) {
             logger.error('Error loading analytics view', error);
+            if (this._recoverFromDynamicImportFailure('analytics-view-load-failure', error)) {
+                return;
+            }
             billActionHandlers.showErrorNotification(ERROR_CODES.VIEW_ANALYTICS_LOAD_FAILED.message, 'View Error');
         }
     }
