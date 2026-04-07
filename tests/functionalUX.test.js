@@ -39,6 +39,7 @@ it('Header: All Bills button event listener is attached', () => {
 it('Navigation: All Bills resets back to list display mode', () => {
     expect(navigationHandlersContent).toContain('export function handleAllBillsSelect()');
     expect(navigationHandlersContent).toContain("appState.setDisplayMode('list')");
+    expect(navigationHandlersContent).toContain("appState.setPaymentFilter('all')");
 });
 
 it('Header: Payment filter dropdown event listener is attached', () => {
