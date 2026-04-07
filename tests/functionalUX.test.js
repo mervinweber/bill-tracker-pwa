@@ -21,6 +21,7 @@ const sidebarContent = fs.readFileSync(sidebarPath, 'utf8');
 const billGridContent = fs.readFileSync(billGridPath, 'utf8');
 const billFormContent = fs.readFileSync(billFormPath, 'utf8');
 const appContent = fs.readFileSync(path.join(__dirname, '../src/app.js'), 'utf8');
+const navigationHandlersContent = fs.readFileSync(path.join(__dirname, '../src/app/navigationHandlers.js'), 'utf8');
 
 // ============ HEADER TESTS ============
 
@@ -32,6 +33,11 @@ it('Header: Pay period select event listener is attached', () => {
 it('Header: All Bills button event listener is attached', () => {
     expect(headerContent).toContain("allBillsBtn.addEventListener('click'");
     expect(headerContent).toContain('actions.onAllBillsSelect');
+});
+
+it('Navigation: All Bills resets back to list display mode', () => {
+    expect(navigationHandlersContent).toContain('export function handleAllBillsSelect()');
+    expect(navigationHandlersContent).toContain("appState.setDisplayMode('list')");
 });
 
 it('Header: Payment filter dropdown event listener is attached', () => {

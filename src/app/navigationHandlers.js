@@ -32,6 +32,7 @@ export function handleToggleCarriedForward(show) {
 
 export function handleAllBillsSelect() {
     appState.setViewMode('all');
+    appState.setDisplayMode('list');
     appState.setCurrentCalendarDate(new Date());
 }
 
