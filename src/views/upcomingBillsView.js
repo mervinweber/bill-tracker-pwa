@@ -4,6 +4,12 @@ import { paycheckManager } from '../utils/paycheckManager.js';
 
 const toCurrency = (value) => `$${(value || 0).toFixed(2)}`;
 
+const toShortDate = (value) => {
+    const parsed = createLocalDate(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
 const getCoverageSummary = (totalDue, paycheckAmountRaw) => {
     const paycheckAmount = Number.parseFloat(paycheckAmountRaw);
     if (!Number.isFinite(paycheckAmount) || paycheckAmount <= 0) {
@@ -125,12 +131,16 @@ export function renderUpcomingBills({ bills, selectedPaycheck, payCheckDates, sh
     }
 
     const listMarkup = upcomingBills.map((bill) => `
-        <article class="rounded-xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md" data-bill-id="${bill.id}">
+        <article class="upcoming-bill-card rounded-xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md" data-bill-id="${bill.id}">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
                         <h3 class="truncate text-base font-semibold text-card-foreground">${bill.name}</h3>
                         <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">${bill.category}</span>
+                        <span class="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            <span>📅</span>
+                            <span>Due ${toShortDate(bill.dueDate)}</span>
+                        </span>
                     </div>
                 </div>
                 <div class="text-left sm:text-right">
@@ -138,9 +148,9 @@ export function renderUpcomingBills({ bills, selectedPaycheck, payCheckDates, sh
                     <div class="mt-0.5 text-lg font-semibold text-card-foreground">${toCurrency(bill.amountDue)}</div>
                 </div>
             </div>
-            <div class="mt-3 grid gap-2 border-t pt-3 sm:grid-cols-[minmax(0,180px)_repeat(3,max-content)] sm:items-end">
-                <div class="flex flex-col gap-1">
-                    <label class="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground" for="dueDate-${bill.id}">Due date</label>
+            <div class="mt-3 grid gap-2 border-t pt-3 sm:grid-cols-[minmax(0,180px)_repeat(3,max-content)] sm:items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm" aria-hidden="true">📅</span>
                     <input id="dueDate-${bill.id}" class="upcoming-date-input ${inputBase}" type="date" value="${bill.dueDate}" aria-label="Due date for ${bill.name}">
                 </div>
                 <button class="upcoming-update-btn ${neutralButton}" data-action="update-date">Update</button>
