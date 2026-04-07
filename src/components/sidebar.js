@@ -26,6 +26,10 @@
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
 
+const MOBILE_SIDEBAR_TOGGLE_EVENT = 'billtracker:toggle-mobile-sidebar';
+
+const isMobileSidebarViewport = () => window.innerWidth < 768;
+
 export const initializeSidebar = (categories, actions) => {
     const sidebar = document.getElementById('sidebar');
     const savedTheme = StorageManager.get(STORAGE_KEYS.THEME, 'light');
@@ -39,12 +43,80 @@ export const initializeSidebar = (categories, actions) => {
     const btnDanger = `${btnBase} bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90`;
 
     sidebar.innerHTML = '';
-    sidebar.className = "hidden w-full shrink-0 self-start overflow-y-auto border-r bg-muted/30 py-4 pl-2 pr-4 md:sticky md:top-[var(--header-height,4.5rem)] md:flex md:max-h-[calc(100vh-var(--header-height,4.5rem)-1rem)]";
+    sidebar.className = "fixed inset-y-0 left-0 z-50 flex w-[85vw] max-w-sm shrink-0 flex-col overflow-y-auto border-r bg-background/95 px-3 py-4 shadow-xl backdrop-blur transition-transform duration-200 ease-out -translate-x-full md:sticky md:top-[var(--header-height,4.5rem)] md:z-auto md:w-full md:max-w-none md:self-start md:bg-muted/30 md:px-0 md:py-4 md:shadow-none md:backdrop-blur-0 md:translate-x-0 md:max-h-[calc(100vh-var(--header-height,4.5rem)-1rem)]";
+    sidebar.setAttribute('aria-hidden', 'true');
+
+    let mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+    if (!mobileSidebarOverlay) {
+        mobileSidebarOverlay = document.createElement('button');
+        mobileSidebarOverlay.type = 'button';
+        mobileSidebarOverlay.id = 'mobileSidebarOverlay';
+        mobileSidebarOverlay.className = 'hidden fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[1px] md:hidden';
+        mobileSidebarOverlay.setAttribute('aria-label', 'Close navigation menu');
+        document.body.appendChild(mobileSidebarOverlay);
+    }
+
+    const closeMobileSidebar = () => {
+        if (!isMobileSidebarViewport()) {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('md:translate-x-0');
+            sidebar.setAttribute('aria-hidden', 'false');
+            mobileSidebarOverlay.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            return;
+        }
+
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
+        sidebar.setAttribute('aria-hidden', 'true');
+        mobileSidebarOverlay.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    const openMobileSidebar = () => {
+        if (!isMobileSidebarViewport()) {
+            return;
+        }
+
+        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        sidebar.setAttribute('aria-hidden', 'false');
+        mobileSidebarOverlay.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    };
+
+    const toggleMobileSidebar = () => {
+        const isOpen = sidebar.classList.contains('translate-x-0') && isMobileSidebarViewport();
+        if (isOpen) {
+            closeMobileSidebar();
+            return;
+        }
+
+        openMobileSidebar();
+    };
 
     const nav = document.createElement('nav');
     nav.className = "flex h-full flex-col gap-6";
     nav.setAttribute('role', 'navigation');
     nav.setAttribute('aria-label', 'Main navigation');
+
+    const mobileHeader = document.createElement('div');
+    mobileHeader.className = 'mb-2 flex items-center justify-between border-b pb-3 md:hidden';
+
+    const mobileTitle = document.createElement('div');
+    mobileTitle.className = 'text-sm font-semibold tracking-tight';
+    mobileTitle.textContent = 'Navigation';
+    mobileHeader.appendChild(mobileTitle);
+
+    const mobileCloseBtn = document.createElement('button');
+    mobileCloseBtn.type = 'button';
+    mobileCloseBtn.id = 'mobileSidebarCloseBtn';
+    mobileCloseBtn.className = `${btnOutline} h-8 px-3 text-xs`;
+    mobileCloseBtn.textContent = 'Close';
+    mobileCloseBtn.addEventListener('click', closeMobileSidebar);
+    mobileHeader.appendChild(mobileCloseBtn);
+
+    nav.appendChild(mobileHeader);
 
     // Categories Section
     const catSection = document.createElement('div');
@@ -93,7 +165,10 @@ export const initializeSidebar = (categories, actions) => {
     addBtn.className = `${btnPrimary} w-full gap-2 h-10`;
     addBtn.ariaLabel = 'Add a new bill';
     addBtn.innerHTML = '<span class="mr-3 text-base">➕</span> <span>Add Bill</span>';
-    addBtn.addEventListener('click', () => actions.onOpenAddBill());
+    addBtn.addEventListener('click', () => {
+        actions.onOpenAddBill();
+        closeMobileSidebar();
+    });
     actionsDiv.appendChild(addBtn);
 
     const regenBtn = document.createElement('button');
@@ -102,7 +177,10 @@ export const initializeSidebar = (categories, actions) => {
     regenBtn.className = `${btnSecondary} w-full gap-2 h-10`;
     regenBtn.ariaLabel = 'Regenerate all recurring bills for the next pay period';
     regenBtn.innerHTML = '<span class="mr-3 text-base">🔄</span> <span>Regenerate</span>';
-    regenBtn.addEventListener('click', () => actions.onRegenerateBills());
+    regenBtn.addEventListener('click', () => {
+        actions.onRegenerateBills();
+        closeMobileSidebar();
+    });
     actionsDiv.appendChild(regenBtn);
 
     actionsSection.appendChild(actionsDiv);
@@ -128,7 +206,10 @@ export const initializeSidebar = (categories, actions) => {
     exportBtn.className = `${btnOutline} ${dataBtnClass} border-dashed`;
     exportBtn.ariaLabel = 'Export bills data to JSON file';
     exportBtn.innerHTML = `<span class="${dataIconClass}">⬇️</span> <span>Export</span>`;
-    exportBtn.addEventListener('click', () => actions.onExportData());
+    exportBtn.addEventListener('click', () => {
+        actions.onExportData();
+        closeMobileSidebar();
+    });
     dataDiv.appendChild(exportBtn);
 
     const importBtn = document.createElement('button');
@@ -151,7 +232,10 @@ export const initializeSidebar = (categories, actions) => {
         }
     });
 
-    importBtn.addEventListener('click', () => fileInput.click());
+    importBtn.addEventListener('click', () => {
+        fileInput.click();
+        closeMobileSidebar();
+    });
     dataDiv.appendChild(importBtn);
     dataDiv.appendChild(fileInput);
 
@@ -161,7 +245,10 @@ export const initializeSidebar = (categories, actions) => {
     settingsBtn.className = `${btnOutline} ${dataBtnClass}`;
     settingsBtn.ariaLabel = 'Open settings';
     settingsBtn.innerHTML = `<span class="${dataIconClass}">⚙️</span> <span>Settings</span>`;
-    settingsBtn.addEventListener('click', () => actions.onShowSettings());
+    settingsBtn.addEventListener('click', () => {
+        actions.onShowSettings();
+        closeMobileSidebar();
+    });
     dataDiv.appendChild(settingsBtn);
 
     const userEmail = StorageManager.get(STORAGE_KEYS.USER_EMAIL, null);
@@ -170,7 +257,10 @@ export const initializeSidebar = (categories, actions) => {
         loginBtn.type = 'button';
         loginBtn.className = `${btnOutline} ${dataBtnClass}`;
         loginBtn.innerHTML = `<span class="${dataIconClass}">☁️</span> <span>Sign In</span>`;
-        loginBtn.addEventListener('click', () => actions.onOpenAuth());
+        loginBtn.addEventListener('click', () => {
+            actions.onOpenAuth();
+            closeMobileSidebar();
+        });
         dataDiv.appendChild(loginBtn);
     }
 
@@ -180,7 +270,10 @@ export const initializeSidebar = (categories, actions) => {
     bulkPaidBtn.className = `${btnOutline} ${dataBtnClass}`;
     bulkPaidBtn.ariaLabel = 'Mark all paid';
     bulkPaidBtn.innerHTML = `<span class="${dataIconClass}">✅</span> <span>Mark All Paid</span>`;
-    bulkPaidBtn.addEventListener('click', () => actions.onBulkMarkPaid());
+    bulkPaidBtn.addEventListener('click', () => {
+        actions.onBulkMarkPaid();
+        closeMobileSidebar();
+    });
     dataDiv.appendChild(bulkPaidBtn);
 
     const bulkFillBtn = document.createElement('button');
@@ -189,7 +282,10 @@ export const initializeSidebar = (categories, actions) => {
     bulkFillBtn.className = `${btnOutline} ${dataBtnClass}`;
     bulkFillBtn.ariaLabel = 'Fill zero balances with bill amounts';
     bulkFillBtn.innerHTML = `<span class="${dataIconClass}">💰</span> <span>Fill Balance</span>`;
-    bulkFillBtn.addEventListener('click', () => actions.onBulkFillBalances());
+    bulkFillBtn.addEventListener('click', () => {
+        actions.onBulkFillBalances();
+        closeMobileSidebar();
+    });
     dataDiv.appendChild(bulkFillBtn);
 
     const bulkDelBtn = document.createElement('button');
@@ -198,7 +294,10 @@ export const initializeSidebar = (categories, actions) => {
     bulkDelBtn.className = `${btnDanger} ${dataBtnClass}`;
     bulkDelBtn.ariaLabel = 'Delete all data';
     bulkDelBtn.innerHTML = `<span class="${dataIconClass}">🗑️</span> <span>Clear All</span>`;
-    bulkDelBtn.addEventListener('click', () => actions.onBulkDelete());
+    bulkDelBtn.addEventListener('click', () => {
+        actions.onBulkDelete();
+        closeMobileSidebar();
+    });
     dataDiv.appendChild(bulkDelBtn);
 
     dataSection.appendChild(dataDiv);
@@ -283,7 +382,10 @@ export const initializeSidebar = (categories, actions) => {
         const logoutBtn = document.createElement('button');
         logoutBtn.className = `${btnOutline} w-full h-8 px-2 text-xs`;
         logoutBtn.innerHTML = '<span class="mr-2">🚪</span> <span>Logout</span>';
-        logoutBtn.addEventListener('click', () => actions.onLogout());
+        logoutBtn.addEventListener('click', () => {
+            actions.onLogout();
+            closeMobileSidebar();
+        });
         authDiv.appendChild(logoutBtn);
 
         bottomSection.appendChild(authDiv);
@@ -308,6 +410,7 @@ export const initializeSidebar = (categories, actions) => {
             btn.setAttribute('aria-checked', 'true');
             btn.tabIndex = 0;
             actions.onCategorySelect(btn.dataset.category);
+            closeMobileSidebar();
         });
 
         // Keyboard navigation
@@ -327,4 +430,14 @@ export const initializeSidebar = (categories, actions) => {
             }
         });
     });
+
+    mobileSidebarOverlay.addEventListener('click', closeMobileSidebar);
+    window.addEventListener(MOBILE_SIDEBAR_TOGGLE_EVENT, toggleMobileSidebar);
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMobileSidebar();
+        }
+    });
+    window.addEventListener('resize', closeMobileSidebar);
+    closeMobileSidebar();
 };

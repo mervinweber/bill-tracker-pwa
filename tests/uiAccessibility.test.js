@@ -51,6 +51,12 @@ it('Mobile controls toggle has ARIA disclosure attributes', () => {
     expect(headerContent).toContain('aria-controls="headerAdvancedControls"');
 });
 
+it('Mobile sidebar toggle has dialog affordance attributes', () => {
+    expect(headerContent).toContain('id="mobileSidebarToggle"');
+    expect(headerContent).toContain('aria-haspopup="dialog"');
+    expect(headerContent).toContain('aria-controls="sidebar"');
+});
+
 // ============ SIDEBAR TESTS ============
 
 it('Sidebar navigation has proper role', () => {
@@ -84,6 +90,12 @@ it('Sidebar category buttons preserve active state via Tailwind classes', () => 
     expect(sidebarContent).toContain('activeClass.split');
     expect(sidebarContent).toContain('classList.remove');
     expect(sidebarContent).toContain('classList.add');
+});
+
+it('Sidebar mobile drawer has close affordances', () => {
+    expect(sidebarContent).toContain('mobileSidebarOverlay');
+    expect(sidebarContent).toContain('Close navigation menu');
+    expect(sidebarContent).toContain('mobileSidebarCloseBtn');
 });
 
 // ============ BILL GRID TESTS ============

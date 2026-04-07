@@ -54,6 +54,12 @@ it('Header: Mobile controls toggle is wired for progressive disclosure', () => {
     expect(headerContent).toContain('headerAdvancedControls');
 });
 
+it('Header: Mobile sidebar toggle is wired', () => {
+    expect(headerContent).toContain('mobileSidebarToggle');
+    expect(headerContent).toContain('billtracker:toggle-mobile-sidebar');
+    expect(headerContent).toContain("mobileSidebarToggle.addEventListener('click'");
+});
+
 it('Header: updateHeaderUI function exists and handles modes', () => {
     expect(headerContent).toContain('export const updateHeaderUI');
     expect(headerContent).toContain("viewMode === 'all'");
@@ -112,6 +118,12 @@ it('Sidebar: Category buttons preserve active state', () => {
 it('Sidebar: Keyboard navigation for categories (arrow keys)', () => {
     expect(sidebarContent).toContain("e.key === 'ArrowDown'");
     expect(sidebarContent).toContain("e.key === 'ArrowUp'");
+});
+
+it('Sidebar: Mobile drawer controls are present', () => {
+    expect(sidebarContent).toContain('mobileSidebarOverlay');
+    expect(sidebarContent).toContain('mobileSidebarCloseBtn');
+    expect(sidebarContent).toContain('billtracker:toggle-mobile-sidebar');
 });
 
 // ============ BILL GRID TESTS ============

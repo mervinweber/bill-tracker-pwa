@@ -23,6 +23,7 @@
 export const initializeHeader = (paychecks, actions) => {
     const header = document.getElementById('header');
     header.classList.add('py-3');
+    const mobileSidebarToggleEvent = 'billtracker:toggle-mobile-sidebar';
     const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
     const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground`;
     const btnOutline = `${btnBase} border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground`;
@@ -51,6 +52,16 @@ export const initializeHeader = (paychecks, actions) => {
                     <button id="paycheckPlannerBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View paycheck planner" aria-pressed="false">💵 Planner</button>
                     <button id="debtSnowballBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View debt snowball planner" aria-pressed="false">🏔️ Debt</button>
                 </div>
+
+                <button
+                    id="mobileSidebarToggle"
+                    class="${btnOutline} h-8 px-3 text-xs sm:hidden"
+                    aria-label="Open navigation menu"
+                    aria-haspopup="dialog"
+                    aria-controls="sidebar"
+                >
+                    ☰ Menu
+                </button>
 
                 <button
                     id="mobileControlsToggle"
@@ -111,6 +122,7 @@ export const initializeHeader = (paychecks, actions) => {
     const calendarViewBtn = document.getElementById('calendarViewBtn');
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
     const headerControls = document.querySelector('.header-controls');
+    const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const mobileControlsToggle = document.getElementById('mobileControlsToggle');
     const headerAdvancedControls = document.getElementById('headerAdvancedControls');
 
@@ -148,6 +160,12 @@ export const initializeHeader = (paychecks, actions) => {
             mobileControlsToggle.textContent = mobileControlsExpanded ? '⚙️ Hide' : '⚙️ More';
         }
     };
+
+    if (mobileSidebarToggle) {
+        mobileSidebarToggle.addEventListener('click', () => {
+            window.dispatchEvent(new CustomEvent(mobileSidebarToggleEvent));
+        });
+    }
 
     if (mobileControlsToggle) {
         mobileControlsToggle.addEventListener('click', () => {
