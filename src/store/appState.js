@@ -7,7 +7,7 @@
  * - selectedCategory: Current category filter
  * - viewMode: 'filtered' (paycheck+category view), 'all' (all bills), 'upcoming', 'planner', or 'debt-snowball'
  * - displayMode: 'list', 'calendar', or 'analytics'
- * - paymentFilter: 'all', 'paid', 'unpaid', 'credit', or 'reconcile'
+ * - paymentFilter: 'all', 'paid', 'unpaid', 'overdue', 'credit', or 'reconcile'
  * - isLoading: Loading state for async operations
  * - error: Current error message if any
  * 
@@ -28,7 +28,7 @@ class AppState {
             selectedCategory: null,
             viewMode: 'filtered', // 'filtered', 'all', 'upcoming', 'planner', or 'debt-snowball'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
-            paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'credit', 'reconcile'
+            paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'reconcile'
             allBillsScope: 'everything', // 'everything', 'open-through-next-pay-date', 'open-only'
             showCarriedForward: true,
             currentCalendarDate: new Date(),
@@ -134,7 +134,7 @@ class AppState {
     }
 
     setPaymentFilter(filter) {
-        this.state.paymentFilter = filter; // 'all', 'unpaid', 'paid', 'credit', 'reconcile'
+        this.state.paymentFilter = filter; // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'reconcile'
         this.notifySubscribers();
     }
 

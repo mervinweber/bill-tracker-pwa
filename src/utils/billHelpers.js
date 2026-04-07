@@ -196,7 +196,7 @@ export const getRemainingBalance = (bill) => {
  * @param {string} viewMode - 'all' or 'filtered'
  * @param {number|null} selectedPaycheck - Index of selected paycheck
  * @param {string|null} selectedCategory - Selected category
- * @param {string} paymentFilter - 'all'|'paid'|'unpaid'
+ * @param {string} paymentFilter - 'all'|'paid'|'unpaid'|'overdue'|'credit'
  * @param {Array<Date>} payCheckDates - Array of paycheck dates
  * @returns {Array<Object>} Filtered and sorted bills
  */
@@ -236,6 +236,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
 
         if (paymentFilter === 'unpaid') filtered = filtered.filter(b => !b.isPaid);
         if (paymentFilter === 'paid') filtered = filtered.filter(b => b.isPaid);
+        if (paymentFilter === 'overdue') filtered = filtered.filter((bill) => !bill.isPaid && parseBillDate(bill.dueDate) < new Date(new Date().setHours(0, 0, 0, 0)));
         if (paymentFilter === 'credit') filtered = filtered.filter(hasCredit);
         return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     }
@@ -276,6 +277,9 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
         filtered = filtered.filter(bill => !bill.isPaid);
     } else if (paymentFilter === 'paid') {
         filtered = filtered.filter(bill => bill.isPaid);
+    } else if (paymentFilter === 'overdue') {
+        const today = createLocalDate(new Date().toISOString().split('T')[0]);
+        filtered = filtered.filter((bill) => !bill.isPaid && createLocalDate(bill.dueDate) < today);
     } else if (paymentFilter === 'credit') {
         filtered = filtered.filter(hasCredit);
     }

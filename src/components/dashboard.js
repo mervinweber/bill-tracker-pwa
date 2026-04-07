@@ -6,6 +6,7 @@ import { createLocalDate } from '../utils/dates.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
+import { appState } from '../store/appState.js';
 
 /**
  * Dashboard Component
@@ -221,6 +222,47 @@ export const initializeDashboard = () => {
     renderDashboard([], 'all', null, null, 'all', []);
 };
 
+function buildMetricCard({ label, icon, value, tone = 'default', filter = 'all', isActive = false, columns = '' }) {
+    const toneClass = tone === 'success'
+        ? 'border-emerald-200 bg-emerald-50'
+        : tone === 'danger'
+            ? 'border-destructive/20 bg-destructive/5'
+            : 'bg-card';
+    const labelClass = tone === 'success'
+        ? 'text-emerald-700'
+        : tone === 'danger'
+            ? 'text-destructive'
+            : 'text-muted-foreground';
+    const valueClass = tone === 'success'
+        ? 'text-emerald-800'
+        : tone === 'danger'
+            ? 'text-destructive'
+            : 'text-foreground';
+    const activeClass = isActive ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/40 hover:bg-accent/40';
+
+    return `
+        <button type="button" class="${columns} flex flex-col gap-0.5 rounded-lg border p-2.5 text-left shadow-sm transition ${toneClass} ${activeClass}" data-dashboard-filter="${filter}" aria-pressed="${isActive ? 'true' : 'false'}">
+            <div class="flex items-center justify-between space-y-0 pb-0.5">
+                <span class="text-[9px] font-bold uppercase tracking-wider ${labelClass} sm:text-[10px]">${label}</span>
+                <span class="text-xs">${icon}</span>
+            </div>
+            <div class="flex items-center pt-0.5">
+                <span class="text-base font-bold tracking-tight ${valueClass} sm:text-lg">${value}</span>
+            </div>
+        </button>
+    `;
+}
+
+function wireDashboardFilterCards() {
+    document.querySelectorAll('[data-dashboard-filter]').forEach((node) => {
+        node.addEventListener('click', () => {
+            const filter = node.getAttribute('data-dashboard-filter') || 'all';
+            appState.setDisplayMode('list');
+            appState.setPaymentFilter(filter);
+        });
+    });
+}
+
 /**
  * Render dashboard with calculated financial metrics
  * 
@@ -345,75 +387,13 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     dashboard.innerHTML = `
         ${todayOverviewHtml}
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-7 sm:gap-3 mb-2">
-            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-0.5">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Total Bills</span>
-                    <span class="text-xs">📋</span>
-                </div>
-                <div class="flex items-center pt-0.5">
-                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg">${totalBills}</span>
-                </div>
-            </div>
-            
-            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-0.5">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Total Due</span>
-                    <span class="text-xs">💰</span>
-                </div>
-                <div class="flex items-center pt-0.5">
-                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg">$${totalAmountDue.toFixed(2)}</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-0.5">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Net Due</span>
-                    <span class="text-xs">🧮</span>
-                </div>
-                <div class="flex items-center pt-0.5">
-                    <span class="text-base font-bold tracking-tight ${netDue > 0 ? 'text-foreground' : 'text-emerald-700'} sm:text-lg">$${netDue.toFixed(2)}</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-0.5 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-0.5">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-700 sm:text-[10px]">Total Credit</span>
-                    <span class="text-xs">💚</span>
-                </div>
-                <div class="flex items-center pt-0.5">
-                    <span class="text-base font-bold tracking-tight text-emerald-800 sm:text-lg">$${totalCredit.toFixed(2)}</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-0.5">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Unpaid</span>
-                    <span class="text-xs">⚠️</span>
-                </div>
-                <div class="flex items-center pt-0.5">
-                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg">${unpaidBills.length}</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm">
-                <div class="flex items-center justify-between space-y-0 pb-0.5">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[10px]">Unpaid Amt</span>
-                    <span class="text-xs">💳</span>
-                </div>
-                <div class="flex items-center pt-0.5">
-                    <span class="text-base font-bold tracking-tight text-foreground sm:text-lg text-destructive">$${totalUnpaidAmount.toFixed(2)}</span>
-                </div>
-            </div>
-
-            <div class="col-span-2 flex flex-col gap-0.5 rounded-lg border bg-card p-2.5 shadow-sm sm:col-span-1 border-destructive/20 bg-destructive/5">
-                <div class="flex items-center justify-between space-y-0 pb-0.5">
-                    <span class="text-[9px] font-bold uppercase tracking-wider text-destructive sm:text-[10px]">Overdue</span>
-                    <span class="text-xs">🔴</span>
-                </div>
-                <div class="flex items-center pt-0.5">
-                    <span class="text-base font-bold tracking-tight text-destructive sm:text-lg">${overdueBills.length}</span>
-                </div>
-            </div>
+            ${buildMetricCard({ label: 'Total Bills', icon: '📋', value: `${totalBills}`, filter: 'all', isActive: paymentFilter === 'all' })}
+            ${buildMetricCard({ label: 'Total Due', icon: '💰', value: `$${totalAmountDue.toFixed(2)}`, filter: 'all', isActive: paymentFilter === 'all' })}
+            ${buildMetricCard({ label: 'Net Due', icon: '🧮', value: `$${netDue.toFixed(2)}`, filter: 'all', isActive: paymentFilter === 'all' })}
+            ${buildMetricCard({ label: 'Total Credit', icon: '💚', value: `$${totalCredit.toFixed(2)}`, tone: 'success', filter: 'credit', isActive: paymentFilter === 'credit' })}
+            ${buildMetricCard({ label: 'Unpaid', icon: '⚠️', value: `${unpaidBills.length}`, filter: 'unpaid', isActive: paymentFilter === 'unpaid' })}
+            ${buildMetricCard({ label: 'Unpaid Amt', icon: '💳', value: `$${totalUnpaidAmount.toFixed(2)}`, tone: 'danger', filter: 'unpaid', isActive: paymentFilter === 'unpaid' })}
+            ${buildMetricCard({ label: 'Overdue', icon: '🔴', value: `${overdueBills.length}`, tone: 'danger', filter: 'overdue', isActive: paymentFilter === 'overdue', columns: 'col-span-2 sm:col-span-1' })}
         </div>
         ${debtWidgetHtml}
     `;
@@ -421,4 +401,5 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     document.getElementById('healthCardSettingsLink')?.addEventListener('click', () => {
         document.getElementById('settingsBtn')?.click();
     });
+    wireDashboardFilterCards();
 };

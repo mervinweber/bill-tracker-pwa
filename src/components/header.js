@@ -86,6 +86,7 @@ export const initializeHeader = (paychecks, actions) => {
                             <option value="all">All</option>
                             <option value="unpaid">Unpaid</option>
                             <option value="paid">Paid</option>
+                            <option value="overdue">Overdue</option>
                             <option value="credit">Has Credit</option>
                             <option value="reconcile">Needs Reconcile</option>
                         </select>
@@ -300,7 +301,7 @@ export const initializeHeader = (paychecks, actions) => {
  * @param {boolean} showCarriedForward - Whether to show carried forward bills
  * @returns {void}
  */
-export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward, allBillsScope = 'everything') => {
+export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward, allBillsScope = 'everything', paymentFilter = 'all') => {
     const payPeriodSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('payPeriodSelect'));
     const allBillsBtn = document.getElementById('allBillsBtn');
     const upcomingBillsBtn = document.getElementById('upcomingBillsBtn');
@@ -311,6 +312,7 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
     const carriedForwardToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('carriedForwardToggle'));
     const allBillsScopeFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('allBillsScopeFilter'));
+    const paymentFilterSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('paymentFilter'));
 
     if (payPeriodSelect) {
         payPeriodSelect.value = selectedPaycheck !== null ? String(selectedPaycheck) : '';
@@ -406,5 +408,9 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
 
     if (allBillsScopeFilter) {
         allBillsScopeFilter.value = allBillsScope;
+    }
+
+    if (paymentFilterSelect) {
+        paymentFilterSelect.value = paymentFilter;
     }
 };

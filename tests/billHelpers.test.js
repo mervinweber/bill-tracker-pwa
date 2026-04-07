@@ -257,4 +257,25 @@ describe('filterBillsByPeriod', () => {
             paycheckManager.paymentSettings = originalPaySettings;
         }
     });
+
+    it('supports overdue filter in all-bills view', () => {
+        const bills = [
+            { id: '1', dueDate: '2020-01-10', isPaid: false, creditBalance: 0 },
+            { id: '2', dueDate: '2030-01-12', isPaid: false, creditBalance: 0 },
+            { id: '3', dueDate: '2020-01-15', isPaid: true, creditBalance: 0 }
+        ];
+
+        const result = filterBillsByPeriod(
+            bills,
+            'all',
+            null,
+            null,
+            'overdue',
+            [new Date(2025, 0, 1), new Date(2025, 0, 15)],
+            true,
+            'everything'
+        );
+
+        expect(result.map((bill) => bill.id)).toEqual(['1']);
+    });
 });

@@ -679,7 +679,7 @@ class AppOrchestrator {
             const renderToken = ++this.viewRenderToken;
 
             // Update header UI
-            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward, state.allBillsScope);
+            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward, state.allBillsScope, state.paymentFilter);
 
             // Render appropriate view based on displayMode
             const billGrid = document.getElementById('billGrid');

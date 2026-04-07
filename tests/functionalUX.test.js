@@ -22,6 +22,7 @@ const billGridContent = fs.readFileSync(billGridPath, 'utf8');
 const billFormContent = fs.readFileSync(billFormPath, 'utf8');
 const appContent = fs.readFileSync(path.join(__dirname, '../src/app.js'), 'utf8');
 const navigationHandlersContent = fs.readFileSync(path.join(__dirname, '../src/app/navigationHandlers.js'), 'utf8');
+const dashboardContent = fs.readFileSync(path.join(__dirname, '../src/components/dashboard.js'), 'utf8');
 
 // ============ HEADER TESTS ============
 
@@ -43,6 +44,10 @@ it('Navigation: All Bills resets back to list display mode', () => {
 it('Header: Payment filter dropdown event listener is attached', () => {
     expect(headerContent).toContain("getElementById('paymentFilter').addEventListener('change'");
     expect(headerContent).toContain('actions.onFilterChange');
+});
+
+it('Header: Overdue filter option is available', () => {
+    expect(headerContent).toContain('<option value="overdue">Overdue</option>');
 });
 
 it('Header: Reconcile filter option is available', () => {
@@ -242,6 +247,12 @@ it('App: Debt snowball view is wired into rendering flow', () => {
 it('App: Upcoming bulk actions use the same upcoming bill selection logic', () => {
     expect(appContent).toContain("viewMode === 'upcoming'");
     expect(appContent).toContain('getUpcomingBills');
+});
+
+it('Dashboard: Summary cards are clickable filters', () => {
+    expect(dashboardContent).toContain('data-dashboard-filter');
+    expect(dashboardContent).toContain('appState.setPaymentFilter');
+    expect(dashboardContent).toContain("filter: 'overdue'");
 });
 
 it('Bill Form: Form validation exists', () => {
