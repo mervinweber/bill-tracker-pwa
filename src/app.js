@@ -20,7 +20,7 @@ import { initializeDashboard, renderDashboard } from './components/dashboard.js'
 import { initializeBillForm, openBillForm, closeBillForm } from './components/billForm.js';
 import { initializeAuthModal, openAuthModal } from './components/authModal.js';
 
-import { initializeUpcomingBillsView, renderUpcomingBills } from './views/upcomingBillsView.js';
+import { getUpcomingBills, initializeUpcomingBillsView, renderUpcomingBills } from './views/upcomingBillsView.js';
 import { initializePaycheckPlannerView, renderPaycheckPlanner } from './views/paycheckPlannerView.js';
 import { initializeDebtSnowballView, renderDebtSnowballView } from './views/debtSnowballView.js';
 
@@ -1353,6 +1353,13 @@ class AppOrchestrator {
 
         if (viewMode === 'all') {
             visibleBills = filterBillsByPeriod(bills, 'all', null, null, paymentFilter, payCheckDates, true, allBillsScope);
+        } else if (viewMode === 'upcoming') {
+            visibleBills = getUpcomingBills(
+                bills,
+                selectedPaycheck,
+                payCheckDates,
+                state.showCarriedForward
+            );
         } else {
             if (selectedPaycheck === null || selectedCategory === null) {
                 visibleBills = bills;

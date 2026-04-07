@@ -26,7 +26,7 @@ const getCoverageSummary = (totalDue, paycheckAmountRaw) => {
     };
 };
 
-const getUpcomingBills = (bills = [], selectedPaycheck, payCheckDates, showCarriedForward = true) => {
+export const getUpcomingBills = (bills = [], selectedPaycheck, payCheckDates, showCarriedForward = true) => {
     // If no paycheck selected, show all unpaid bills for next paycheck period
     // Otherwise use period filtering to constrain to selected period
     if (selectedPaycheck === null || !payCheckDates || payCheckDates.length === 0) {

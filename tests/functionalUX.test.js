@@ -239,6 +239,11 @@ it('App: Debt snowball view is wired into rendering flow', () => {
     expect(appContent).toContain('renderDebtSnowballView');
 });
 
+it('App: Upcoming bulk actions use the same upcoming bill selection logic', () => {
+    expect(appContent).toContain("viewMode === 'upcoming'");
+    expect(appContent).toContain('getUpcomingBills');
+});
+
 it('Bill Form: Form validation exists', () => {
     expect(billFormContent).toContain('amount < 0');
     expect(billFormContent).toContain('alert');
