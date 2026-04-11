@@ -43,7 +43,6 @@ import {
     initializeSupabase,
     getUser,
     signOut,
-    syncBills,
     syncUserData,
     syncPaymentSettings,
     updatePassword,

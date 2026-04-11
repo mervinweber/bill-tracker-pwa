@@ -199,26 +199,4 @@ export const StorageManager = {
     }
 };
 
-/**
- * Get item wrapper for shorthand usage
- * @param {string} key - Storage key
- * @param {*} fallback - Default value
- * @returns {*} Stored value or fallback
- * @deprecated Use StorageManager.get() directly
- */
-export function safeGetFromStorage(key, fallback = null) {
-    return StorageManager.get(key, fallback);
-}
-
-/**
- * Set item wrapper for shorthand usage
- * @param {string} key - Storage key
- * @param {*} value - Value to store
- * @returns {boolean} Success status
- * @deprecated Use StorageManager.set() directly
- */
-export function safeSetToStorage(key, value) {
-    return StorageManager.set(key, value);
-}
-
 export default StorageManager;

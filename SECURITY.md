@@ -140,7 +140,7 @@ We have auditted the codebase and replaced `innerHTML` with `document.createElem
 - `billGrid.js`: Renders bill list safely
 - `sidebar.js`: Renders category lists safely
 - `settingsHandler.js`: Renders settings details safely
-- `payment-history.js`: Renders transaction logs safely
+- `app/initializeModals.js`: Renders payment/history modal content safely
 
 **Protection measures**:
 - ✅ `textContent` for all text interpolation

@@ -12,7 +12,6 @@
  */
 
 import logger from './logger.js';
-import StorageManager from './StorageManager.js';
 
 /**
  * Retry configuration object
@@ -117,35 +116,6 @@ export function safeStringify(obj, fallback = '{}') {
         logger.warn('Failed to stringify object, using fallback', { error: error.message });
         return fallback;
     }
-}
-
-/**
- * Safe localStorage access with automatic fallback
- * 
- * @param {string} key - localStorage key to retrieve
- * @param {*} [fallback=null] - Value to return on error or if key not found
- * @returns {*} Stored value (parsed if JSON) or fallback value
- * @description Safely retrieves data from localStorage. Handles:
- *   - Missing localStorage support (some private browsing modes)
- *   - Invalid JSON values
- *   - Quota exceeded errors
- *   - Automatically logs warnings for debugging
- * @example
- * const settings = safeGetFromStorage('userSettings', {});
- * const paycheck = safeGetFromStorage('nextPaycheck', new Date());
- */
-export function safeGetFromStorage(key, fallback = null) {
-    return StorageManager.get(key, fallback);
-}
-
-/**
- * Safe localStorage write
- * @param {string} key - localStorage key
- * @param {*} value - Value to store
- * @returns {boolean} Success status
- */
-export function safeSetToStorage(key, value) {
-    return StorageManager.set(key, value);
 }
 
 /**

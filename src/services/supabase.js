@@ -250,13 +250,6 @@ export const syncUserData = async (localBills, localPaymentSettings = null) => {
 };
 
 /**
- * Sync bills to cloud (legacy - now uses syncUserData)
- */
-export const syncBills = async (localBills) => {
-    return syncUserData(localBills);
-};
-
-/**
  * Sync payment settings to cloud
  * @param {Object} paymentSettings - Payment settings to sync
  */

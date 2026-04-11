@@ -143,7 +143,7 @@ bill-tracker-pwa/
 │   │   └── settingsHandler.js     # Settings & categories
 │   ├── utils/                # Utilities
 │   │   ├── paycheckManager.js     # Paycheck logic
-│   │   ├── dateHelpers.js         # Date helpers
+│   │   ├── dates.js               # Date helpers
 │   │   ├── billHelpers.js         # Bill filtering
 │   │   ├── StorageManager.js      # Storage abstraction
 │   │   ├── debtSnowball.js        # Debt Snowball calculation engine

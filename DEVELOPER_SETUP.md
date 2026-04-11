@@ -245,10 +245,10 @@ bill-tracker-pwa/
 │   │   └── BillStore.js
 │   ├── utils/                # Utilities
 │   │   ├── paycheckManager.js
-│   │   ├── dateHelpers.js
+│   │   ├── dates.js
 │   │   ├── billHelpers.js
 │   │   ├── errorHandling.js
-│   │   └── storage.js
+│   │   └── StorageManager.js
 │   ├── views/                # Complex views
 │   │   ├── calendarView.js
 │   │   └── analyticsView.js
