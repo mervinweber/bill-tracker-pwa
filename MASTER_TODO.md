@@ -11,24 +11,24 @@
 ## 🎯 Next Additions Focus (April 2026)
 
 ### A. Undo for Bulk Actions *(High impact / low risk)*
-- [ ] Add undo toast (8-10 seconds) for:
+- [x] Add undo toast (8-10 seconds) for:
   - Bulk mark paid/unpaid
   - Bulk fill balances
-- [ ] Restore prior bill snapshots on undo and re-render current view
-- [ ] Track undo events in audit log (`bulk.undo.applied`)
+- [x] Restore prior bill snapshots on undo and re-render current view
+- [x] Track undo events in audit log (`bulk.undo.applied`)
 
 ### B. Bill History Timeline *(Trust and transparency)*
-- [ ] Add bill-level timeline modal/tab combining payment history + key audit events
-- [ ] Include status flips, balance edits/fills, and credit balance changes
-- [ ] Sort timeline descending by timestamp with clear action labels
+- [x] Add bill-level timeline modal/tab combining payment history + key audit events
+- [x] Include status flips, balance edits/fills, and credit balance changes
+- [x] Sort timeline descending by timestamp with clear action labels
 
 ### C. Reconcile Mode *(Data quality and confidence)*
-- [ ] Add "Reconcile" filter/view for mismatched bill state
-- [ ] Detect common mismatches:
+- [x] Add "Reconcile" filter/view for mismatched bill state
+- [x] Detect common mismatches:
   - `isPaid = true` but remaining balance > 0
   - `isPaid = false` with zero balance and no credit
   - Negative/invalid amount states from legacy data
-- [ ] Provide one-click fixes (set paid/unpaid, reset balance, clear invalid values)
+- [x] Provide one-click fixes (set paid/unpaid, reset balance, clear invalid values)
 
 ### D. Reminder System v2 *(Retention feature)*
 - [ ] Add due-soon and overdue reminder cadence options
@@ -36,9 +36,9 @@
 - [ ] Add "last sent" metadata to prevent duplicate same-day reminders
 
 ### E. Setup Health Card *(Onboarding + recovery)*
-- [ ] Add dashboard card showing setup health score
-- [ ] Include checks for: sync enabled, reminder permission, recent backup/export, security env readiness
-- [ ] Add direct CTA links from each failed check to the appropriate setting/action
+- [x] Add dashboard card showing setup health score
+- [x] Include checks for: sync enabled, reminder permission, recent backup/export, security env readiness
+- [x] Add direct CTA links from each failed check to the appropriate setting/action
 
 ---
 
@@ -47,17 +47,17 @@
 ### Week 1 — Core Reliability + Confidence
 
 #### Day 1-2: Undo Infrastructure
-- [ ] Implement reusable undo queue utility and toast action wiring
-- [ ] Integrate undo into bulk mark paid/unpaid and bulk fill balances
-- [ ] Add tests for undo happy path and timeout expiry
+- [x] Implement reusable undo queue utility and toast action wiring
+- [x] Integrate undo into bulk mark paid/unpaid and bulk fill balances
+- [x] Add tests for undo happy path and timeout expiry
 
 #### Day 3: Reconcile Rule Engine
-- [ ] Implement reconciliation detectors in helper module
-- [ ] Add unit tests for mismatch detection rules
+- [x] Implement reconciliation detectors in helper module
+- [x] Add unit tests for mismatch detection rules
 
 #### Day 4: Reconcile UI + Quick Fixes
-- [ ] Add reconcile filter entry point and action buttons
-- [ ] Add safe patch handlers for one-click fixes
+- [x] Add reconcile filter entry point and action buttons
+- [x] Add safe patch handlers for one-click fixes
 
 #### Day 5: Stabilization Pass
 - [ ] UX pass on bulk/reconcile flows (desktop + mobile)
@@ -66,17 +66,17 @@
 ### Week 2 — Product Polish + Retention
 
 #### Day 6-7: Bill History Timeline
-- [ ] Build timeline data adapter (payments + audit events)
-- [ ] Add timeline UI in bill modal/view
-- [ ] Add tests for ordering and event labels
+- [x] Build timeline data adapter (payments + audit events)
+- [x] Add timeline UI in bill modal/view
+- [x] Add tests for ordering and event labels
 
 #### Day 8-9: Reminder System v2
 - [ ] Add reminder cadence settings and quiet hours
 - [ ] Implement dedupe guard (`lastSentAt`) and related tests
 
 #### Day 10: Setup Health Card
-- [ ] Add health checks and score algorithm
-- [ ] Add dashboard card with CTA deep-links
+- [x] Add health checks and score algorithm
+- [x] Add dashboard card with CTA deep-links
 
 #### Day 11: Production Hardening
 - [ ] Run live smoke checklist in deployment section
@@ -96,7 +96,7 @@
 - [x] Add local env preflight command: `npm run verify:security-env`
 
 ### Manual Production Checks
-- [ ] Complete Section 1.4 production deploy verification checks (manifest/service worker + smoke pass)
+- [x] Complete Section 1.4 production deploy verification checks (manifest/service worker + smoke pass)
 - [ ] Verify cloud sync state after login/logout with a real Supabase account
 - [x] Add deploy verification command: `npm run verify:production-pwa -- <production-url>`
 
@@ -119,10 +119,10 @@
 
 ### P1 — Post-Beta Backlog
 
-- [ ] Narrow stale service worker recovery trigger in `src/index.js`
+- [x] Narrow stale service worker recovery trigger in `src/index.js`
   - Only trigger on SW/chunk-load failures, not all global errors / unhandled rejections
-- [ ] Extend `scripts/verify_production_pwa.mjs` to assert security headers on live URL
-- [ ] Update `SECURITY.md` dependency section to reflect current runtime dependencies (`dompurify`, `chart.js`, `@supabase/supabase-js`)
+- [x] Extend `scripts/verify_production_pwa.mjs` to assert security headers on live URL
+- [x] Update `SECURITY.md` dependency section to reflect current runtime dependencies (`dompurify`, `chart.js`, `@supabase/supabase-js`)
 
 ---
 
@@ -157,8 +157,8 @@
 ### 1.4 Deployment Steps
 - [x] Create release tag (`v1.0.1` — annotated, pushed to GitHub)
 - [x] Deploy from current `main` *(pushed `a7e3cf1`; Vercel auto-deploy triggered)*
-- [ ] Verify deployed app loads manifest and service worker correctly *(manual check on live URL)*
-- [ ] Run 5-minute post-deploy smoke pass on production URL
+- [x] Verify deployed app loads manifest and service worker correctly *(manual/automated check on live URL)*
+- [x] Run 5-minute post-deploy smoke pass on production URL
 
 ### 1.5 Post-Deploy Monitoring *(first session after each deploy)*
 - [ ] Watch browser console / network for auth or sync error bursts
