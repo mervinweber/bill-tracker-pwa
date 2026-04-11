@@ -278,4 +278,101 @@ describe('filterBillsByPeriod', () => {
 
         expect(result.map((bill) => bill.id)).toEqual(['1']);
     });
+
+    it('supports before_next_payday filter in all-bills view', () => {
+        const originalPaySettings = { ...paycheckManager.paymentSettings };
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const todayDate = now.getDate();
+        const yesterday = new Date(currentYear, currentMonth, todayDate - 1);
+        const tomorrow = new Date(currentYear, currentMonth, todayDate + 1);
+        const fiveDays = new Date(currentYear, currentMonth, todayDate + 5);
+        const tenDays = new Date(currentYear, currentMonth, todayDate + 10);
+
+        const toLocalKey = (date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        try {
+            paycheckManager.paymentSettings = {
+                ...originalPaySettings,
+                frequency: 'bi-weekly'
+            };
+
+            const bills = [
+                { id: 'past_due', dueDate: toLocalKey(yesterday), isPaid: false, creditBalance: 0 },
+                { id: 'due_tomorrow', dueDate: toLocalKey(tomorrow), isPaid: false, creditBalance: 0 },
+                { id: 'due_five_days', dueDate: toLocalKey(fiveDays), isPaid: false, creditBalance: 0 },
+                { id: 'due_ten_days', dueDate: toLocalKey(tenDays), isPaid: false, creditBalance: 0 },
+                { id: 'paid_bill', dueDate: toLocalKey(tomorrow), isPaid: true, creditBalance: 0 }
+            ];
+
+            const result = filterBillsByPeriod(
+                bills,
+                'all',
+                null,
+                null,
+                'before_next_payday',
+                [tenDays],
+                true,
+                'everything'
+            );
+
+            expect(result.map((bill) => bill.id)).toEqual(['due_tomorrow', 'due_five_days']);
+        } finally {
+            paycheckManager.paymentSettings = originalPaySettings;
+        }
+    });
+
+    it('supports before_next_payday filter in filtered paycheck/category view', () => {
+        const originalPaySettings = { ...paycheckManager.paymentSettings };
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const todayDate = now.getDate();
+        const yesterday = new Date(currentYear, currentMonth, todayDate - 1);
+        const twoDays = new Date(currentYear, currentMonth, todayDate + 2);
+        const sixDays = new Date(currentYear, currentMonth, todayDate + 6);
+
+        const toLocalKey = (date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        try {
+            paycheckManager.paymentSettings = {
+                ...originalPaySettings,
+                frequency: 'bi-weekly'
+            };
+
+            const bills = [
+                { id: 'util_due_soon', category: 'Utilities', dueDate: toLocalKey(twoDays), isPaid: false, creditBalance: 0 },
+                { id: 'util_future', category: 'Utilities', dueDate: toLocalKey(sixDays), isPaid: false, creditBalance: 0 },
+                { id: 'util_past', category: 'Utilities', dueDate: toLocalKey(yesterday), isPaid: false, creditBalance: 0 },
+                { id: 'util_paid', category: 'Utilities', dueDate: toLocalKey(twoDays), isPaid: true, creditBalance: 0 },
+                { id: 'rent_due_soon', category: 'Rent', dueDate: toLocalKey(twoDays), isPaid: false, creditBalance: 0 }
+            ];
+
+            const result = filterBillsByPeriod(
+                bills,
+                'filtered',
+                0,
+                'Utilities',
+                'before_next_payday',
+                [yesterday, sixDays],
+                true,
+                'everything'
+            );
+
+            expect(result.map((bill) => bill.id)).toEqual(['util_due_soon']);
+        } finally {
+            paycheckManager.paymentSettings = originalPaySettings;
+        }
+    });
 });

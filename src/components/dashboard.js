@@ -147,7 +147,7 @@ function getNextPaydayDate(payCheckDates = []) {
     return getNormalizedDate(new Date(lastKnownPayday.getTime() + (days * 24 * 60 * 60 * 1000)));
 }
 
-function buildTodayOverviewHtml(bills = [], payCheckDates = []) {
+function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 'all') {
     if (!Array.isArray(bills) || bills.length === 0) {
         return '';
     }
@@ -181,6 +181,13 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = []) {
         ? `No unpaid bills are past due or due before ${nextPaydayLabel}.`
         : `Based on today's date, here's what needs attention before ${nextPaydayLabel}.`;
 
+    const pastDueActiveClass = paymentFilter === 'overdue'
+        ? 'ring-2 ring-primary ring-offset-1'
+        : 'hover:border-primary/50 hover:bg-background/90';
+    const beforeNextActiveClass = paymentFilter === 'before_next_payday'
+        ? 'ring-2 ring-primary ring-offset-1'
+        : 'hover:border-primary/50 hover:bg-background/90';
+
     return `
         <section class="mb-3 rounded-2xl border ${containerClass} px-4 py-3 shadow-sm" aria-label="Today's overview">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -189,16 +196,26 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = []) {
                     <div class="mt-1 text-sm font-medium">${subtitle}</div>
                 </div>
                 <div class="grid gap-2 sm:grid-cols-2 lg:min-w-[30rem] lg:max-w-[34rem] lg:flex-1">
-                    <div class="rounded-xl border border-current/10 bg-background/70 px-3 py-2">
+                    <button
+                        type="button"
+                        class="rounded-xl border border-current/10 bg-background/70 px-3 py-2 text-left shadow-sm transition ${pastDueActiveClass}"
+                        data-dashboard-filter="overdue"
+                        aria-pressed="${paymentFilter === 'overdue' ? 'true' : 'false'}"
+                    >
                         <div class="text-[11px] uppercase tracking-[0.15em] opacity-65">Past Due</div>
                         <div class="mt-1 text-lg font-semibold">${overdueBills.length} bill${overdueBills.length === 1 ? '' : 's'}</div>
                         <div class="text-xs opacity-75">$${overdueTotal.toFixed(2)} total</div>
-                    </div>
-                    <div class="rounded-xl border border-current/10 bg-background/70 px-3 py-2">
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-xl border border-current/10 bg-background/70 px-3 py-2 text-left shadow-sm transition ${beforeNextActiveClass}"
+                        data-dashboard-filter="before_next_payday"
+                        aria-pressed="${paymentFilter === 'before_next_payday' ? 'true' : 'false'}"
+                    >
                         <div class="text-[11px] uppercase tracking-[0.15em] opacity-65">Before Next Payday</div>
                         <div class="mt-1 text-lg font-semibold">${beforeNextPaydayBills.length} bill${beforeNextPaydayBills.length === 1 ? '' : 's'}</div>
                         <div class="text-xs opacity-75">$${beforeNextPaydayTotal.toFixed(2)} due before ${nextPaydayLabel}</div>
-                    </div>
+                    </button>
                 </div>
             </div>
         </section>`;
@@ -347,7 +364,7 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
 
     // Compact layout when no data matches the current filter
     const healthCardHtml = buildHealthCardHtml();
-    const todayOverviewHtml = buildTodayOverviewHtml(bills, payCheckDates);
+    const todayOverviewHtml = buildTodayOverviewHtml(displayBills, payCheckDates, paymentFilter);
 
     if (allZero) {
         dashboard.className = "w-full pt-3 pb-1";

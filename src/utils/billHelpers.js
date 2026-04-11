@@ -196,23 +196,58 @@ export const getRemainingBalance = (bill) => {
  * @param {string} viewMode - 'all' or 'filtered'
  * @param {number|null} selectedPaycheck - Index of selected paycheck
  * @param {string|null} selectedCategory - Selected category
- * @param {string} paymentFilter - 'all'|'paid'|'unpaid'|'overdue'|'credit'
+ * @param {string} paymentFilter - 'all'|'paid'|'unpaid'|'overdue'|'credit'|'before_next_payday'
  * @param {Array<Date>} payCheckDates - Array of paycheck dates
  * @returns {Array<Object>} Filtered and sorted bills
  */
 export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true, allBillsScope = 'everything') => {
     const hasCredit = (bill) => (Number.parseFloat(bill.creditBalance) || 0) > 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const parseBillDate = (rawDate) => {
+        if (typeof rawDate !== 'string') return null;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return createLocalDate(rawDate);
+        const parsed = new Date(rawDate);
+        if (Number.isNaN(parsed.getTime())) return null;
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    };
+
+    const resolveNextPaydayDate = () => {
+        const futurePayday = (payCheckDates || [])
+            .map((date) => {
+                const normalized = new Date(date);
+                normalized.setHours(0, 0, 0, 0);
+                return normalized;
+            })
+            .find((date) => date > today);
+
+        if (futurePayday) {
+            return futurePayday;
+        }
+
+        const fallbackPayday = payCheckDates?.length ? new Date(payCheckDates[payCheckDates.length - 1]) : null;
+        if (!fallbackPayday) {
+            return null;
+        }
+
+        fallbackPayday.setHours(0, 0, 0, 0);
+        const frequency = paycheckManager.paymentSettings.frequency;
+        const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+        return new Date(fallbackPayday.getTime() + (days * 24 * 60 * 60 * 1000));
+    };
+
+    const beforeNextPaydayMatcher = (bill) => {
+        if (bill.isPaid) return false;
+        const dueDate = parseBillDate(bill.dueDate);
+        if (!dueDate || dueDate < today) return false;
+
+        const nextPayday = resolveNextPaydayDate();
+        return nextPayday ? dueDate < nextPayday : true;
+    };
 
     if (viewMode === 'all') {
         let filtered = [...bills];
-
-        const parseBillDate = (rawDate) => {
-            if (typeof rawDate !== 'string') return null;
-            if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return createLocalDate(rawDate);
-            const parsed = new Date(rawDate);
-            if (Number.isNaN(parsed.getTime())) return null;
-            return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-        };
 
         if (allBillsScope === 'open-only') {
             filtered = filtered.filter(b => !b.isPaid);
@@ -236,7 +271,8 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
 
         if (paymentFilter === 'unpaid') filtered = filtered.filter(b => !b.isPaid);
         if (paymentFilter === 'paid') filtered = filtered.filter(b => b.isPaid);
-        if (paymentFilter === 'overdue') filtered = filtered.filter((bill) => !bill.isPaid && parseBillDate(bill.dueDate) < new Date(new Date().setHours(0, 0, 0, 0)));
+        if (paymentFilter === 'overdue') filtered = filtered.filter((bill) => !bill.isPaid && parseBillDate(bill.dueDate) < today);
+        if (paymentFilter === 'before_next_payday') filtered = filtered.filter(beforeNextPaydayMatcher);
         if (paymentFilter === 'credit') filtered = filtered.filter(hasCredit);
         return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     }
@@ -280,6 +316,8 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
     } else if (paymentFilter === 'overdue') {
         const today = createLocalDate(new Date().toISOString().split('T')[0]);
         filtered = filtered.filter((bill) => !bill.isPaid && createLocalDate(bill.dueDate) < today);
+    } else if (paymentFilter === 'before_next_payday') {
+        filtered = filtered.filter(beforeNextPaydayMatcher);
     } else if (paymentFilter === 'credit') {
         filtered = filtered.filter(hasCredit);
     }
