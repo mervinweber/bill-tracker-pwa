@@ -184,7 +184,7 @@ describe('filterBillsByPeriod', () => {
 
             const bills = [
                 { id: '1', category: 'Utilities', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
-                { id: '2', category: 'Utilities', dueDate: '2025-01-11', isPaid: true, creditBalance: 20 },
+                { id: '2', category: 'Utilities', dueDate: '2025-01-11', isPaid: false, creditBalance: 20 },
                 { id: '3', category: 'Rent', dueDate: '2025-01-12', isPaid: true, creditBalance: 40 }
             ];
 
