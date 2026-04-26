@@ -6,6 +6,7 @@ it('should initialize with default state', () => {
     expect(state.selectedPaycheck).toBeDefined();
     expect(state.selectedCategory).toBeDefined();
     expect(state.viewMode).toBeDefined();
+    expect(state.allBillsScope).toBe('open-through-next-pay-date');
 });
 
 it('should update state with setState', () => {
