@@ -433,7 +433,9 @@ export function validatePaymentSettings(settings) {
         if (!validFrequencies.includes(normalizedFrequency)) {
             errors.push('Frequency must be weekly, bi-weekly, monthly, or custom');
         } else if (normalizedFrequency === 'custom') {
-            const customDays = Number.parseInt(settings.customDays, 10);
+            const customDays = typeof settings.customDays === 'number'
+                ? settings.customDays
+                : Number.parseInt(String(settings.customDays), 10);
             if (!Number.isInteger(customDays) || customDays < 1 || customDays > 365) {
                 errors.push('Custom frequency must include customDays between 1 and 365');
             }
