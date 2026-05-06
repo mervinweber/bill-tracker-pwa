@@ -111,7 +111,13 @@ export function showSettingsModal(categoriesList) {
                     <option value="weekly" ${settings.frequency === 'weekly' ? 'selected' : ''}>Weekly (every 7 days)</option>
                     <option value="bi-weekly" ${settings.frequency === 'bi-weekly' ? 'selected' : ''}>Bi-weekly (every 14 days)</option>
                     <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
+                    <option value="custom" ${settings.frequency === 'custom' ? 'selected' : ''}>Custom</option>
                 </select>
+            </div>
+            <div class="form-group" id="settingsCustomDaysGroup" style="${settings.frequency === 'custom' ? '' : 'display:none;'}">
+                <label for="settingsCustomDays"><strong>Custom Interval (days)</strong></label>
+                <input type="number" id="settingsCustomDays" min="1" max="365" step="1" value="${Number.isInteger(settings.customDays) ? settings.customDays : ''}" placeholder="e.g. 90">
+                <small class="settings-help-text">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
             </div>
             <div class="form-group">
                 <label><strong>Number of Pay Periods to Show:</strong></label>
@@ -347,6 +353,17 @@ export function showSettingsModal(categoriesList) {
                     /** @type {HTMLElement} */ (fields).style.pointerEvents = /** @type {HTMLInputElement} */ (quietHoursCheckbox).checked ? '' : 'none';
                 }
             });
+        }
+
+        const frequencySelect = document.getElementById('settingsFrequency');
+        const customDaysGroup = document.getElementById('settingsCustomDaysGroup');
+        if (frequencySelect && customDaysGroup) {
+            const syncCustomDaysVisibility = () => {
+                customDaysGroup.style.display = /** @type {HTMLSelectElement} */ (frequencySelect).value === 'custom' ? '' : 'none';
+            };
+
+            frequencySelect.addEventListener('change', syncCustomDaysVisibility);
+            syncCustomDaysVisibility();
         }
 
         // Clean up unused categories handler
@@ -834,6 +851,8 @@ async function handleSettingsSave(e, modal) {
         const startDate = f('settingsStartDate').value;
         const frequency = f('settingsFrequency').value;
         const weeks = parseInt(f('settingsWeeks').value);
+        const customDaysInput = f('settingsCustomDays');
+        const customDays = customDaysInput ? parseInt(customDaysInput.value, 10) : null;
         const amountInput = f('settingsAmount').value;
         const amount = amountInput !== '' ? parseFloat(amountInput) : null;
         const notificationsEnabledInput = /** @type {HTMLInputElement|null} */ (document.getElementById('settingsNotificationsEnabled'));
@@ -854,8 +873,13 @@ async function handleSettingsSave(e, modal) {
             startDate,
             frequency,
             payPeriodsToShow: weeks,
-            amount
+            amount,
+            customDays: frequency === 'custom' ? customDays : undefined
         };
+
+        if (frequency === 'custom' && (!Number.isInteger(customDays) || customDays < 1 || customDays > 365)) {
+            throw createAppError('INVALID_PAYMENT_SETTINGS', 'Custom interval must be between 1 and 365 days');
+        }
 
         const paymentSettingsChanged = hasPaymentScheduleChanged(existingSettings, newSettings);
 

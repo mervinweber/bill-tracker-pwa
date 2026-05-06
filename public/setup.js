@@ -24,6 +24,8 @@ document.getElementById('setupForm').addEventListener('submit', function (e) {
     const startDate = document.getElementById('setupStartDate').value;
     const frequency = document.getElementById('setupFrequency').value;
     const weeks = document.getElementById('setupWeeks').value;
+    const customDaysInput = document.getElementById('setupCustomDays');
+    const customDays = customDaysInput ? parseInt(customDaysInput.value, 10) : null;
 
     if (!startDate) {
         alert('Please select a paycheck date before continuing.');
@@ -39,11 +41,20 @@ document.getElementById('setupForm').addEventListener('submit', function (e) {
         return;
     }
 
+    if (frequency === 'custom' && (!Number.isInteger(customDays) || customDays < 1 || customDays > 365)) {
+        alert('Please enter a custom interval between 1 and 365 days.');
+        return;
+    }
+
     var settings = {
         startDate: startDate,
         frequency: frequency,
         payPeriodsToShow: parseInt(weeks, 10)
     };
+
+    if (frequency === 'custom') {
+        settings.customDays = customDays;
+    }
 
     if (parsedAmount !== null) {
         settings.amount = parsedAmount;
@@ -58,3 +69,15 @@ document.getElementById('setupForm').addEventListener('submit', function (e) {
 
     window.location.href = 'index.html';
 });
+
+const frequencySelect = document.getElementById('setupFrequency');
+const customDaysGroup = document.getElementById('setupCustomDaysGroup');
+
+if (frequencySelect && customDaysGroup) {
+    const syncCustomDaysVisibility = () => {
+        customDaysGroup.style.display = frequencySelect.value === 'custom' ? '' : 'none';
+    };
+
+    frequencySelect.addEventListener('change', syncCustomDaysVisibility);
+    syncCustomDaysVisibility();
+}

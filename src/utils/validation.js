@@ -367,7 +367,7 @@ export function validateRecurrence(recurrence) {
  *   frequency: 'invalid',
  *   payPeriodsToShow: -1
  * })
- * // Returns: { isValid: false, errors: ['Frequency must be weekly, bi-weekly, or monthly', 'Pay periods to show must be a positive integer'] }
+ * // Returns: { isValid: false, errors: ['Frequency must be weekly, bi-weekly, monthly, or custom', 'Pay periods to show must be a positive integer'] }
  */
 export function validatePaymentSettings(settings) {
     const errors = [];
@@ -425,11 +425,16 @@ export function validatePaymentSettings(settings) {
     if (!settings.frequency || typeof settings.frequency !== 'string') {
         errors.push('Frequency is required');
     } else {
-        const validFrequencies = ['weekly', 'bi-weekly', 'monthly'];
+        const validFrequencies = ['weekly', 'bi-weekly', 'monthly', 'custom'];
         const normalizedFrequency = settings.frequency.toLowerCase().trim();
         
         if (!validFrequencies.includes(normalizedFrequency)) {
-            errors.push('Frequency must be weekly, bi-weekly, or monthly');
+            errors.push('Frequency must be weekly, bi-weekly, monthly, or custom');
+        } else if (normalizedFrequency === 'custom') {
+            const customDays = Number.parseInt(settings.customDays, 10);
+            if (!Number.isInteger(customDays) || customDays < 1 || customDays > 365) {
+                errors.push('Custom frequency must include customDays between 1 and 365');
+            }
         }
     }
 

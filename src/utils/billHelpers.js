@@ -8,6 +8,18 @@ import { paycheckManager } from './paycheckManager.js';
 
 export { calculateNextDueDate };
 
+const getPeriodLengthDays = (frequency) => {
+    if (frequency === 'weekly') return 7;
+    if (frequency === 'bi-weekly') return 14;
+    if (frequency === 'custom') {
+        const customDays = Number.parseInt(paycheckManager.paymentSettings?.customDays, 10);
+        if (Number.isInteger(customDays) && customDays >= 1 && customDays <= 365) {
+            return customDays;
+        }
+    }
+    return 30;
+};
+
 /**
  * Bill Helper Utilities
  * 
@@ -233,7 +245,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
 
         fallbackPayday.setHours(0, 0, 0, 0);
         const frequency = paycheckManager.paymentSettings.frequency;
-        const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+        const days = getPeriodLengthDays(frequency);
         return new Date(fallbackPayday.getTime() + (days * 24 * 60 * 60 * 1000));
     };
 
@@ -253,7 +265,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
             filtered = filtered.filter(b => !b.isPaid);
         } else if (allBillsScope === 'open-through-next-pay-date') {
             const frequency = paycheckManager.paymentSettings.frequency;
-            const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+            const days = getPeriodLengthDays(frequency);
             const fallbackIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
             const effectiveIndex = selectedPaycheck ?? fallbackIndex;
             const currentPaycheckDate = payCheckDates?.[effectiveIndex] || new Date();
@@ -283,7 +295,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
 
     const currentPaycheckDate = payCheckDates[selectedPaycheck];
     const frequency = paycheckManager.paymentSettings.frequency;
-    const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+    const days = getPeriodLengthDays(frequency);
 
     const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1
         ? payCheckDates[selectedPaycheck + 1]

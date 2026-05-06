@@ -216,12 +216,30 @@ it('validatePaymentSettings accepts valid settings', () => {
     expect(validatePaymentSettings({ startDate: getFutureDate(14), frequency: 'bi-weekly', payPeriodsToShow: 6 }).isValid).toBe(true);
 });
 
+it('validatePaymentSettings accepts valid custom settings', () => {
+    expect(validatePaymentSettings({
+        startDate: getFutureDate(14),
+        frequency: 'custom',
+        customDays: 90,
+        payPeriodsToShow: 6
+    }).isValid).toBe(true);
+});
+
 it('validatePaymentSettings rejects null input', () => {
     expect(validatePaymentSettings(null).isValid).toBe(false);
 });
 
 it('validatePaymentSettings rejects invalid frequency', () => {
     expect(validatePaymentSettings({ startDate: getFutureDate(14), frequency: 'daily', payPeriodsToShow: 6 }).isValid).toBe(false);
+});
+
+it('validatePaymentSettings rejects invalid customDays', () => {
+    expect(validatePaymentSettings({
+        startDate: getFutureDate(14),
+        frequency: 'custom',
+        customDays: 0,
+        payPeriodsToShow: 6
+    }).isValid).toBe(false);
 });
 
 it('validatePaymentSettings rejects missing startDate', () => {
