@@ -201,19 +201,29 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         const nameCell = document.createElement('td');
         nameCell.className = "px-2 py-2 align-middle sm:px-4 sm:py-4";
         const hasNotes = typeof bill.notes === 'string' && bill.notes.trim().length > 0;
+        const mobileMeta = isCompactViewport
+            ? `
+                <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span class="inline-flex max-w-[25ch] truncate items-center rounded-full bg-muted px-2 py-0.5">${bill.dueDate}</span>
+                    <span class="inline-flex max-w-[25ch] truncate items-center rounded-full bg-muted px-2 py-0.5">$${(bill.amountDue || 0).toFixed(2)}</span>
+                    ${viewMode === 'all' ? `<span class="inline-flex max-w-[18ch] truncate items-center rounded-full bg-muted px-2 py-0.5">${bill.category}</span>` : ''}
+                </div>
+            `
+            : '';
         nameCell.innerHTML = `
             <div class="flex flex-col">
                 <span class="${mobileTextCap} truncate font-semibold text-foreground">${bill.name}</span>
                 <span class="${reasonBadgeBase} ${reasonBadgeStyles[dueReason.tone] || reasonBadgeStyles.open} mt-1 w-fit">${dueReason.label}</span>
                 ${hasNotes ? `<span class="${mobileNotesCap} truncate text-[9px] text-muted-foreground sm:text-[10px]">${bill.notes}</span>` : ''}
                 ${primaryReconciliationIssue ? '<span class="text-[9px] font-semibold uppercase tracking-wide text-amber-700 sm:text-[10px]">Needs Reconcile</span>' : ''}
+                ${mobileMeta}
             </div>
         `;
         row.appendChild(nameCell);
 
         // Due Date
         const dateCell = document.createElement('td');
-        dateCell.className = "px-2 py-2 align-middle whitespace-nowrap sm:px-4 sm:py-4";
+        dateCell.className = `${isCompactViewport ? 'hidden' : 'table-cell'} px-2 py-2 align-middle whitespace-nowrap sm:px-4 sm:py-4`;
         dateCell.innerHTML = `
             <div class="flex flex-col">
                 <span class="${isOverdue ? 'font-bold text-destructive' : ''}">${bill.dueDate}</span>
@@ -225,14 +235,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         // Category
         if (viewMode === 'all') {
             const catCell = document.createElement('td');
-            catCell.className = "hidden px-2 py-2 align-middle lg:table-cell lg:px-4 lg:py-4";
+            catCell.className = `${isCompactViewport ? 'hidden' : 'hidden lg:table-cell'} px-2 py-2 align-middle lg:px-4 lg:py-4`;
             catCell.innerHTML = `<span class="inline-flex ${mobileCategoryCap} truncate items-center rounded-full border border-transparent bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80">${bill.category}</span>`;
             row.appendChild(catCell);
         }
 
         // Amount Due
         const amountCell = document.createElement('td');
-        amountCell.className = "px-1.5 py-2 align-middle font-mono font-medium sm:px-4 sm:py-4";
+        amountCell.className = `${isCompactViewport ? 'hidden' : 'table-cell'} px-1.5 py-2 align-middle font-mono font-medium sm:px-4 sm:py-4`;
         const splitIndicator = bill.split?.enabled 
             ? `<div class="text-[10px] text-primary font-sans font-bold">SPLIT (${bill.split.payers.length})</div>` 
             : '';
