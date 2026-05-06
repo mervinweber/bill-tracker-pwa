@@ -342,15 +342,17 @@ export function validateRecurrence(recurrence) {
  * 
  * Payment settings control:
  * - startDate: When paycheck cycle begins (YYYY-MM-DD format)
- * - frequency: Paycheck frequency (weekly, bi-weekly, monthly)
+ * - frequency: Paycheck frequency (weekly, bi-weekly, monthly, custom)
  * - payPeriodsToShow: Number of upcoming paychecks to display and filter
  * - amount: Optional paycheck amount used for coverage calculations
+ * - customDays: Optional interval in days when frequency is custom
  * 
  * @param {Object} settings - Payment settings object to validate
  * @param {string} settings.startDate - Start date in YYYY-MM-DD format
- * @param {string} settings.frequency - Frequency type (weekly, bi-weekly, monthly)
+ * @param {string} settings.frequency - Frequency type (weekly, bi-weekly, monthly, custom)
  * @param {number} settings.payPeriodsToShow - Number of periods to show (positive integer)
  * @param {number|null} [settings.amount] - Optional paycheck amount (0 or greater)
+ * @param {number} [settings.customDays] - Custom interval in days for custom frequency
  * @returns {Object} Validation result with isValid and errors array
  * 
  * @example
