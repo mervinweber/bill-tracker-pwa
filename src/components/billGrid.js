@@ -164,6 +164,10 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         </div>
     ` : '';
 
+    const mobileTextCap = isCompactViewport ? 'max-w-[25ch]' : 'max-w-none';
+    const mobileNotesCap = isCompactViewport ? 'max-w-[25ch]' : 'max-w-none';
+    const mobileCategoryCap = isCompactViewport ? 'max-w-[18ch]' : 'max-w-[110px]';
+
     dueBills.forEach(bill => {
         const isPaid = bill.isPaid || false;
         const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
@@ -199,9 +203,9 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         const hasNotes = typeof bill.notes === 'string' && bill.notes.trim().length > 0;
         nameCell.innerHTML = `
             <div class="flex flex-col">
-                <span class="max-w-[120px] truncate font-semibold text-foreground sm:max-w-none">${bill.name}</span>
+                <span class="${mobileTextCap} truncate font-semibold text-foreground">${bill.name}</span>
                 <span class="${reasonBadgeBase} ${reasonBadgeStyles[dueReason.tone] || reasonBadgeStyles.open} mt-1 w-fit">${dueReason.label}</span>
-                ${hasNotes ? `<span class="max-w-[100px] truncate text-[9px] text-muted-foreground sm:max-w-[150px] sm:text-[10px]">${bill.notes}</span>` : ''}
+                ${hasNotes ? `<span class="${mobileNotesCap} truncate text-[9px] text-muted-foreground sm:text-[10px]">${bill.notes}</span>` : ''}
                 ${primaryReconciliationIssue ? '<span class="text-[9px] font-semibold uppercase tracking-wide text-amber-700 sm:text-[10px]">Needs Reconcile</span>' : ''}
             </div>
         `;
@@ -222,7 +226,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         if (viewMode === 'all') {
             const catCell = document.createElement('td');
             catCell.className = "hidden px-2 py-2 align-middle lg:table-cell lg:px-4 lg:py-4";
-            catCell.innerHTML = `<span class="inline-flex max-w-[110px] truncate items-center rounded-full border border-transparent bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80">${bill.category}</span>`;
+            catCell.innerHTML = `<span class="inline-flex ${mobileCategoryCap} truncate items-center rounded-full border border-transparent bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80">${bill.category}</span>`;
             row.appendChild(catCell);
         }
 
