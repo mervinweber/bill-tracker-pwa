@@ -47,6 +47,7 @@ const formatDueDateLabel = (date) => {
 export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates, allBillsScope }, actions) => {
     runBillGridCleanup();
     const useCompactMobileActions = isTouchDevice() && isMobileViewport();
+    const isCompactViewport = isMobileViewport();
     const billGrid = document.getElementById('billGrid');
     billGrid.className = "flex flex-col gap-4 p-4 sm:p-6";
     billGrid.innerHTML = '';
@@ -75,10 +76,9 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
     // Shadcn-like styling constants
     const btnBase = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
-    const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground h-8 w-8`;
     const checkboxBase = "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground";
-    const inputBase = "flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-    const reasonBadgeBase = "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide";
+    const inputBase = "flex h-7 w-full rounded-md border border-input bg-transparent px-2 py-1 text-[11px] shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:h-8 sm:text-xs";
+    const reasonBadgeBase = "inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide sm:px-2 sm:text-[10px]";
     const reasonBadgeStyles = {
         overdue: 'bg-destructive/10 text-destructive',
         carried: 'bg-amber-500/10 text-amber-700',
@@ -91,20 +91,20 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     tableWrapper.className = "relative w-full overflow-x-auto overflow-y-visible rounded-lg border bg-card shadow-sm";
 
     const table = document.createElement('table');
-    table.className = "w-full caption-bottom text-sm min-w-max sm:min-w-full";
+    table.className = "w-full caption-bottom text-sm min-w-[760px] sm:min-w-full";
     table.setAttribute('role', 'table');
 
     const thead = document.createElement('thead');
-    thead.className = "[&_tr]:border-b";
+    thead.className = "hidden sm:table-header-group [&_tr]:border-b";
     thead.innerHTML = `
         <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Bill</th>
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Due</th>
-            ${viewMode === 'all' ? '<th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Category</th>' : ''}
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Amount</th>\n            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Balance</th>
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Credit</th>
-            <th class="h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Status</th>
-            <th class="h-9 px-3 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Actions</th>
+            <th class="h-9 px-2 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Bill</th>
+            <th class="h-9 px-2 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Due</th>
+            ${viewMode === 'all' ? '<th class="h-9 px-2 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Category</th>' : ''}
+            <th class="h-9 px-2 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Amount</th>\n            <th class="h-9 px-2 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Balance</th>
+            <th class="h-9 px-2 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Credit</th>
+            <th class="h-9 px-2 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Status</th>
+            <th class="h-9 px-2 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -145,20 +145,20 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     }).length;
 
     const summaryMarkup = viewMode === 'filtered' || allBillsScope !== 'everything' ? `
-        <div class="rounded-xl border bg-card px-4 py-3 shadow-sm">
+        <div class="rounded-xl border bg-card px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Pay Period Summary</div>
-                    <p class="mt-1 text-sm text-card-foreground">
+                    <div class="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-xs">Pay Period Summary</div>
+                    <p class="mt-1 text-xs text-card-foreground sm:text-sm">
                         ${summaryDateLabel
                             ? `Showing bills that need attention before ${summaryDateLabel}.`
                             : 'Showing bills that need attention in the selected period.'}
                     </p>
                 </div>
-                <div class="flex flex-wrap gap-2 text-[11px] font-semibold">
-                    <span class="inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-sky-700">${dueThisPeriodCount} due this period</span>
-                    <span class="inline-flex items-center rounded-full bg-amber-500/10 px-3 py-1 text-amber-700">${carriedForwardCount} carried forward</span>
-                    <span class="inline-flex items-center rounded-full bg-destructive/10 px-3 py-1 text-destructive">${overdueCount} overdue</span>
+                <div class="grid grid-cols-3 gap-1.5 text-[10px] font-semibold sm:flex sm:flex-wrap sm:gap-2 sm:text-[11px]">
+                    <span class="inline-flex items-center justify-center rounded-full bg-sky-500/10 px-2 py-1 text-sky-700 sm:px-3">${dueThisPeriodCount} due</span>
+                    <span class="inline-flex items-center justify-center rounded-full bg-amber-500/10 px-2 py-1 text-amber-700 sm:px-3">${carriedForwardCount} carried</span>
+                    <span class="inline-flex items-center justify-center rounded-full bg-destructive/10 px-2 py-1 text-destructive sm:px-3">${overdueCount} overdue</span>
                 </div>
             </div>
         </div>
@@ -195,25 +195,25 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Name & Notes hidden
         const nameCell = document.createElement('td');
-        nameCell.className = "p-4 align-middle";
+        nameCell.className = "px-2 py-2 align-middle sm:px-4 sm:py-4";
         const hasNotes = typeof bill.notes === 'string' && bill.notes.trim().length > 0;
         nameCell.innerHTML = `
             <div class="flex flex-col">
-                <span class="font-semibold text-foreground">${bill.name}</span>
+                <span class="max-w-[150px] truncate font-semibold text-foreground sm:max-w-none">${bill.name}</span>
                 <span class="${reasonBadgeBase} ${reasonBadgeStyles[dueReason.tone] || reasonBadgeStyles.open} mt-1 w-fit">${dueReason.label}</span>
-                ${hasNotes ? `<span class="text-[10px] text-muted-foreground truncate max-w-[150px]">${bill.notes}</span>` : ''}
-                ${primaryReconciliationIssue ? '<span class="text-[10px] text-amber-700 font-semibold uppercase tracking-wide">Needs Reconcile</span>' : ''}
+                ${hasNotes ? `<span class="max-w-[120px] truncate text-[9px] text-muted-foreground sm:max-w-[150px] sm:text-[10px]">${bill.notes}</span>` : ''}
+                ${primaryReconciliationIssue ? '<span class="text-[9px] font-semibold uppercase tracking-wide text-amber-700 sm:text-[10px]">Needs Reconcile</span>' : ''}
             </div>
         `;
         row.appendChild(nameCell);
 
         // Due Date
         const dateCell = document.createElement('td');
-        dateCell.className = "p-4 align-middle whitespace-nowrap";
+        dateCell.className = "px-2 py-2 align-middle whitespace-nowrap sm:px-4 sm:py-4";
         dateCell.innerHTML = `
             <div class="flex flex-col">
-                <span class="${isOverdue ? 'text-destructive font-bold' : ''}">${bill.dueDate}</span>
-                <span class="text-[10px] text-muted-foreground uppercase">${bill.recurrence}</span>
+                <span class="${isOverdue ? 'font-bold text-destructive' : ''}">${bill.dueDate}</span>
+                <span class="text-[9px] uppercase text-muted-foreground sm:text-[10px]">${bill.recurrence}</span>
             </div>
         `;
         row.appendChild(dateCell);
@@ -221,14 +221,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         // Category
         if (viewMode === 'all') {
             const catCell = document.createElement('td');
-            catCell.className = "p-4 align-middle";
-            catCell.innerHTML = `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">${bill.category}</span>`;
+            catCell.className = "hidden px-2 py-2 align-middle lg:table-cell lg:px-4 lg:py-4";
+            catCell.innerHTML = `<span class="inline-flex max-w-[110px] truncate items-center rounded-full border border-transparent bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80">${bill.category}</span>`;
             row.appendChild(catCell);
         }
 
         // Amount Due
         const amountCell = document.createElement('td');
-        amountCell.className = "p-4 align-middle font-medium font-mono";
+        amountCell.className = "px-2 py-2 align-middle font-mono font-medium sm:px-4 sm:py-4";
         const splitIndicator = bill.split?.enabled 
             ? `<div class="text-[10px] text-primary font-sans font-bold">SPLIT (${bill.split.payers.length})</div>` 
             : '';
@@ -242,7 +242,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Balance Input
         const balanceCell = document.createElement('td');
-        balanceCell.className = "p-4 align-middle min-w-[100px]";
+        balanceCell.className = "hidden min-w-[88px] px-2 py-2 align-middle md:table-cell md:px-3 md:py-4";
         const balanceInput = document.createElement('input');
         balanceInput.className = inputBase;
         balanceInput.type = 'number';
@@ -254,7 +254,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Credit
         const creditCell = document.createElement('td');
-        creditCell.className = 'p-4 align-middle font-medium font-mono';
+        creditCell.className = 'hidden px-2 py-2 align-middle font-mono font-medium md:table-cell md:px-3 md:py-4';
         creditCell.innerHTML = creditBalance > 0
             ? `<span class="text-emerald-600">$${creditBalance.toFixed(2)}</span>`
             : '<span class="text-muted-foreground">$0.00</span>';
@@ -262,7 +262,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Status / Paid Toggle
         const statusCell = document.createElement('td');
-        statusCell.className = "p-4 align-middle text-center";
+        statusCell.className = "px-2 py-2 align-middle text-center sm:px-4 sm:py-4";
         const toggleDiv = document.createElement('div');
         toggleDiv.className = "flex items-center justify-center";
 
@@ -277,11 +277,11 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Actions
         const actionsCell = document.createElement('td');
-        actionsCell.className = "p-4 align-middle text-right";
+        actionsCell.className = "px-2 py-2 align-middle text-right sm:px-4 sm:py-4";
         const actionGroup = document.createElement('div');
-        actionGroup.className = "flex items-center justify-end gap-2";
+        actionGroup.className = "flex items-center justify-end gap-1.5 sm:gap-2";
 
-        const btnStyle = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8";
+        const btnStyle = "inline-flex h-7 w-7 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground sm:h-8 sm:w-8";
 
         if (bill.website) {
             const linkBtn = document.createElement('button');
