@@ -39,6 +39,11 @@ export const initializeBillGrid = () => {
     `;
 };
 
+const formatDueDateLabel = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return 'Unknown date';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
 export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates, allBillsScope }, actions) => {
     runBillGridCleanup();
     const useCompactMobileActions = isTouchDevice() && isMobileViewport();
@@ -73,6 +78,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     const btnGhost = `${btnBase} hover:bg-accent hover:text-accent-foreground h-8 w-8`;
     const checkboxBase = "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground";
     const inputBase = "flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
+    const reasonBadgeBase = "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide";
+    const reasonBadgeStyles = {
+        overdue: 'bg-destructive/10 text-destructive',
+        carried: 'bg-amber-500/10 text-amber-700',
+        due: 'bg-sky-500/10 text-sky-700',
+        paid: 'bg-emerald-500/10 text-emerald-700',
+        open: 'bg-muted text-muted-foreground'
+    };
 
     const tableWrapper = document.createElement('div');
     tableWrapper.className = "relative w-full overflow-x-auto overflow-y-visible rounded-lg border bg-card shadow-sm";
@@ -98,17 +111,83 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
     const tbody = document.createElement('tbody');
     tbody.className = "[&_tr:last-child]:border-0";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const currentPaycheckDate = payCheckDates?.[selectedPaycheck ?? 0] || null;
+    const nextPaycheckDate = currentPaycheckDate && selectedPaycheck !== null && payCheckDates?.length
+        ? (selectedPaycheck < payCheckDates.length - 1
+            ? payCheckDates[selectedPaycheck + 1]
+            : new Date(currentPaycheckDate.getTime() + (14 * 24 * 60 * 60 * 1000)))
+        : null;
+    const summaryDateLabel = nextPaycheckDate instanceof Date && !Number.isNaN(nextPaycheckDate.getTime())
+        ? formatDueDateLabel(nextPaycheckDate)
+        : null;
+    const dueThisPeriodCount = dueBills.filter((bill) => {
+        if (bill.isPaid) return false;
+        const dueDate = createLocalDate(bill.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return currentPaycheckDate && nextPaycheckDate
+            ? dueDate >= currentPaycheckDate && dueDate < nextPaycheckDate
+            : true;
+    }).length;
+    const carriedForwardCount = dueBills.filter((bill) => {
+        if (bill.isPaid || !showCarriedForward) return false;
+        const dueDate = createLocalDate(bill.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return currentPaycheckDate ? dueDate < currentPaycheckDate : false;
+    }).length;
+    const overdueCount = dueBills.filter((bill) => {
+        if (bill.isPaid) return false;
+        const dueDate = createLocalDate(bill.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate < today;
+    }).length;
+
+    const summaryMarkup = viewMode === 'filtered' || allBillsScope !== 'everything' ? `
+        <div class="rounded-xl border bg-card px-4 py-3 shadow-sm">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Pay Period Summary</div>
+                    <p class="mt-1 text-sm text-card-foreground">
+                        ${summaryDateLabel
+                            ? `Showing bills that need attention before ${summaryDateLabel}.`
+                            : 'Showing bills that need attention in the selected period.'}
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2 text-[11px] font-semibold">
+                    <span class="inline-flex items-center rounded-full bg-sky-500/10 px-3 py-1 text-sky-700">${dueThisPeriodCount} due this period</span>
+                    <span class="inline-flex items-center rounded-full bg-amber-500/10 px-3 py-1 text-amber-700">${carriedForwardCount} carried forward</span>
+                    <span class="inline-flex items-center rounded-full bg-destructive/10 px-3 py-1 text-destructive">${overdueCount} overdue</span>
+                </div>
+            </div>
+        </div>
+    ` : '';
 
     dueBills.forEach(bill => {
         const isPaid = bill.isPaid || false;
         const creditBalance = Math.max(0, Number.parseFloat(bill.creditBalance) || 0);
         const reconciliationIssues = getBillReconciliationIssues(bill);
         const primaryReconciliationIssue = reconciliationIssues[0] || null;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         const dueDate = new Date(bill.dueDate);
         dueDate.setHours(0, 0, 0, 0);
         const isOverdue = dueDate < today && !isPaid;
+        const dueReason = (() => {
+            if (isPaid) return { label: 'Paid', tone: 'paid' };
+            if (viewMode === 'filtered' && showCarriedForward && isOverdue) {
+                return { label: 'Carried from previous period', tone: 'carried' };
+            }
+            if (isOverdue) return { label: 'Overdue', tone: 'overdue' };
+            if (viewMode === 'filtered' && nextPaycheckDate) {
+                return { label: `Due by ${formatDueDateLabel(nextPaycheckDate)}`, tone: 'due' };
+            }
+            if (viewMode === 'filtered') return { label: 'Due this period', tone: 'due' };
+            if (allBillsScope === 'open-through-next-pay-date' && nextPaycheckDate) {
+                return { label: `Due by ${formatDueDateLabel(nextPaycheckDate)}`, tone: 'due' };
+            }
+            if (allBillsScope === 'open-only') return { label: 'Open only', tone: 'open' };
+            return { label: 'Open', tone: 'open' };
+        })();
 
         const row = document.createElement('tr');
         row.className = `border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted ${isPaid ? 'opacity-60 bg-muted/20' : ''}`;
@@ -121,6 +200,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         nameCell.innerHTML = `
             <div class="flex flex-col">
                 <span class="font-semibold text-foreground">${bill.name}</span>
+                <span class="${reasonBadgeBase} ${reasonBadgeStyles[dueReason.tone] || reasonBadgeStyles.open} mt-1 w-fit">${dueReason.label}</span>
                 ${hasNotes ? `<span class="text-[10px] text-muted-foreground truncate max-w-[150px]">${bill.notes}</span>` : ''}
                 ${primaryReconciliationIssue ? '<span class="text-[10px] text-amber-700 font-semibold uppercase tracking-wide">Needs Reconcile</span>' : ''}
             </div>
@@ -258,5 +338,10 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
     table.appendChild(tbody);
     tableWrapper.appendChild(table);
+    billGrid.innerHTML = `
+        <div class="flex flex-col gap-4">
+            ${summaryMarkup}
+        </div>
+    `;
     billGrid.appendChild(tableWrapper);
 };

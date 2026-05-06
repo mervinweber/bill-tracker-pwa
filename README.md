@@ -239,7 +239,7 @@ For detailed information about the project, start with:
 - **[docs/guides/ERROR_HANDLING_GUIDE.md](docs/guides/ERROR_HANDLING_GUIDE.md)** - Error taxonomy, handler template, and messaging strategy
 - **[docs/guides/LOCAL_WORKFLOW.md](docs/guides/LOCAL_WORKFLOW.md)** - Day-to-day dev/test/build workflow
 - **[docs/guides/JSON_IMPORT_PROCESS_FLOW.md](docs/guides/JSON_IMPORT_PROCESS_FLOW.md)** - JSON import validation and process flow
-- **[IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md)** - Future enhancements and technical debt
+- **[IMPROVEMENT_ROADMAP.md](docs/archive/legacy-planning/IMPROVEMENT_ROADMAP.md)** - Future enhancements and technical debt
 - **[SECURITY.md](SECURITY.md)** - Security best practices and guidelines
 - **[BILLSTORE_REFERENCE.md](BILLSTORE_REFERENCE.md)** - BillStore API reference
 
@@ -268,7 +268,7 @@ Legacy planning/session summary docs are preserved in **[docs/archive](docs/arch
 
 ## 🔮 Future Enhancements
 
-See [IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md) for the complete roadmap. Key priorities:
+See [IMPROVEMENT_ROADMAP.md](docs/archive/legacy-planning/IMPROVEMENT_ROADMAP.md) for the archived roadmap. Key priorities:
 
 ### Production Readiness
 1.  ✅ **PWA Offline Documentation** - Complete ([PWA_OFFLINE_GUIDE.md](PWA_OFFLINE_GUIDE.md))
@@ -402,7 +402,7 @@ npm test
 This project follows a modular architecture with clear separation of concerns. Before contributing:
 
 1. Review [ARCHITECTURE.md](ARCHITECTURE.md) to understand the design
-2. Check [IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md) for planned features
+2. Check [IMPROVEMENT_ROADMAP.md](docs/archive/legacy-planning/IMPROVEMENT_ROADMAP.md) for archived planned features
 3. Ensure all tests pass before submitting changes
 4. Follow the existing code style and patterns
 
