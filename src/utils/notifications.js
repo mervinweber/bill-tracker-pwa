@@ -107,6 +107,13 @@ function buildEligibleBills(bills, daysBefore, today) {
             return false;
         }
 
+        if (bill.snoozeUntil) {
+            const snoozeUntil = new Date(`${bill.snoozeUntil}T00:00:00`);
+            if (!Number.isNaN(snoozeUntil.getTime()) && snoozeUntil > startOfDay(today)) {
+                return false;
+            }
+        }
+
         const daysUntilDue = computeDaysUntilDue(bill.dueDate, today);
         if (daysUntilDue === null) {
             return false;
@@ -262,6 +269,12 @@ export function checkAndSendDueBillReminders(bills = []) {
         const overdueBills = bills.filter(bill => {
             if (!bill || bill.isPaid || bill.reminderEnabled === false || !bill.dueDate) {
                 return false;
+            }
+            if (bill.snoozeUntil) {
+                const snoozeUntil = new Date(`${bill.snoozeUntil}T00:00:00`);
+                if (!Number.isNaN(snoozeUntil.getTime()) && snoozeUntil > startOfDay(today)) {
+                    return false;
+                }
             }
             const daysUntil = computeDaysUntilDue(bill.dueDate, today);
             return daysUntil !== null && daysUntil < 0;

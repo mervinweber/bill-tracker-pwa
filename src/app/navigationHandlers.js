@@ -22,6 +22,10 @@ export function handleFilterChange(filter) {
     appState.setPaymentFilter(filter);
 }
 
+export function handleSearchQueryChange(query) {
+    appState.setSearchQuery(query);
+}
+
 export function handleAllBillsScopeChange(scope) {
     appState.setAllBillsScope(scope);
 }
@@ -34,6 +38,7 @@ export function handleAllBillsSelect() {
     appState.setViewMode('all');
     appState.setDisplayMode('list');
     appState.setPaymentFilter('all');
+    appState.setSearchQuery('');
     appState.setAllBillsScope('open-through-next-pay-date');
     appState.setCurrentCalendarDate(new Date());
 }

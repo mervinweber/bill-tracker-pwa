@@ -26,6 +26,7 @@ import {
     validateDate,
     validateAmount,
     validateCategory,
+    validateShortTextField,
     validateNotes,
     validateRecurrence,
     isValidURL,
@@ -754,9 +755,42 @@ export function migrateBillsToPaymentHistory() {
 }
 
 /**
- * Export all data as JSON
+ * Export all data as JSON or CSV
  */
-export function exportData() {
+function escapeCsvValue(value) {
+    const text = String(value ?? '');
+    if (/[",\n\r]/.test(text)) {
+        return `"${text.replaceAll('"', '""')}"`;
+    }
+    return text;
+}
+
+function buildBillsCsv(bills) {
+    const headers = [
+        'id',
+        'name',
+        'category',
+        'dueDate',
+        'amountDue',
+        'balance',
+        'isPaid',
+        'recurrence',
+        'reminderEnabled',
+        'creditBalance',
+        'snoozeUntil',
+        'website',
+        'notes'
+    ];
+
+    const rows = bills.map((bill) => headers.map((header) => {
+        const value = bill?.[header];
+        return escapeCsvValue(value);
+    }).join(','));
+
+    return [headers.join(','), ...rows].join('\n');
+}
+
+export function exportData(format = 'json') {
     try {
         const bills = billStore.getAll();
         const customCategories = StorageManager.get(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
@@ -770,23 +804,33 @@ export function exportData() {
             paymentSettings
         };
 
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        let blob;
+        let fileName;
+
+        if (format === 'csv') {
+            blob = new Blob([buildBillsCsv(bills)], { type: 'text/csv;charset=utf-8' });
+            fileName = `bill-tracker-bills-${new Date().toISOString().split('T')[0]}.csv`;
+        } else {
+            blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            fileName = `bill-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        }
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `bill-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
 
         recordAuditEvent('data.exported', {
             entityType: 'data',
             summary: `Exported ${bills.length} bills`,
-            metadata: { billCount: bills.length }
+            metadata: { billCount: bills.length, format }
         });
 
         StorageManager.set(STORAGE_KEYS.LAST_EXPORT_DATE, new Date().toISOString());
 
-        showSuccessNotification('Data exported successfully');
+        showSuccessNotification(format === 'csv' ? 'CSV exported successfully' : 'Data exported successfully');
         return true;
     } catch (error) {
         logger.error('Error exporting data', error);
@@ -906,6 +950,16 @@ export function validateBill(billData) {
     const categoryValidation = validateCategory(billData.category);
     if (!categoryValidation.isValid) {
         errors.push(categoryValidation.error);
+    }
+
+    const payeeValidation = validateShortTextField(billData.payee, 'Payee');
+    if (!payeeValidation.isValid) {
+        errors.push(payeeValidation.error);
+    }
+
+    const accountValidation = validateShortTextField(billData.accountName, 'Account name');
+    if (!accountValidation.isValid) {
+        errors.push(accountValidation.error);
     }
 
     // Validate due date

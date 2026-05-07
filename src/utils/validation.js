@@ -162,6 +162,35 @@ export function validateBillName(name) {
 }
 
 /**
+ * Validate optional short label fields like payee/account name.
+ *
+ * @param {string} value - Field value to validate
+ * @param {string} fieldLabel - Label used in error text
+ * @param {number} [maxLength=100] - Maximum length
+ * @returns {Object} Validation result with isValid and error message
+ */
+export function validateShortTextField(value, fieldLabel, maxLength = 100) {
+    if (value === undefined || value === null || value === '') {
+        return { isValid: true, error: null };
+    }
+
+    if (typeof value !== 'string') {
+        return { isValid: false, error: `${fieldLabel} must be text` };
+    }
+
+    const trimmed = value.trim();
+    if (trimmed.length > maxLength) {
+        return { isValid: false, error: `${fieldLabel} must be ${maxLength} characters or less` };
+    }
+
+    if (containsMaliciousContent(trimmed)) {
+        return { isValid: false, error: `${fieldLabel} contains invalid characters` };
+    }
+
+    return { isValid: true, error: null };
+}
+
+/**
  * Validate date string format and range
  * 
  * @param {string} dateString - Date in YYYY-MM-DD format

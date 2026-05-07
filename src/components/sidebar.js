@@ -7,6 +7,7 @@
  * @param {Function} actions.onOpenAddBill - Called when user clicks "Add Bill" button
  * @param {Function} actions.onRegenerateBills - Called when user clicks "Regenerate Bills" button
  * @param {Function} actions.onExportData - Called when user clicks "Export Data" button
+ * @param {Function} [actions.onExportCsv] - Called when user clicks "Export CSV" button
  * @param {Function} actions.onImportData - Called when user selects a file to import (receives File object)
  * @param {Function} actions.onLogout - Called when user clicks "Logout" button
  * @param {Function} actions.onOpenAuth - Called when user clicks "Login" button
@@ -211,6 +212,18 @@ export const initializeSidebar = (categories, actions) => {
         closeMobileSidebar();
     });
     dataDiv.appendChild(exportBtn);
+
+    const exportCsvBtn = document.createElement('button');
+    exportCsvBtn.id = 'exportCsvBtn';
+    exportCsvBtn.type = 'button';
+    exportCsvBtn.className = `${btnOutline} ${dataBtnClass} border-dashed`;
+    exportCsvBtn.ariaLabel = 'Export bills data to CSV file';
+    exportCsvBtn.innerHTML = `<span class="${dataIconClass}">⬇️</span> <span>Export CSV</span>`;
+    exportCsvBtn.addEventListener('click', () => {
+        actions.onExportCsv?.();
+        closeMobileSidebar();
+    });
+    dataDiv.appendChild(exportCsvBtn);
 
     const importBtn = document.createElement('button');
     importBtn.id = 'importDataBtn';
