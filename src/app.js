@@ -785,30 +785,30 @@ class AppOrchestrator {
                             <div class="mx-auto grid w-full max-w-5xl gap-5 rounded-2xl border border-border bg-card p-5 shadow-sm lg:grid-cols-[1fr_1.1fr] lg:p-6">
                                 <div class="flex flex-col items-center justify-center gap-4 text-center lg:items-start lg:text-left">
                                     <div class="rounded-full bg-muted p-5 text-4xl" aria-hidden="true">📋</div>
-                                    <div class="space-y-1">
-                                        <h2 class="text-2xl font-semibold text-foreground">Welcome to Bill Tracker</h2>
-                                        <p class="text-sm text-muted-foreground">You haven't added any bills yet. Start with one bill, then layer in reminders and upcoming planning.</p>
-                                    </div>
-                                    <div class="rounded-xl border border-border bg-muted/30 px-4 py-3 text-left text-sm text-muted-foreground">
-                                        <p class="font-medium text-foreground">Quick start</p>
-                                        <p class="mt-1">Use the button below to add your first bill. Once you do, the dashboard and upcoming views will fill in automatically.</p>
-                                    </div>
+                                <div class="space-y-1">
+                                    <h2 class="text-2xl font-semibold text-foreground">Welcome to Bill Tracker</h2>
+                                    <p class="text-sm text-muted-foreground">You haven't added any bills yet. Start with one bill, then layer in reminders, payee details, and upcoming planning.</p>
                                 </div>
+                                <div class="rounded-xl border border-border bg-muted/30 px-4 py-3 text-left text-sm text-muted-foreground">
+                                    <p class="font-medium text-foreground">Quick start</p>
+                                    <p class="mt-1">Add a bill, then use reminders, search, and the calendar to stay ahead of what's coming next.</p>
+                                </div>
+                            </div>
                                 <div class="space-y-4">
                                     <div class="rounded-xl border bg-background p-5">
                                         <div class="flex items-start gap-3">
                                             <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
                                             <div>
                                                 <p class="text-sm font-medium text-foreground">Add your first bill</p>
-                                                <p class="text-xs text-muted-foreground mt-0.5">Enter a bill name, amount, and due date to start tracking.</p>
+                                                <p class="text-xs text-muted-foreground mt-0.5">Enter a bill name, payee, amount, and due date to start tracking.</p>
                                             </div>
                                         </div>
                                         <div class="my-4 border-t border-border"></div>
                                         <div class="flex items-start gap-3">
                                             <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">2</span>
                                             <div>
-                                                <p class="text-sm font-medium text-foreground">Enable reminders</p>
-                                                <p class="text-xs text-muted-foreground mt-0.5">Turn on notifications so you're alerted before payments are due.</p>
+                                                <p class="text-sm font-medium text-foreground">Set reminders and autopay</p>
+                                                <p class="text-xs text-muted-foreground mt-0.5">Turn on notifications and mark autopay so the app reflects your real workflow.</p>
                                             </div>
                                         </div>
                                         <div class="my-4 border-t border-border"></div>
@@ -816,7 +816,7 @@ class AppOrchestrator {
                                             <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">3</span>
                                             <div>
                                                 <p class="text-sm font-medium text-foreground">Review upcoming bills</p>
-                                                <p class="text-xs text-muted-foreground mt-0.5">Use the Upcoming view to see what's due each pay period.</p>
+                                                <p class="text-xs text-muted-foreground mt-0.5">Use search, the calendar, and Upcoming view to see what’s due each pay period.</p>
                                             </div>
                                         </div>
                                     </div>

@@ -55,6 +55,12 @@ it('Header: Search input is available and wired', () => {
     expect(headerContent).toContain('actions.onSearchQueryChange');
 });
 
+it('Header: narrow-width search toggle is available', () => {
+    expect(headerContent).toContain('mobileSearchToggle');
+    expect(headerContent).toContain('billSearchGroup');
+    expect(headerContent).toContain('🔎 Search');
+});
+
 it('Header: Overdue filter option is available', () => {
     expect(headerContent).toContain('<option value="overdue">Overdue</option>');
 });
@@ -256,6 +262,18 @@ it('Bill Form: payee and autopay fields are available', () => {
     expect(billFormContent).toContain('billPayee');
     expect(billFormContent).toContain('billAccountName');
     expect(billFormContent).toContain('billAutopayEnabled');
+});
+
+it('Bill Grid: empty states include quick actions', () => {
+    expect(billGridContent).toContain('Choose a view to start');
+    expect(billGridContent).toContain('emptyStateClearSearch');
+    expect(billGridContent).toContain('emptyStateOpenAllBills');
+});
+
+it('App: zero-bill onboarding copy is actionable', () => {
+    expect(appContent).toContain('Start with one bill, then layer in reminders, payee details, and upcoming planning.');
+    expect(appContent).toContain('Set reminders and autopay');
+    expect(appContent).toContain('Use search, the calendar, and Upcoming view');
 });
 
 it('Bill Grid: Responsive table structure is present', () => {

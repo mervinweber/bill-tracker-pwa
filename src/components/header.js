@@ -13,7 +13,6 @@
  * @param {Function} [actions.onPaycheckPlannerSelect] - Called when user clicks "Planner" button
  * @param {Function} [actions.onDebtSnowballSelect] - Called when user clicks "Debt Snowball" button
  * @param {Function} [actions.onDisplayModeSelect] - Called when display mode button is clicked
- * @param {string} [searchQuery=''] - Current search query
  * @returns {void}
  * @description Sets up the header with:
  *   - Live status region for screen reader announcements
@@ -58,7 +57,16 @@ export const initializeHeader = (paychecks, actions) => {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                    <div class="flex min-w-[220px] flex-1 items-center gap-2 lg:max-w-[340px]">
+                    <button
+                        id="mobileSearchToggle"
+                        class="${btnOutline} h-8 px-3 text-xs xl:hidden"
+                        aria-label="Show search"
+                        aria-expanded="true"
+                        aria-controls="billSearchGroup"
+                    >
+                        🔎 Search
+                    </button>
+                    <div id="billSearchGroup" class="flex min-w-[220px] flex-1 items-center gap-2 lg:max-w-[340px]">
                         <label for="billSearchInput" class="sr-only">Search bills</label>
                         <div class="relative w-full">
                             <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">⌕</span>
@@ -145,8 +153,10 @@ export const initializeHeader = (paychecks, actions) => {
     const analyticsViewBtn = document.getElementById('analyticsViewBtn');
     const headerControls = document.querySelector('.header-controls');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+    const mobileSearchToggle = document.getElementById('mobileSearchToggle');
     const mobileControlsToggle = document.getElementById('mobileControlsToggle');
     const headerAdvancedControls = document.getElementById('headerAdvancedControls');
+    const billSearchGroup = document.getElementById('billSearchGroup');
     const billSearchInput = /** @type {HTMLInputElement|null} */ (document.getElementById('billSearchInput'));
 
     let mobileControlsExpanded = false;
@@ -188,6 +198,30 @@ export const initializeHeader = (paychecks, actions) => {
         mobileSidebarToggle.addEventListener('click', () => {
             window.dispatchEvent(new CustomEvent(mobileSidebarToggleEvent));
         });
+    }
+
+    if (mobileSearchToggle && billSearchGroup) {
+        let mobileSearchVisible = true;
+        const applySearchState = () => {
+            const isSmall = window.innerWidth <= 1280;
+            if (!isSmall) {
+                billSearchGroup.hidden = false;
+                mobileSearchToggle.setAttribute('aria-expanded', 'true');
+                mobileSearchToggle.textContent = '🔎 Search';
+                return;
+            }
+
+            billSearchGroup.hidden = !mobileSearchVisible;
+            mobileSearchToggle.setAttribute('aria-expanded', mobileSearchVisible ? 'true' : 'false');
+            mobileSearchToggle.textContent = mobileSearchVisible ? '🔎 Hide' : '🔎 Search';
+        };
+
+        mobileSearchToggle.addEventListener('click', () => {
+            mobileSearchVisible = !mobileSearchVisible;
+            applySearchState();
+        });
+        window.addEventListener('resize', applySearchState);
+        applySearchState();
     }
 
     if (mobileControlsToggle) {

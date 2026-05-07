@@ -31,10 +31,17 @@ export const initializeBillGrid = () => {
     const billGrid = document.getElementById('billGrid');
     billGrid.className = "flex flex-col gap-3 p-4 sm:p-6";
     billGrid.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-12 text-center">
-            <div class="rounded-full bg-muted p-3 mb-4 text-2xl">📋</div>
-            <h3 class="text-sm font-semibold text-foreground">No selection</h3>
-            <p class="text-xs text-muted-foreground mt-1" aria-live="polite" role="status">Select a paycheck date and category to view bills.</p>
+        <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-2xl border border-dashed bg-card px-5 py-8 text-center shadow-sm sm:px-6">
+            <div class="mx-auto rounded-full bg-muted p-3 text-2xl">📋</div>
+            <div class="space-y-1">
+                <h3 class="text-sm font-semibold text-foreground">Choose a view to start</h3>
+                <p class="text-xs text-muted-foreground mt-1" aria-live="polite" role="status">Pick a paycheck date or switch to All Bills so we can show the right bills here.</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
+                <span class="rounded-full border bg-muted/40 px-3 py-1">Pay period</span>
+                <span class="rounded-full border bg-muted/40 px-3 py-1">Category</span>
+                <span class="rounded-full border bg-muted/40 px-3 py-1">All Bills</span>
+            </div>
         </div>
     `;
 };
@@ -83,13 +90,34 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             : viewMode === 'all'
             ? 'No bills found in this view'
             : 'No bills in this category are due before the next paycheck';
+        const helper = normalizedSearchQuery
+            ? 'Clear search or try a different keyword like vendor, category, or note.'
+            : viewMode === 'all'
+            ? 'Try a different payment filter or add your first bill from the sidebar.'
+            : 'Try a different pay period, category, or switch to All Bills.';
         billGrid.innerHTML = `
-            <div class="flex flex-col items-center justify-center rounded-xl border border-dashed bg-card px-6 py-12 text-center shadow-sm">
-                <div class="text-2xl mb-2">✨</div>
-                <p class="text-sm font-medium text-foreground" aria-live="polite" role="status">${message}</p>
-                <p class="mt-1 text-xs text-muted-foreground">${normalizedSearchQuery ? 'Try a different search or clear the search box.' : 'Try a different paycheck date, category, or payment filter.'}</p>
+            <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-2xl border border-dashed bg-card px-5 py-8 text-center shadow-sm sm:px-6">
+                <div class="mx-auto rounded-full bg-muted p-3 text-2xl">✨</div>
+                <div class="space-y-1">
+                    <p class="text-sm font-medium text-foreground" aria-live="polite" role="status">${message}</p>
+                    <p class="mt-1 text-xs text-muted-foreground">${helper}</p>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button type="button" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-accent hover:text-accent-foreground" id="emptyStateClearSearch">Clear Search</button>
+                    <button type="button" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-accent hover:text-accent-foreground" id="emptyStateAddBill">Add Bill</button>
+                    <button type="button" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-accent hover:text-accent-foreground" id="emptyStateOpenAllBills">All Bills</button>
+                </div>
             </div>
         `;
+        document.getElementById('emptyStateClearSearch')?.addEventListener('click', () => {
+            const search = document.getElementById('billSearchInput');
+            if (search) {
+                search.value = '';
+                search.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+        document.getElementById('emptyStateAddBill')?.addEventListener('click', () => document.getElementById('addBillBtn')?.click());
+        document.getElementById('emptyStateOpenAllBills')?.addEventListener('click', () => document.getElementById('allBillsBtn')?.click());
         return;
     }
 

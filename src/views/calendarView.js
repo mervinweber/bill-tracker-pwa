@@ -158,6 +158,7 @@ export function renderCalendar() {
             'November',
             'December'
         ];
+        const today = new Date();
         const monthBills = currentBills.filter((bill) => {
             const dueDate = new Date(bill.dueDate);
             return dueDate.getFullYear() === year && dueDate.getMonth() === month;
@@ -212,8 +213,6 @@ export function renderCalendar() {
         }
 
         // Current month days
-        const today = new Date();
-
         for (let day = 1; day <= daysInMonth; day++) {
             const isToday =
                 today.getDate() === day &&
