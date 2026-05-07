@@ -113,7 +113,7 @@ it('Bill grid has payment button', () => {
 
 it('Bill grid has edit and delete buttons', () => {
     expect(billGridContent).toContain('"Edit"');
-    expect(billGridContent).toContain('"Delete"');
+    expect(billGridContent).toContain("appendMenuButton('Delete'");
 });
 
 it('Bill grid has payment toggle checkbox', () => {
