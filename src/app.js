@@ -818,22 +818,33 @@ class AppOrchestrator {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex flex-col sm:flex-row gap-3 lg:col-span-2 lg:justify-center">
+                                <div class="flex flex-col gap-3 lg:col-span-2">
+                                    <div class="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+                                        <span>Need to tune reminders or import data?</span>
+                                    </div>
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-center">
                                     <button id="emptyStateAddBill" type="button"
                                         class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-6 bg-primary text-primary-foreground shadow hover:bg-primary/90">
                                         + Add Your First Bill
+                                    </button>
+                                    <button id="emptyStateSettings" type="button"
+                                        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-6 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground">
+                                        ⚙️ Open Settings
                                     </button>
                                     <label for="emptyStateImport"
                                         class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-6 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground cursor-pointer">
                                         📥 Import from Backup
                                     </label>
                                     <input id="emptyStateImport" type="file" accept=".json" class="sr-only" />
+                                    </div>
                                 </div>
                             </div>
                         `;
                         const addBtn = document.getElementById('emptyStateAddBill');
+                        const settingsBtn = document.getElementById('emptyStateSettings');
                         const importInput = /** @type {HTMLInputElement|null} */ (document.getElementById('emptyStateImport'));
                         if (addBtn) addBtn.addEventListener('click', handleOpenAddBill);
+                        if (settingsBtn) settingsBtn.addEventListener('click', () => document.getElementById('settingsBtn')?.click());
                         if (importInput) importInput.addEventListener('change', (e) => {
                             const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
                             if (file) this.handleImportData(file);
@@ -1160,15 +1171,41 @@ class AppOrchestrator {
         const historyContent = document.getElementById('historyContent');
         historyContent.innerHTML = ''; // safe to clear
 
-        const summaryCard = document.createElement('div');
-            summaryCard.className = 'history-summary-card';
+        const detailCard = document.createElement('div');
+        detailCard.className = 'history-summary-card';
 
-        const title = document.createElement('h3');
-        title.textContent = bill.name;
-        summaryCard.appendChild(title);
+        const detailHeader = document.createElement('div');
+        detailHeader.className = 'flex items-start justify-between gap-3';
+
+        const detailHeadingWrap = document.createElement('div');
+        const detailTitle = document.createElement('h3');
+        detailTitle.textContent = bill.name;
+        detailHeadingWrap.appendChild(detailTitle);
+
+        const detailMeta = document.createElement('p');
+        detailMeta.className = 'text-sm text-muted-foreground';
+        detailMeta.textContent = `${bill.category || 'Uncategorized'} · Due ${bill.dueDate}`;
+        detailHeadingWrap.appendChild(detailMeta);
+
+        detailHeader.appendChild(detailHeadingWrap);
+
+        const editButton = document.createElement('button');
+        editButton.type = 'button';
+        editButton.className = 'inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground';
+        editButton.textContent = 'Edit Bill';
+        editButton.addEventListener('click', () => {
+            document.getElementById('viewHistoryModal').style.display = 'none';
+            this.handleEditBill(bill.id);
+        });
+        detailHeader.appendChild(editButton);
+
+        detailCard.appendChild(detailHeader);
+
+        const summaryCard = document.createElement('div');
+        summaryCard.className = 'mt-3';
 
         const statsDiv = document.createElement('div');
-            statsDiv.className = 'history-stats-row';
+        statsDiv.className = 'history-stats-row';
 
         const createStat = (label, value, color = null) => {
             const span = document.createElement('span');
@@ -1185,7 +1222,8 @@ class AppOrchestrator {
             statsDiv.appendChild(createStat('Remaining', remaining, remaining > 0 ? 'history-payment-remaining-owed' : 'history-payment-remaining-paid'));
 
         summaryCard.appendChild(statsDiv);
-        historyContent.appendChild(summaryCard);
+        detailCard.appendChild(summaryCard);
+        historyContent.appendChild(detailCard);
 
         const listContainer = document.createElement('div');
             listContainer.className = 'history-list';

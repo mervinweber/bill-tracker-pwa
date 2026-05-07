@@ -58,7 +58,7 @@ export const initializeHeader = (paychecks, actions) => {
                 <div class="flex flex-wrap items-center gap-2 lg:justify-end">
                     <button
                         id="mobileSidebarToggle"
-                        class="${btnOutline} h-8 px-3 text-xs sm:hidden"
+                        class="${btnOutline} h-8 px-3 text-xs xl:hidden"
                         aria-label="Open navigation menu"
                         aria-haspopup="dialog"
                         aria-controls="sidebar"
@@ -68,7 +68,7 @@ export const initializeHeader = (paychecks, actions) => {
 
                     <button
                         id="mobileControlsToggle"
-                        class="${btnOutline} h-8 px-3 text-xs sm:hidden"
+                        class="${btnOutline} h-8 px-3 text-xs xl:hidden"
                         aria-label="Show advanced filters"
                         aria-expanded="false"
                         aria-controls="headerAdvancedControls"
@@ -135,7 +135,7 @@ export const initializeHeader = (paychecks, actions) => {
     let mobileControlsExpanded = false;
 
     const applyMobileControlsState = () => {
-        const isMobile = window.innerWidth <= 768;
+        const isMobile = window.innerWidth <= 1280;
 
         if (!isMobile) {
             if (mobileControlsToggle) {

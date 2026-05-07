@@ -126,13 +126,14 @@ export function initializePaymentModals(onRerender) {
         </div>
 
         <div id="viewHistoryModal" class="fixed inset-0 z-50 overflow-y-auto bg-background/80 backdrop-blur-sm" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="viewHistoryTitle">
-            <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
-                <div class="relative w-full max-w-lg border bg-background shadow-lg sm:rounded-lg">
-                    <div class="flex flex-col space-y-1.5 p-6 pb-4 border-b">
+            <div class="flex min-h-full justify-end p-0 sm:p-4">
+                <div class="relative flex h-screen w-full max-w-full flex-col border bg-background shadow-2xl sm:max-w-xl sm:rounded-l-2xl" style="min-height: 100vh;">
+                    <div class="flex flex-col space-y-1.5 border-b px-6 py-5">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Bill Details</p>
                         <h2 id="viewHistoryTitle" class="text-lg font-semibold leading-none tracking-tight">📜 Payment History</h2>
                     </div>
                     <button type="button" class="${closeBtn}" id="closeViewHistory" aria-label="Close dialog">${closeIcon}</button>
-                    <div id="historyContent" class="p-6 pt-4 max-h-[70vh] overflow-y-auto space-y-4"></div>
+                    <div id="historyContent" class="flex-1 overflow-y-auto px-6 py-4 space-y-4"></div>
                 </div>
             </div>
         </div>
