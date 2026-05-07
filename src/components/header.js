@@ -6,12 +6,14 @@
  * @param {Function} actions.onPaycheckSelect - Called when user selects a pay period (receives index)
  * @param {Function} actions.onAllBillsSelect - Called when user clicks "All Bills" button
  * @param {Function} actions.onFilterChange - Called when user changes payment filter (receives filter value: 'all'|'paid'|'unpaid'|'overdue'|'credit'|'before_next_payday'|'reconcile')
+ * @param {Function} [actions.onSearchQueryChange] - Called when user types a search query
  * @param {Function} [actions.onAllBillsScopeChange] - Called when user changes all bills scope
  * @param {Function} [actions.onUpcomingBillsSelect] - Called when user clicks "Upcoming" button
  * @param {Function} [actions.onToggleCarriedForward] - Called when carried forward toggle changes
  * @param {Function} [actions.onPaycheckPlannerSelect] - Called when user clicks "Planner" button
  * @param {Function} [actions.onDebtSnowballSelect] - Called when user clicks "Debt Snowball" button
  * @param {Function} [actions.onDisplayModeSelect] - Called when display mode button is clicked
+ * @param {string} [searchQuery=''] - Current search query
  * @returns {void}
  * @description Sets up the header with:
  *   - Live status region for screen reader announcements
@@ -56,6 +58,20 @@ export const initializeHeader = (paychecks, actions) => {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                    <div class="flex min-w-[220px] flex-1 items-center gap-2 lg:max-w-[340px]">
+                        <label for="billSearchInput" class="sr-only">Search bills</label>
+                        <div class="relative w-full">
+                            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">⌕</span>
+                            <input
+                                id="billSearchInput"
+                                type="search"
+                                placeholder="Search bills, notes, categories..."
+                                class="${inputBase} h-8 w-full pl-8 pr-3"
+                                aria-label="Search bills"
+                            >
+                        </div>
+                    </div>
+
                     <button
                         id="mobileSidebarToggle"
                         class="${btnOutline} h-8 px-3 text-xs xl:hidden"
@@ -131,6 +147,7 @@ export const initializeHeader = (paychecks, actions) => {
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const mobileControlsToggle = document.getElementById('mobileControlsToggle');
     const headerAdvancedControls = document.getElementById('headerAdvancedControls');
+    const billSearchInput = /** @type {HTMLInputElement|null} */ (document.getElementById('billSearchInput'));
 
     let mobileControlsExpanded = false;
 
@@ -180,6 +197,12 @@ export const initializeHeader = (paychecks, actions) => {
         });
     }
 
+    if (billSearchInput) {
+        billSearchInput.addEventListener('input', (e) => {
+            actions.onSearchQueryChange?.((/** @type {HTMLInputElement} */ (e.target)).value);
+        });
+    }
+
     window.addEventListener('resize', applyMobileControlsState);
     applyMobileControlsState();
 
@@ -204,6 +227,14 @@ export const initializeHeader = (paychecks, actions) => {
         headerStatus.textContent = `Viewing bills for: ${selectedText}`;
         actions.onPaycheckSelect(parseInt(sel.value));
     });
+
+    const syncSearchInput = (value) => {
+        if (!billSearchInput) return;
+        const nextValue = typeof value === 'string' ? value : '';
+        if (billSearchInput.value !== nextValue) {
+            billSearchInput.value = nextValue;
+        }
+    };
 
     allBillsBtn.addEventListener('click', () => {
         allBillsBtn.classList.add('active');
@@ -258,6 +289,8 @@ export const initializeHeader = (paychecks, actions) => {
         actions.onDebtSnowballSelect?.();
     });
 
+    syncSearchInput('');
+
     document.getElementById('paymentFilter').addEventListener('change', (e) => {
         const sel = /** @type {HTMLSelectElement} */ (e.target);
         const filterText = sel.options[sel.selectedIndex].text;
@@ -306,7 +339,7 @@ export const initializeHeader = (paychecks, actions) => {
  * @param {boolean} showCarriedForward - Whether to show carried forward bills
  * @returns {void}
  */
-export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward, allBillsScope = 'everything', paymentFilter = 'all') => {
+export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarriedForward, allBillsScope = 'everything', paymentFilter = 'all', searchQuery = '') => {
     const payPeriodSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('payPeriodSelect'));
     const allBillsBtn = document.getElementById('allBillsBtn');
     const upcomingBillsBtn = document.getElementById('upcomingBillsBtn');
@@ -318,6 +351,7 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
     const carriedForwardToggle = /** @type {HTMLInputElement|null} */ (document.getElementById('carriedForwardToggle'));
     const allBillsScopeFilter = /** @type {HTMLSelectElement|null} */ (document.getElementById('allBillsScopeFilter'));
     const paymentFilterSelect = /** @type {HTMLSelectElement|null} */ (document.getElementById('paymentFilter'));
+    const billSearchInput = /** @type {HTMLInputElement|null} */ (document.getElementById('billSearchInput'));
 
     if (payPeriodSelect) {
         payPeriodSelect.value = selectedPaycheck !== null ? String(selectedPaycheck) : '';
@@ -417,5 +451,8 @@ export const updateHeaderUI = (viewMode, selectedPaycheck, displayMode, showCarr
 
     if (paymentFilterSelect) {
         paymentFilterSelect.value = paymentFilter;
+    }
+    if (billSearchInput && billSearchInput.value !== searchQuery) {
+        billSearchInput.value = searchQuery;
     }
 };

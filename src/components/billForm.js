@@ -66,6 +66,17 @@ export const initializeBillForm = (categories, actions) => {
                     <label for="billName" class="${labelBase}">Bill Name <span class="text-destructive">*</span></label>
                     <input type="text" id="billName" required aria-required="true" placeholder="Electric Bill" class="${inputBase}">
                 </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="grid gap-2">
+                        <label for="billPayee" class="${labelBase}">Payee / Vendor</label>
+                        <input type="text" id="billPayee" placeholder="Comcast, Chase, etc." class="${inputBase}">
+                    </div>
+                    <div class="grid gap-2">
+                        <label for="billAccountName" class="${labelBase}">Account Name</label>
+                        <input type="text" id="billAccountName" placeholder="Checking, Visa, etc." class="${inputBase}">
+                    </div>
+                </div>
                 
                 <div class="grid gap-2">
                     <label for="billDueDate" class="${labelBase}">Due Date <span class="text-destructive">*</span></label>
@@ -120,6 +131,11 @@ export const initializeBillForm = (categories, actions) => {
                 <div class="flex items-center space-x-2 py-2">
                     <input type="checkbox" id="billReminderEnabled" checked class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
                     <label for="billReminderEnabled" class="text-sm font-medium leading-none cursor-pointer">Enable reminders for this bill</label>
+                </div>
+
+                <div class="flex items-center space-x-2 py-1">
+                    <input type="checkbox" id="billAutopayEnabled" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
+                    <label for="billAutopayEnabled" class="text-sm font-medium leading-none cursor-pointer">Autopay enabled</label>
                 </div>
                 
                 <div class="grid gap-2">
@@ -289,6 +305,8 @@ export const initializeBillForm = (categories, actions) => {
             id: g('billId').value,
             category: g('billCategory').value,
             name: g('billName').value,
+            payee: g('billPayee').value,
+            accountName: g('billAccountName').value,
             dueDate: g('billDueDate').value,
             amountDue: amount,
             balance: parseFloat(g('billBalance').value),
@@ -297,6 +315,7 @@ export const initializeBillForm = (categories, actions) => {
             includeInDebtSnowball: g('billIncludeInDebtSnowball').checked,
             recurrence: g('billRecurrence').value,
             reminderEnabled: g('billReminderEnabled').checked,
+            autopayEnabled: g('billAutopayEnabled').checked,
             notes: g('billNotes').value,
             website: g('billWebsite').value,
             split: splitData
@@ -319,8 +338,11 @@ export const openBillForm = (bill) => {
         includeInDebtSnowball: false,
         recurrence: 'One-time',
         reminderEnabled: true,
+        autopayEnabled: false,
         notes: '',
         website: '',
+        payee: '',
+        accountName: '',
         split: { enabled: false, payers: [] }
     };
 
@@ -329,6 +351,8 @@ export const openBillForm = (bill) => {
     g('billId').value = billData.id;
     g('billCategory').value = billData.category;
     g('billName').value = billData.name;
+    g('billPayee').value = billData.payee || '';
+    g('billAccountName').value = billData.accountName || '';
     g('billDueDate').value = billData.dueDate;
     g('billAmountDue').value = billData.amountDue || 0;
     g('billBalance').value = billData.balance || 0;
@@ -338,6 +362,7 @@ export const openBillForm = (bill) => {
 
     g('billRecurrence').value = billData.recurrence;
     g('billReminderEnabled').checked = billData.reminderEnabled !== false;
+    g('billAutopayEnabled').checked = billData.autopayEnabled === true;
     g('billNotes').value = billData.notes || '';
     g('billWebsite').value = billData.website || '';
 
@@ -391,6 +416,9 @@ export const resetBillForm = () => {
     g('billCategory').value = '';
     g('billFormElement').reset();
     g('billReminderEnabled').checked = true;
+    g('billAutopayEnabled').checked = false;
+    g('billPayee').value = '';
+    g('billAccountName').value = '';
     g('billDebtTotal').value = '';
     g('billInterestRate').value = '';
     g('billIncludeInDebtSnowball').checked = false;

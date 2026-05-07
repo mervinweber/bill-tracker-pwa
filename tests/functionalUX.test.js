@@ -15,11 +15,13 @@ const headerPath = path.join(__dirname, '../src/components/header.js');
 const sidebarPath = path.join(__dirname, '../src/components/sidebar.js');
 const billGridPath = path.join(__dirname, '../src/components/billGrid.js');
 const billFormPath = path.join(__dirname, '../src/components/billForm.js');
+const calendarPath = path.join(__dirname, '../src/views/calendarView.js');
 
 const headerContent = fs.readFileSync(headerPath, 'utf8');
 const sidebarContent = fs.readFileSync(sidebarPath, 'utf8');
 const billGridContent = fs.readFileSync(billGridPath, 'utf8');
 const billFormContent = fs.readFileSync(billFormPath, 'utf8');
+const calendarContent = fs.readFileSync(calendarPath, 'utf8');
 const appContent = fs.readFileSync(path.join(__dirname, '../src/app.js'), 'utf8');
 const navigationHandlersContent = fs.readFileSync(path.join(__dirname, '../src/app/navigationHandlers.js'), 'utf8');
 const dashboardContent = fs.readFileSync(path.join(__dirname, '../src/components/dashboard.js'), 'utf8');
@@ -45,6 +47,12 @@ it('Navigation: All Bills resets back to list display mode', () => {
 it('Header: Payment filter dropdown event listener is attached', () => {
     expect(headerContent).toContain("getElementById('paymentFilter').addEventListener('change'");
     expect(headerContent).toContain('actions.onFilterChange');
+});
+
+it('Header: Search input is available and wired', () => {
+    expect(headerContent).toContain('billSearchInput');
+    expect(headerContent).toContain('Search bills, notes, categories');
+    expect(headerContent).toContain('actions.onSearchQueryChange');
 });
 
 it('Header: Overdue filter option is available', () => {
@@ -214,9 +222,40 @@ it('Bill Grid: Payment status filtering works', () => {
     expect(billGridContent).toContain('paymentFilter');
 });
 
+it('Bill Grid: Search query filtering works', () => {
+    expect(billGridContent).toContain('normalizedSearchQuery');
+    expect(billGridContent).toContain('searchQuery');
+    expect(billGridContent).toContain('No bills match');
+});
+
+it('Dashboard: Forecast card is available', () => {
+    expect(dashboardContent).toContain('Next Month Forecast');
+    expect(dashboardContent).toContain('forecastNextMonth');
+    expect(dashboardContent).toContain('Monthly Total');
+});
+
+it('Dashboard: Paycheck coverage card is available', () => {
+    expect(dashboardContent).toContain('Paycheck Coverage');
+    expect(dashboardContent).toContain('Bills Before');
+    expect(dashboardContent).toContain('Total Due');
+});
+
+it('Calendar view: month summary and agenda are available', () => {
+    expect(calendarContent).toContain('Next bills coming up this month');
+    expect(calendarContent).toContain('calendarTodayBtn');
+    expect(calendarContent).toContain('monthTotal');
+    expect(calendarContent).toContain('upcomingBills');
+});
+
 it('Bill Grid: All bills view is rendered correctly', () => {
     expect(billGridContent).toContain("viewMode === 'all'");
     expect(billGridContent).toContain("viewMode === 'all' ? '<th");
+});
+
+it('Bill Form: payee and autopay fields are available', () => {
+    expect(billFormContent).toContain('billPayee');
+    expect(billFormContent).toContain('billAccountName');
+    expect(billFormContent).toContain('billAutopayEnabled');
 });
 
 it('Bill Grid: Responsive table structure is present', () => {

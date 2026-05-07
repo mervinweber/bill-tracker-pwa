@@ -39,7 +39,7 @@ export const initializeBillGrid = () => {
     `;
 };
 
-export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, showCarriedForward, payCheckDates, allBillsScope }, actions) => {
+export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, searchQuery = '', showCarriedForward, payCheckDates, allBillsScope }, actions) => {
     runBillGridCleanup();
     const useCompactMobileActions = isTouchDevice() && isMobileViewport();
     const billGrid = document.getElementById('billGrid');
@@ -52,20 +52,42 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         dueBills = dueBills.filter((bill) => getBillReconciliationIssues(bill).length > 0);
     }
 
+    const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+    if (normalizedSearchQuery) {
+        dueBills = dueBills.filter((bill) => {
+            const haystack = [
+                bill.name,
+                bill.category,
+                bill.notes,
+                bill.website,
+                bill.recurrence,
+                bill.amountDue,
+                bill.balance
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+
+            return haystack.includes(normalizedSearchQuery);
+        });
+    }
+
     if (viewMode !== 'all' && (selectedPaycheck === null || selectedCategory === null)) {
         initializeBillGrid();
         return;
     }
 
     if (dueBills.length === 0) {
-        const message = viewMode === 'all'
+        const message = normalizedSearchQuery
+            ? `No bills match "${searchQuery.trim()}"`
+            : viewMode === 'all'
             ? 'No bills found in this view'
             : 'No bills in this category are due before the next paycheck';
         billGrid.innerHTML = `
             <div class="flex flex-col items-center justify-center rounded-xl border border-dashed bg-card px-6 py-12 text-center shadow-sm">
                 <div class="text-2xl mb-2">✨</div>
                 <p class="text-sm font-medium text-foreground" aria-live="polite" role="status">${message}</p>
-                <p class="mt-1 text-xs text-muted-foreground">Try a different paycheck date, category, or payment filter.</p>
+                <p class="mt-1 text-xs text-muted-foreground">${normalizedSearchQuery ? 'Try a different search or clear the search box.' : 'Try a different paycheck date, category, or payment filter.'}</p>
             </div>
         `;
         return;

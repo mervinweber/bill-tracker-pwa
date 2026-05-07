@@ -32,6 +32,8 @@
  * @property {string} id
  * @property {string} name
  * @property {string} category
+ * @property {string} [payee]
+ * @property {string} [accountName]
  * @property {string} dueDate
  * @property {number} amountDue
  * @property {number} balance
@@ -44,6 +46,8 @@
  * @property {number} [debtTotal]
  * @property {number} [interestRate]
  * @property {boolean} [includeInDebtSnowball]
+ * @property {boolean} [autopayEnabled]
+ * @property {string|null} [snoozeUntil]
  */
 
 /**

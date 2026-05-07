@@ -72,6 +72,7 @@ import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
 import {
     handlePaycheckSelect,
     handleFilterChange,
+    handleSearchQueryChange,
     handleAllBillsScopeChange,
     handleToggleCarriedForward,
     handleAllBillsSelect,
@@ -191,6 +192,7 @@ class AppOrchestrator {
             initializeHeader(paycheckLabels, {
                 onPaycheckSelect: handlePaycheckSelect,
                 onFilterChange: handleFilterChange,
+                onSearchQueryChange: handleSearchQueryChange,
                 onAllBillsScopeChange: handleAllBillsScopeChange,
                 onAllBillsSelect: handleAllBillsSelect,
                 onUpcomingBillsSelect: handleUpcomingBillsSelect,
@@ -211,7 +213,8 @@ class AppOrchestrator {
                 onBulkDelete: () => this.handleBulkDelete(),
                 onBulkMarkPaid: () => this.handleBulkMarkPaid(),
                 onBulkFillBalances: () => this.handleBulkFillBalances(),
-                onShowSettings: () => this.handleShowSettings()
+                onShowSettings: () => this.handleShowSettings(),
+                onExportCsv: () => this.handleExportData('csv')
             });
 
             // Fetch cloud data if logged in
@@ -678,7 +681,7 @@ class AppOrchestrator {
             const renderToken = ++this.viewRenderToken;
 
             // Update header UI
-            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward, state.allBillsScope, state.paymentFilter);
+            updateHeaderUI(state.viewMode, state.selectedPaycheck, state.displayMode, state.showCarriedForward, state.allBillsScope, state.paymentFilter, state.searchQuery);
 
             // Render appropriate view based on displayMode
             const billGrid = document.getElementById('billGrid');
@@ -863,6 +866,7 @@ class AppOrchestrator {
                             selectedPaycheck: state.selectedPaycheck,
                             selectedCategory: state.selectedCategory,
                             paymentFilter: state.paymentFilter,
+                            searchQuery: state.searchQuery,
                             showCarriedForward: state.showCarriedForward,
                             payCheckDates: paycheckManager.payCheckDates,
                             allBillsScope: state.allBillsScope
@@ -943,8 +947,12 @@ class AppOrchestrator {
                 includeInDebtSnowball: billData?.includeInDebtSnowball ?? g('billIncludeInDebtSnowball').checked,
                 recurrence: billData?.recurrence || g('billRecurrence').value,
                 reminderEnabled: billData?.reminderEnabled ?? g('billReminderEnabled').checked,
+                autopayEnabled: billData?.autopayEnabled ?? g('billAutopayEnabled').checked,
                 notes: billData?.notes || g('billNotes').value,
                 website: billData?.website || g('billWebsite').value,
+                payee: billData?.payee || g('billPayee').value,
+                accountName: billData?.accountName || g('billAccountName').value,
+                snoozeUntil: billData?.snoozeUntil ?? existingBill?.snoozeUntil ?? null,
                 split: split,
                 creditBalance: existingBill ? existingBill.creditBalance || 0 : 0,
                 isPaid: existingBill ? existingBill.isPaid || false : false,
@@ -1184,8 +1192,33 @@ class AppOrchestrator {
 
         const detailMeta = document.createElement('p');
         detailMeta.className = 'text-sm text-muted-foreground';
-        detailMeta.textContent = `${bill.category || 'Uncategorized'} · Due ${bill.dueDate}`;
+        const accountLabel = bill.accountName ? ` · ${bill.accountName}` : '';
+        detailMeta.textContent = `${bill.category || 'Uncategorized'}${accountLabel} · Due ${bill.dueDate}`;
         detailHeadingWrap.appendChild(detailMeta);
+
+        const detailTags = document.createElement('div');
+        detailTags.className = 'mt-2 flex flex-wrap gap-2';
+        const createTag = (label, tone = 'bg-muted text-muted-foreground') => {
+            const tag = document.createElement('span');
+            tag.className = `inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${tone}`;
+            tag.textContent = label;
+            return tag;
+        };
+        detailTags.appendChild(createTag(bill.recurrence || 'One-time'));
+        detailTags.appendChild(createTag(bill.reminderEnabled ? 'Reminders on' : 'Reminders off', bill.reminderEnabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'));
+        if (bill.snoozeUntil) {
+            detailTags.appendChild(createTag(`Snoozed until ${bill.snoozeUntil}`, 'bg-sky-500/10 text-sky-700'));
+        }
+        if (bill.website) {
+            detailTags.appendChild(createTag('Pay link available', 'bg-emerald-500/10 text-emerald-700'));
+        }
+        if (bill.payee) {
+            detailTags.appendChild(createTag(`Payee: ${bill.payee}`, 'bg-violet-500/10 text-violet-700'));
+        }
+        if (bill.autopayEnabled) {
+            detailTags.appendChild(createTag('Autopay on', 'bg-sky-500/10 text-sky-700'));
+        }
+        detailHeadingWrap.appendChild(detailTags);
 
         detailHeader.appendChild(detailHeadingWrap);
 
@@ -1200,6 +1233,82 @@ class AppOrchestrator {
         detailHeader.appendChild(editButton);
 
         detailCard.appendChild(detailHeader);
+
+        const quickActions = document.createElement('div');
+        quickActions.className = 'mt-3 flex flex-wrap gap-2';
+
+        if (bill.website) {
+            const payLinkButton = document.createElement('button');
+            payLinkButton.type = 'button';
+            payLinkButton.className = 'inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground';
+            payLinkButton.textContent = 'Open Pay Link';
+            payLinkButton.addEventListener('click', () => window.open(bill.website, '_blank'));
+            quickActions.appendChild(payLinkButton);
+        }
+
+        const markPaidButton = document.createElement('button');
+        markPaidButton.type = 'button';
+        markPaidButton.className = 'inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90';
+        markPaidButton.textContent = bill.isPaid ? 'Mark Unpaid' : 'Mark Paid';
+        markPaidButton.addEventListener('click', () => {
+            billActionHandlers.togglePaymentStatus(bill.id, !bill.isPaid);
+            document.getElementById('viewHistoryModal').style.display = 'none';
+            this.rerender();
+        });
+        quickActions.appendChild(markPaidButton);
+
+        const remindButton = document.createElement('button');
+        remindButton.type = 'button';
+        remindButton.className = 'inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground';
+        remindButton.textContent = bill.reminderEnabled ? 'Disable Reminders' : 'Enable Reminders';
+        remindButton.addEventListener('click', () => {
+            this.handleToggleReminder(bill.id, !bill.reminderEnabled);
+            document.getElementById('viewHistoryModal').style.display = 'none';
+        });
+        quickActions.appendChild(remindButton);
+
+        const snoozeButton = document.createElement('button');
+        snoozeButton.type = 'button';
+        snoozeButton.className = 'inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground';
+        snoozeButton.textContent = bill.snoozeUntil ? 'Clear Snooze' : 'Snooze 3 Days';
+        snoozeButton.addEventListener('click', () => {
+            const nextSnooze = bill.snoozeUntil ? null : new Date(Date.now() + (3 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+            const bills = billStore.getAll();
+            const currentBill = bills.find((item) => item.id === bill.id);
+            if (!currentBill) return;
+            billStore.update({
+                ...currentBill,
+                snoozeUntil: nextSnooze
+            });
+            document.getElementById('viewHistoryModal').style.display = 'none';
+            this.rerender();
+        });
+        quickActions.appendChild(snoozeButton);
+
+        const snoozePresets = document.createElement('div');
+        snoozePresets.className = 'mt-2 flex flex-wrap gap-2';
+        ['1 day', '3 days', '7 days'].forEach((label) => {
+            const presetBtn = document.createElement('button');
+            presetBtn.type = 'button';
+            presetBtn.className = 'inline-flex items-center rounded-full border border-input bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground';
+            presetBtn.textContent = label;
+            presetBtn.addEventListener('click', () => {
+                const days = Number.parseInt(label, 10) || 1;
+                const bills = billStore.getAll();
+                const currentBill = bills.find((item) => item.id === bill.id);
+                if (!currentBill) return;
+                billStore.update({
+                    ...currentBill,
+                    snoozeUntil: new Date(Date.now() + (days * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+                });
+                document.getElementById('viewHistoryModal').style.display = 'none';
+                this.rerender();
+            });
+            snoozePresets.appendChild(presetBtn);
+        });
+        quickActions.appendChild(snoozePresets);
+
+        detailCard.appendChild(quickActions);
 
         const summaryCard = document.createElement('div');
         summaryCard.className = 'mt-3';
@@ -1220,6 +1329,7 @@ class AppOrchestrator {
         statsDiv.appendChild(createStat('Total Due', totalDue));
         statsDiv.appendChild(createStat('Total Paid', totalPaid));
             statsDiv.appendChild(createStat('Remaining', remaining, remaining > 0 ? 'history-payment-remaining-owed' : 'history-payment-remaining-paid'));
+        statsDiv.appendChild(createStat('Balance', Number.parseFloat(String(bill.balance || 0)) || 0));
 
         summaryCard.appendChild(statsDiv);
         detailCard.appendChild(summaryCard);
@@ -1353,8 +1463,8 @@ class AppOrchestrator {
         }
     }
 
-    handleExportData() {
-        billActionHandlers.exportData();
+    handleExportData(format = 'json') {
+        billActionHandlers.exportData(format);
     }
 
     handleImportData(file) {

@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from '../services/supabase.js';
 import { getNotificationSettings } from '../utils/notifications.js';
 import { createLocalDate } from '../utils/dates.js';
 import { paycheckManager } from '../utils/paycheckManager.js';
+import { forecastNextMonth } from '../utils/forecastingHelpers.js';
 import StorageManager from '../utils/StorageManager.js';
 import { STORAGE_KEYS } from '../utils/constants.js';
 import { appState } from '../store/appState.js';
@@ -254,6 +255,74 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 
         </section>`;
 }
 
+function getNextPaycheckDate(payCheckDates = []) {
+    const today = getNormalizedDate();
+    const future = (payCheckDates || [])
+        .map((date) => getNormalizedDate(date))
+        .find((date) => date > today);
+
+    return future || null;
+}
+
+function buildPaycheckCoverageHtml(bills = [], payCheckDates = [], paymentFilter = 'all', allBillsScope = 'everything') {
+    if (!Array.isArray(bills) || bills.length === 0) {
+        return '';
+    }
+
+    const nextPaycheck = getNextPaycheckDate(payCheckDates);
+    if (!nextPaycheck) {
+        return '';
+    }
+
+    const settings = paycheckManager.paymentSettings || {};
+    const paycheckAmount = Math.max(0, Number.parseFloat(settings.amount) || 0);
+    const today = getNormalizedDate();
+    const dueBeforeNextPaycheck = bills.filter((bill) => {
+        if (bill.isPaid) return false;
+        const dueDate = getBillDueDate(bill);
+        return dueDate >= today && dueDate < nextPaycheck;
+    });
+
+    const dueTotal = dueBeforeNextPaycheck.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
+    const coverageGap = Math.max(0, dueTotal - paycheckAmount);
+    const coverageRemaining = Math.max(0, paycheckAmount - dueTotal);
+    const nextPaycheckLabel = nextPaycheck.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const coverageClass = coverageGap > 0
+        ? 'border-rose-200 bg-rose-50 text-rose-950'
+        : 'border-emerald-200 bg-emerald-50 text-emerald-950';
+    const coverageText = paycheckAmount > 0
+        ? coverageGap > 0
+            ? `Short by $${coverageGap.toFixed(2)} before ${nextPaycheckLabel}.`
+            : `Covered with $${coverageRemaining.toFixed(2)} left after ${nextPaycheckLabel}.`
+        : `Set a paycheck amount in Settings to see coverage.`;
+
+    const filterHint = paymentFilter !== 'all' || allBillsScope !== 'everything'
+        ? 'Based on your current filters and scope.'
+        : 'Based on all unpaid bills due before the next paycheck.';
+
+    return `
+        <section class="mb-3 rounded-2xl border ${coverageClass} px-4 py-3 shadow-sm" aria-label="Paycheck coverage">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">Paycheck Coverage</div>
+                    <div class="mt-1 text-sm font-medium">${coverageText}</div>
+                    <div class="mt-1 text-xs opacity-75">${filterHint}</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 sm:min-w-[240px]">
+                    <div class="rounded-xl border border-current/10 bg-background/80 px-3 py-2">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">Bills Before</div>
+                        <div class="mt-1 text-lg font-semibold">${dueBeforeNextPaycheck.length}</div>
+                    </div>
+                    <div class="rounded-xl border border-current/10 bg-background/80 px-3 py-2">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">Total Due</div>
+                        <div class="mt-1 text-lg font-semibold">$${dueTotal.toFixed(2)}</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    `;
+}
+
 /**
  * Initialize dashboard component
  * 
@@ -398,11 +467,36 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     // Compact layout when no data matches the current filter
     const healthCardHtml = buildHealthCardHtml();
     const todayOverviewHtml = buildTodayOverviewHtml(displayBills, payCheckDates, paymentFilter);
+    const paycheckCoverageHtml = buildPaycheckCoverageHtml(displayBills, payCheckDates, paymentFilter, allBillsScope);
+    const forecast = forecastNextMonth(displayBills);
+    const topForecastCategory = Object.entries(forecast.byCategory || {})
+        .sort((a, b) => b[1] - a[1])[0] || null;
+    const forecastCardHtml = `
+        <div class="mb-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sky-950 shadow-sm">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">Next Month Forecast</div>
+                    <div class="mt-1 text-sm font-medium">${forecast.recurringCount} recurring bill${forecast.recurringCount === 1 ? '' : 's'} mapped</div>
+                    <div class="mt-1 text-xs text-sky-700">Projected recurring total: <strong>$${forecast.total.toFixed(2)}</strong>${topForecastCategory ? ` · Largest category: ${topForecastCategory[0]}` : ''}</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 sm:min-w-[220px]">
+                    <div class="rounded-xl border border-sky-200 bg-white/70 px-3 py-2">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">Recurring</div>
+                        <div class="mt-1 text-lg font-semibold text-sky-950">${forecast.recurringCount}</div>
+                    </div>
+                    <div class="rounded-xl border border-sky-200 bg-white/70 px-3 py-2">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">Monthly Total</div>
+                        <div class="mt-1 text-lg font-semibold text-sky-950">$${forecast.total.toFixed(2)}</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
 
     if (allZero) {
         dashboard.className = "w-full pt-3 pb-1";
         dashboard.innerHTML = `
             ${todayOverviewHtml}
+            ${paycheckCoverageHtml}
             <div class="mb-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                     <div>
@@ -453,6 +547,8 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     dashboard.className = "w-full pt-3 pb-1";
     dashboard.innerHTML = `
         ${todayOverviewHtml}
+        ${paycheckCoverageHtml}
+        ${forecast.recurringCount > 0 ? forecastCardHtml : ''}
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-7 sm:gap-3 mb-2">
             ${buildMetricCard({ label: 'Total Bills', icon: '📋', value: `${totalBills}`, filter: 'all', isActive: paymentFilter === 'all' })}
             ${buildMetricCard({ label: 'Total Due', icon: '💰', value: `$${totalAmountDue.toFixed(2)}`, filter: 'all', isActive: paymentFilter === 'all' })}

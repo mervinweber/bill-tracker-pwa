@@ -129,6 +129,8 @@ export function normalizeImportPayload(data, options = {}) {
         const newBill = { ...bill };
 
         newBill.name = sanitizeInput(String(newBill.name || ''), 100);
+        newBill.payee = sanitizeInput(String(newBill.payee || ''), 100);
+        newBill.accountName = sanitizeInput(String(newBill.accountName || ''), 100);
         newBill.category = sanitizeInput(String(newBill.category || ''), 50);
         newBill.notes = sanitizeInput(String(newBill.notes || ''), 500);
         newBill.website = typeof newBill.website === 'string' ? newBill.website.trim() : '';
@@ -182,6 +184,12 @@ export function normalizeImportPayload(data, options = {}) {
 
         if (newBill.reminderEnabled === undefined) newBill.reminderEnabled = true;
         newBill.reminderEnabled = Boolean(newBill.reminderEnabled);
+        newBill.autopayEnabled = Boolean(newBill.autopayEnabled);
+        if (typeof newBill.snoozeUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(newBill.snoozeUntil)) {
+            newBill.snoozeUntil = newBill.snoozeUntil;
+        } else {
+            newBill.snoozeUntil = null;
+        }
 
         if (newBill.creditBalance === undefined) {
             newBill.creditBalance = 0;

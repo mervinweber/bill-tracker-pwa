@@ -30,6 +30,7 @@ class AppState {
             displayMode: 'list', // 'list', 'calendar', 'analytics'
             paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'before_next_payday', 'reconcile'
             allBillsScope: 'open-through-next-pay-date', // 'everything', 'open-through-next-pay-date', 'open-only'
+            searchQuery: '',
             showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,
@@ -138,6 +139,11 @@ class AppState {
         this.notifySubscribers();
     }
 
+    setSearchQuery(query) {
+        this.state.searchQuery = typeof query === 'string' ? query : '';
+        this.notifySubscribers();
+    }
+
     setAllBillsScope(scope) {
         this.state.allBillsScope = scope;
         StorageManager.set(STORAGE_KEYS.ALL_BILLS_SCOPE, scope);
@@ -209,6 +215,7 @@ class AppState {
             displayMode: 'list',
             paymentFilter: 'all',
             allBillsScope: StorageManager.get(STORAGE_KEYS.ALL_BILLS_SCOPE) || 'open-through-next-pay-date',
+            searchQuery: '',
             showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,

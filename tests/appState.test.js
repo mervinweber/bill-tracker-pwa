@@ -7,6 +7,7 @@ it('should initialize with default state', () => {
     expect(state.selectedCategory).toBeDefined();
     expect(state.viewMode).toBeDefined();
     expect(state.allBillsScope).toBe('open-through-next-pay-date');
+    expect(state.searchQuery).toBe('');
 });
 
 it('should update state with setState', () => {
@@ -38,6 +39,11 @@ it('should set selected category', () => {
 it('should set view mode', () => {
     appState.setViewMode('calendar');
     expect(appState.getState().viewMode).toBe('calendar');
+});
+
+it('should set search query', () => {
+    appState.setSearchQuery('internet');
+    expect(appState.getState().searchQuery).toBe('internet');
 });
 
 it('should support debt snowball view mode', () => {
