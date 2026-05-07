@@ -82,6 +82,13 @@ export function showSettingsModal(categoriesList) {
         subtitle.className = 'settings-modal-subtitle';
         subtitle.textContent = 'Update your payment configuration';
 
+        const intro = document.createElement('div');
+        intro.className = 'settings-intro';
+        intro.innerHTML = `
+            <span class="settings-intro-badge">Step 1 of 1</span>
+            <p class="settings-intro-copy">Set your pay cycle, then add reminders and household sharing later if you need them.</p>
+        `;
+
         const form = document.createElement('form');
         form.id = 'settingsForm';
         form.className = 'settings-form';
@@ -101,36 +108,38 @@ export function showSettingsModal(categoriesList) {
 
         // Static Form Fields
         form.innerHTML = `
-            <div class="form-group">
-                <label><strong>First Paycheck Date:</strong></label>
-                <input type="date" id="settingsStartDate" value="${settings.startDate}" required>
-            </div>
-            <div class="form-group">
-                <label><strong>Payment Frequency:</strong></label>
-                <select id="settingsFrequency" required>
-                    <option value="weekly" ${settings.frequency === 'weekly' ? 'selected' : ''}>Weekly (every 7 days)</option>
-                    <option value="bi-weekly" ${settings.frequency === 'bi-weekly' ? 'selected' : ''}>Bi-weekly (every 14 days)</option>
-                    <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
-                    <option value="custom" ${settings.frequency === 'custom' ? 'selected' : ''}>Custom</option>
-                </select>
-                <small class="settings-help-text">Choose custom only if your pay cycle is not weekly, bi-weekly, or monthly.</small>
-            </div>
-            <div class="form-group" id="settingsCustomDaysGroup" style="${settings.frequency === 'custom' ? '' : 'display:none;'}">
-                <label for="settingsCustomDays"><strong>Custom Interval (days)</strong></label>
-                <div class="settings-inline-group">
-                    <input type="number" id="settingsCustomDays" min="1" max="365" step="1" value="${Number.isInteger(settings.customDays) ? settings.customDays : ''}" placeholder="e.g. 90" style="max-width: 160px;">
-                    <small class="settings-help-text" style="margin-bottom: 0;">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label><strong>First Paycheck Date:</strong></label>
+                    <input type="date" id="settingsStartDate" value="${settings.startDate}" required>
                 </div>
-            </div>
-            <div class="form-group">
-                <label><strong>Number of Pay Periods to Show:</strong></label>
-                <select id="settingsWeeks" required>
-                    <option value="3" ${settings.payPeriodsToShow === 3 ? 'selected' : ''}>3 Pay Periods</option>
-                    <option value="4" ${settings.payPeriodsToShow === 4 ? 'selected' : ''}>4 Pay Periods</option>
-                    <option value="6" ${settings.payPeriodsToShow === 6 ? 'selected' : ''}>6 Pay Periods</option>
-                    <option value="8" ${settings.payPeriodsToShow === 8 ? 'selected' : ''}>8 Pay Periods</option>
-                    <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
-                </select>
+                <div class="form-group">
+                    <label><strong>Payment Frequency:</strong></label>
+                    <select id="settingsFrequency" required>
+                        <option value="weekly" ${settings.frequency === 'weekly' ? 'selected' : ''}>Weekly (every 7 days)</option>
+                        <option value="bi-weekly" ${settings.frequency === 'bi-weekly' ? 'selected' : ''}>Bi-weekly (every 14 days)</option>
+                        <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
+                        <option value="custom" ${settings.frequency === 'custom' ? 'selected' : ''}>Custom</option>
+                    </select>
+                    <small class="settings-help-text">Choose custom only if your pay cycle is not weekly, bi-weekly, or monthly.</small>
+                </div>
+                <div class="form-group" id="settingsCustomDaysGroup" style="${settings.frequency === 'custom' ? '' : 'display:none;'}">
+                    <label for="settingsCustomDays"><strong>Custom Interval (days)</strong></label>
+                    <div class="settings-inline-group">
+                        <input type="number" id="settingsCustomDays" min="1" max="365" step="1" value="${Number.isInteger(settings.customDays) ? settings.customDays : ''}" placeholder="e.g. 90" style="max-width: 160px;">
+                        <small class="settings-help-text" style="margin-bottom: 0;">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><strong>Number of Pay Periods to Show:</strong></label>
+                    <select id="settingsWeeks" required>
+                        <option value="3" ${settings.payPeriodsToShow === 3 ? 'selected' : ''}>3 Pay Periods</option>
+                        <option value="4" ${settings.payPeriodsToShow === 4 ? 'selected' : ''}>4 Pay Periods</option>
+                        <option value="6" ${settings.payPeriodsToShow === 6 ? 'selected' : ''}>6 Pay Periods</option>
+                        <option value="8" ${settings.payPeriodsToShow === 8 ? 'selected' : ''}>8 Pay Periods</option>
+                        <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
+                    </select>
+                </div>
             </div>
             <div class="form-group">
                 <label><strong>Paycheck Amount (optional):</strong></label>
@@ -307,6 +316,7 @@ export function showSettingsModal(categoriesList) {
 
         modalContent.appendChild(title);
         modalContent.appendChild(subtitle);
+        modalContent.appendChild(intro);
         modalContent.appendChild(form);
         modal.appendChild(modalContent);
 

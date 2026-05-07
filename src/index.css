@@ -229,6 +229,51 @@
     font-size: 0.95rem;
 }
 
+#settingsModal .settings-intro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.65rem;
+    background: hsl(var(--muted) / 0.25);
+}
+
+#settingsModal .settings-intro-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+#settingsModal .settings-intro-copy {
+    margin: 0;
+    flex: 1;
+    min-width: 240px;
+    color: hsl(var(--foreground));
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+#settingsModal .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem 1rem;
+}
+
+#settingsModal .settings-grid .form-group {
+    margin-bottom: 0;
+}
+
 #settingsModal .settings-form h3 {
     margin: 1rem 0 0.6rem;
     font-size: 1.05rem;
@@ -638,5 +683,9 @@
 
     #settingsModal .settings-help-inline {
         white-space: normal;
+    }
+
+    #settingsModal .settings-grid {
+        grid-template-columns: 1fr;
     }
 }
