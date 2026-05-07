@@ -305,3 +305,85 @@ export function calculateBudgetMetrics(bills, monthlyBudget = null) {
 
     return metrics;
 }
+
+/**
+ * Calculate category-level spend trends across recent months.
+ * @param {Array} bills - Array of bill objects
+ * @param {number} months - Number of months to analyze (default 6)
+ * @returns {Object} Category trend summary
+ */
+export function calculateCategoryTrends(bills, months = 6) {
+    if (!bills || bills.length === 0) {
+        return {
+            categoryTotals: {},
+            topCategories: [],
+            trendingUp: [],
+            trendingDown: []
+        };
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const monthWindow = Math.max(2, months);
+    const monthKeys = [];
+    for (let i = monthWindow - 1; i >= 0; i--) {
+        const d = new Date(currentYear, currentMonth - i, 1);
+        monthKeys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const categoryBuckets = {};
+
+    bills.forEach((bill) => {
+        try {
+            const dueDate = new Date(bill.dueDate);
+            if (Number.isNaN(dueDate.getTime())) return;
+
+            const monthKey = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthKeys.includes(monthKey)) return;
+
+            const category = bill.category || 'Uncategorized';
+            if (!categoryBuckets[category]) {
+                categoryBuckets[category] = {};
+                monthKeys.forEach((key) => { categoryBuckets[category][key] = 0; });
+            }
+
+            categoryBuckets[category][monthKey] += bill.amountDue || 0;
+        } catch {
+            // ignore invalid entries
+        }
+    });
+
+    const categoryTotals = Object.entries(categoryBuckets).reduce((acc, [category, monthsMap]) => {
+        acc[category] = Object.values(monthsMap).reduce((sum, value) => sum + value, 0);
+        return acc;
+    }, {});
+
+    const topCategories = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([category, total]) => ({
+            category,
+            total,
+            share: Object.keys(categoryTotals).length ? Math.round((total / Object.values(categoryTotals).reduce((a, b) => a + b, 0)) * 100) : 0
+        }));
+
+    const splitIndex = Math.floor(monthKeys.length / 2);
+    const recentKeys = monthKeys.slice(splitIndex);
+    const previousKeys = monthKeys.slice(0, splitIndex);
+
+    const categoryMovement = Object.entries(categoryBuckets).map(([category, monthMap]) => {
+        const previousTotal = previousKeys.reduce((sum, key) => sum + (monthMap[key] || 0), 0);
+        const recentTotal = recentKeys.reduce((sum, key) => sum + (monthMap[key] || 0), 0);
+        const delta = recentTotal - previousTotal;
+        const percent = previousTotal > 0 ? (delta / previousTotal) * 100 : (recentTotal > 0 ? 100 : 0);
+        return { category, previousTotal, recentTotal, delta, percent };
+    }).sort((a, b) => b.delta - a.delta);
+
+    return {
+        categoryTotals,
+        topCategories,
+        trendingUp: categoryMovement.filter((item) => item.delta > 0).slice(0, 3),
+        trendingDown: categoryMovement.filter((item) => item.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 3)
+    };
+}

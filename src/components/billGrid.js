@@ -110,7 +110,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             </div>
         `;
         document.getElementById('emptyStateClearSearch')?.addEventListener('click', () => {
-            const search = document.getElementById('billSearchInput');
+            const search = /** @type {HTMLInputElement | null} */ (document.getElementById('billSearchInput'));
             if (search) {
                 search.value = '';
                 search.dispatchEvent(new Event('input', { bubbles: true }));

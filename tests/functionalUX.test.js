@@ -25,6 +25,7 @@ const calendarContent = fs.readFileSync(calendarPath, 'utf8');
 const appContent = fs.readFileSync(path.join(__dirname, '../src/app.js'), 'utf8');
 const navigationHandlersContent = fs.readFileSync(path.join(__dirname, '../src/app/navigationHandlers.js'), 'utf8');
 const dashboardContent = fs.readFileSync(path.join(__dirname, '../src/components/dashboard.js'), 'utf8');
+const analyticsContent = fs.readFileSync(path.join(__dirname, '../src/views/analyticsView.js'), 'utf8');
 
 // ============ HEADER TESTS ============
 
@@ -244,6 +245,12 @@ it('Dashboard: Paycheck coverage card is available', () => {
     expect(dashboardContent).toContain('Paycheck Coverage');
     expect(dashboardContent).toContain('Bills Before');
     expect(dashboardContent).toContain('Total Due');
+});
+
+it('Analytics view: category trend insights are available', () => {
+    expect(analyticsContent).toContain('Top Categories');
+    expect(analyticsContent).toContain('Category Movement');
+    expect(analyticsContent).toContain('calculateCategoryTrends');
 });
 
 it('Calendar view: month summary and agenda are available', () => {

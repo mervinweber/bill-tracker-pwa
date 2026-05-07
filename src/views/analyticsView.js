@@ -11,7 +11,8 @@ import {
     forecastNextMonth,
     getSpendingAlerts,
     calculateTrend,
-    calculateBudgetMetrics
+    calculateBudgetMetrics,
+    calculateCategoryTrends
 } from '../utils/forecastingHelpers.js';
 
 let categoryChart = null;
@@ -79,6 +80,7 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
         const trend = calculateTrend(currentBills, 3);
         const avgMonthly = calculateAverageMonthlySpending(currentBills, 3);
         const alerts = getSpendingAlerts(currentBills, 25);
+        const categoryTrends = calculateCategoryTrends(currentBills, 6);
 
         analyticsView.innerHTML = `
             <div class="mb-8">
@@ -181,6 +183,62 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                     <div class="p-6 pt-0">
                         <div class="text-2xl font-bold font-mono text-primary">$${forecast.total.toFixed(2)}</div>
                         <p class="text-xs text-secondary-foreground/70 mt-1">${forecast.recurringCount} recurring bills projected</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8 grid gap-4 lg:grid-cols-2">
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+                    <div class="flex items-center justify-between gap-2">
+                        <h3 class="text-lg font-bold tracking-tight">Top Categories</h3>
+                        <span class="text-xs text-muted-foreground">By total spend</span>
+                    </div>
+                    <div class="mt-4 space-y-3">
+                        ${categoryTrends.topCategories.length > 0 ? categoryTrends.topCategories.map((item, index) => `
+                            <div class="rounded-lg border border-border bg-muted/20 px-3 py-2">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div class="text-sm font-medium text-foreground">${index + 1}. ${item.category}</div>
+                                        <div class="text-xs text-muted-foreground">${item.share}% of tracked spending</div>
+                                    </div>
+                                    <div class="text-sm font-mono font-semibold text-foreground">$${item.total.toFixed(2)}</div>
+                                </div>
+                            </div>
+                        `).join('') : `
+                            <div class="rounded-lg border border-dashed bg-muted/10 px-3 py-6 text-center text-sm text-muted-foreground">
+                                No category spend data yet.
+                            </div>
+                        `}
+                    </div>
+                </div>
+                <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+                    <div class="flex items-center justify-between gap-2">
+                        <h3 class="text-lg font-bold tracking-tight">Category Movement</h3>
+                        <span class="text-xs text-muted-foreground">Recent 3 vs previous 3</span>
+                    </div>
+                    <div class="mt-4 grid gap-3">
+                        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Moving Up</div>
+                            <div class="mt-2 space-y-2">
+                                ${categoryTrends.trendingUp.length > 0 ? categoryTrends.trendingUp.map((item) => `
+                                    <div class="flex items-center justify-between gap-2 text-sm">
+                                        <span class="font-medium text-emerald-950">${item.category}</span>
+                                        <span class="font-mono text-emerald-800">+${item.delta.toFixed(2)}</span>
+                                    </div>
+                                `).join('') : '<div class="text-sm text-emerald-900/70">No categories trending up.</div>'}
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2">
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-sky-700">Moving Down</div>
+                            <div class="mt-2 space-y-2">
+                                ${categoryTrends.trendingDown.length > 0 ? categoryTrends.trendingDown.map((item) => `
+                                    <div class="flex items-center justify-between gap-2 text-sm">
+                                        <span class="font-medium text-sky-950">${item.category}</span>
+                                        <span class="font-mono text-sky-800">${item.delta.toFixed(2)}</span>
+                                    </div>
+                                `).join('') : '<div class="text-sm text-sky-900/70">No categories trending down.</div>'}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

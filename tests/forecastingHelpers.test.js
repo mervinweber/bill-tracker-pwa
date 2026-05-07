@@ -4,7 +4,8 @@ import {
     forecastNextMonth,
     getSpendingAlerts,
     calculateTrend,
-    calculateBudgetMetrics
+    calculateBudgetMetrics,
+    calculateCategoryTrends
 } from '../src/utils/forecastingHelpers.js';
 
 const bills = [
@@ -84,4 +85,11 @@ it('calculateBudgetMetrics returns 0 spending for empty bills', () => {
 it('calculateBudgetMetrics returns numeric percentOfBudget', () => {
     const m = calculateBudgetMetrics(bills, 1000);
     expect(typeof m.percentOfBudget).toBe('number');
+});
+
+it('calculateCategoryTrends returns category summaries', () => {
+    const trends = calculateCategoryTrends(bills, 6);
+    expect(Array.isArray(trends.topCategories)).toBe(true);
+    expect(Array.isArray(trends.trendingUp)).toBe(true);
+    expect(Array.isArray(trends.trendingDown)).toBe(true);
 });
