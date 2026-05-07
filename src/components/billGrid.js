@@ -29,7 +29,7 @@ export const cleanupBillGrid = () => {
 
 export const initializeBillGrid = () => {
     const billGrid = document.getElementById('billGrid');
-    billGrid.className = "flex flex-col gap-4 p-4 sm:p-6";
+    billGrid.className = "flex flex-col gap-3 p-4 sm:p-6";
     billGrid.innerHTML = `
         <div class="flex flex-col items-center justify-center py-12 text-center">
             <div class="rounded-full bg-muted p-3 mb-4 text-2xl">📋</div>
@@ -58,11 +58,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     }
 
     if (dueBills.length === 0) {
-        const message = viewMode === 'all' ? 'No bills found' : 'No bills in this category due before the next paycheck';
+        const message = viewMode === 'all'
+            ? 'No bills found in this view'
+            : 'No bills in this category are due before the next paycheck';
         billGrid.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-12 text-center bg-card rounded-lg border border-dashed">
+            <div class="flex flex-col items-center justify-center rounded-xl border border-dashed bg-card px-6 py-12 text-center shadow-sm">
                 <div class="text-2xl mb-2">✨</div>
-                <p class="text-sm text-muted-foreground" aria-live="polite" role="status">${message}</p>
+                <p class="text-sm font-medium text-foreground" aria-live="polite" role="status">${message}</p>
+                <p class="mt-1 text-xs text-muted-foreground">Try a different paycheck date, category, or payment filter.</p>
             </div>
         `;
         return;
@@ -88,14 +91,15 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     }, { due: 0, carried: 0, overdue: 0, paid: 0 });
 
     const summaryStrip = document.createElement('div');
-    summaryStrip.className = "rounded-xl border bg-card/80 px-4 py-3 shadow-sm";
+    summaryStrip.className = "rounded-xl border bg-card/85 px-4 py-3 shadow-sm";
     summaryStrip.innerHTML = `
         <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Pay Period Summary</div>
-                <div class="mt-1 text-sm text-muted-foreground">
-                    ${dueBills.length} bill${dueBills.length === 1 ? '' : 's'} shown. Focus on the oldest items first.
+                <div class="mt-1 text-sm text-foreground">
+                    ${dueBills.length} bill${dueBills.length === 1 ? '' : 's'} shown.
                 </div>
+                <div class="mt-1 text-xs text-muted-foreground">Focus on overdue items first, then work through carried-forward bills.</div>
             </div>
             <div class="flex flex-wrap gap-2">
                 <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">${summaryCounts.due} due</span>
@@ -116,7 +120,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     tableWrapper.className = "relative w-full overflow-x-auto overflow-y-visible rounded-xl border bg-card shadow-sm";
 
     const table = document.createElement('table');
-    table.className = "w-full table-fixed caption-bottom text-sm min-w-[1100px]";
+    table.className = "w-full table-fixed caption-bottom text-sm min-w-[1040px]";
     table.setAttribute('role', 'table');
 
     const thead = document.createElement('thead');
@@ -124,13 +128,13 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     thead.innerHTML = `
         <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
             <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[30%]">Bill</th>
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[16%]">Due</th>
+            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[15%]">Due</th>
             ${viewMode === 'all' ? '<th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Category</th>' : ''}
             <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[12%]">Amount</th>
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[18%]">Balance</th>
+            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[20%]">Balance</th>
             <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[10%]">Credit</th>
-            <th class="h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[8%]">Status</th>
-            <th class="h-9 px-3 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[16%]">Actions</th>
+            <th class="h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[8%]">Paid</th>
+            <th class="h-9 px-3 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[15%]">Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -155,7 +159,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Name & Notes hidden
         const nameCell = document.createElement('td');
-        nameCell.className = "px-3 py-4 align-top";
+        nameCell.className = "px-3 py-3 align-top";
         const hasNotes = typeof bill.notes === 'string' && bill.notes.trim().length > 0;
         nameCell.innerHTML = `
             <div class="flex flex-col">
@@ -171,11 +175,11 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Due Date
         const dateCell = document.createElement('td');
-        dateCell.className = "px-3 py-4 align-top whitespace-nowrap";
+        dateCell.className = "px-3 py-3 align-top whitespace-nowrap";
         dateCell.innerHTML = `
             <div class="flex flex-col">
                 <span class="${isOverdue ? 'text-destructive font-bold' : ''}">${bill.dueDate}</span>
-                <span class="text-[10px] text-muted-foreground uppercase">Due date</span>
+                <span class="text-[10px] text-muted-foreground uppercase">${isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Due date'}</span>
             </div>
         `;
         row.appendChild(dateCell);
@@ -183,14 +187,14 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         // Category
         if (viewMode === 'all') {
             const catCell = document.createElement('td');
-            catCell.className = "px-3 py-4 align-top";
+            catCell.className = "px-3 py-3 align-top";
             catCell.innerHTML = `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">${bill.category}</span>`;
             row.appendChild(catCell);
         }
 
         // Amount Due
         const amountCell = document.createElement('td');
-        amountCell.className = "px-3 py-4 align-top font-medium font-mono";
+        amountCell.className = "px-3 py-3 align-top font-medium font-mono";
         const splitIndicator = bill.split?.enabled 
             ? `<div class="text-[10px] text-primary font-sans font-bold">SPLIT (${bill.split.payers.length})</div>` 
             : '';
@@ -204,9 +208,9 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Balance Input
         const balanceCell = document.createElement('td');
-        balanceCell.className = "px-3 py-4 align-top";
+        balanceCell.className = "px-3 py-3 align-top";
         const balanceInput = document.createElement('input');
-        balanceInput.className = `${inputBase} max-w-[140px]`;
+        balanceInput.className = `${inputBase} max-w-[124px]`;
         balanceInput.type = 'number';
         balanceInput.step = '0.01';
         balanceInput.value = (bill.balance || 0).toFixed(2);
@@ -216,7 +220,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Credit
         const creditCell = document.createElement('td');
-        creditCell.className = 'px-3 py-4 align-top font-medium font-mono';
+        creditCell.className = 'px-3 py-3 align-top font-medium font-mono';
         creditCell.innerHTML = creditBalance > 0
             ? `<span class="text-emerald-600">$${creditBalance.toFixed(2)}</span>`
             : '<span class="text-muted-foreground">$0.00</span>';
@@ -224,7 +228,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Status / Paid Toggle
         const statusCell = document.createElement('td');
-        statusCell.className = "px-3 py-4 align-top text-center";
+        statusCell.className = "px-3 py-3 align-top text-center";
         const toggleDiv = document.createElement('div');
         toggleDiv.className = "flex items-center justify-center";
 
@@ -239,7 +243,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
         // Actions
         const actionsCell = document.createElement('td');
-        actionsCell.className = "px-3 py-4 align-top text-right";
+        actionsCell.className = "px-3 py-3 align-top text-right";
         const actionGroup = document.createElement('div');
         actionGroup.className = "flex flex-wrap items-center justify-end gap-1";
 
