@@ -301,22 +301,16 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
         ? payCheckDates[selectedPaycheck + 1]
         : new Date(currentPaycheckDate.getTime() + (days * 24 * 60 * 60 * 1000));
 
-    // Carry Forward Logic Bounds
-    const activeIndex = paycheckManager.getAutoSelectedPayPeriodIndex();
-    const planningBoundaryIndex = activeIndex + 1;
-    const planningBoundaryDate = payCheckDates[planningBoundaryIndex] || new Date(9999, 0, 1);
-
     let filtered = bills.filter(bill => {
         const billDate = createLocalDate(bill.dueDate);
         const isMatch = bill.category === selectedCategory;
         if (!isMatch) return false;
 
-        const isInPeriod = billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
+        const isInPeriod = !bill.isPaid && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
 
         const isOverdueAndUnpaid = showCarriedForward &&
             !bill.isPaid &&
-            billDate < currentPaycheckDate &&
-            currentPaycheckDate <= planningBoundaryDate;
+            billDate < currentPaycheckDate;
 
         return isInPeriod || isOverdueAndUnpaid;
     });

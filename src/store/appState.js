@@ -29,7 +29,7 @@ class AppState {
             viewMode: 'filtered', // 'filtered', 'all', 'upcoming', 'planner', or 'debt-snowball'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
             paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'before_next_payday', 'reconcile'
-            allBillsScope: 'everything', // 'everything', 'open-through-next-pay-date', 'open-only'
+            allBillsScope: 'open-through-next-pay-date', // 'everything', 'open-through-next-pay-date', 'open-only'
             showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,
@@ -208,7 +208,7 @@ class AppState {
             viewMode: 'filtered',
             displayMode: 'list',
             paymentFilter: 'all',
-            allBillsScope: StorageManager.get(STORAGE_KEYS.ALL_BILLS_SCOPE) || 'everything',
+            allBillsScope: StorageManager.get(STORAGE_KEYS.ALL_BILLS_SCOPE) || 'open-through-next-pay-date',
             showCarriedForward: true,
             currentCalendarDate: new Date(),
             isLoading: false,

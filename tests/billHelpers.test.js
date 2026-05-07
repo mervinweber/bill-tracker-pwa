@@ -184,7 +184,7 @@ describe('filterBillsByPeriod', () => {
 
             const bills = [
                 { id: '1', category: 'Utilities', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
-                { id: '2', category: 'Utilities', dueDate: '2025-01-11', isPaid: true, creditBalance: 20 },
+                { id: '2', category: 'Utilities', dueDate: '2025-01-11', isPaid: false, creditBalance: 20 },
                 { id: '3', category: 'Rent', dueDate: '2025-01-12', isPaid: true, creditBalance: 40 }
             ];
 
@@ -253,6 +253,71 @@ describe('filterBillsByPeriod', () => {
             );
 
             expect(result.map((bill) => bill.id)).toEqual(['1', '2']);
+        } finally {
+            paycheckManager.paymentSettings = originalPaySettings;
+        }
+    });
+
+    it('carries overdue unpaid bills into a later pay period when enabled', () => {
+        const originalPaySettings = { ...paycheckManager.paymentSettings };
+        const originalAutoSelectedIndex = paycheckManager.getAutoSelectedPayPeriodIndex;
+        try {
+            paycheckManager.paymentSettings = {
+                ...originalPaySettings,
+                frequency: 'bi-weekly'
+            };
+            paycheckManager.getAutoSelectedPayPeriodIndex = () => 0;
+
+            const bills = [
+                { id: '1', category: 'Utilities', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
+                { id: '2', category: 'Utilities', dueDate: '2025-01-22', isPaid: false, creditBalance: 0 },
+                { id: '3', category: 'Utilities', dueDate: '2025-01-30', isPaid: false, creditBalance: 0 }
+            ];
+
+            const result = filterBillsByPeriod(
+                bills,
+                'filtered',
+                2,
+                'Utilities',
+                'all',
+                [new Date(2025, 0, 1), new Date(2025, 0, 15), new Date(2025, 0, 29)],
+                true,
+                'everything'
+            );
+
+            expect(result.map((bill) => bill.id)).toEqual(['1', '2', '3']);
+        } finally {
+            paycheckManager.paymentSettings = originalPaySettings;
+            paycheckManager.getAutoSelectedPayPeriodIndex = originalAutoSelectedIndex;
+        }
+    });
+
+    it('hides paid bills from the pay period view', () => {
+        const originalPaySettings = { ...paycheckManager.paymentSettings };
+        try {
+            paycheckManager.paymentSettings = {
+                ...originalPaySettings,
+                frequency: 'bi-weekly'
+            };
+
+            const bills = [
+                { id: '1', category: 'Utilities', dueDate: '2025-01-10', isPaid: false, creditBalance: 0 },
+                { id: '2', category: 'Utilities', dueDate: '2025-01-22', isPaid: true, creditBalance: 0 },
+                { id: '3', category: 'Utilities', dueDate: '2025-01-30', isPaid: false, creditBalance: 0 }
+            ];
+
+            const result = filterBillsByPeriod(
+                bills,
+                'filtered',
+                2,
+                'Utilities',
+                'all',
+                [new Date(2025, 0, 1), new Date(2025, 0, 15), new Date(2025, 0, 29)],
+                true,
+                'everything'
+            );
+
+            expect(result.map((bill) => bill.id)).toEqual(['1', '3']);
         } finally {
             paycheckManager.paymentSettings = originalPaySettings;
         }
