@@ -345,12 +345,14 @@ export function validateRecurrence(recurrence) {
  * - frequency: Paycheck frequency (weekly, bi-weekly, monthly)
  * - payPeriodsToShow: Number of upcoming paychecks to display and filter
  * - amount: Optional paycheck amount used for coverage calculations
+ * - customDays: Optional custom interval in days when frequency is custom
  * 
  * @param {Object} settings - Payment settings object to validate
  * @param {string} settings.startDate - Start date in YYYY-MM-DD format
  * @param {string} settings.frequency - Frequency type (weekly, bi-weekly, monthly)
  * @param {number} settings.payPeriodsToShow - Number of periods to show (positive integer)
  * @param {number|null} [settings.amount] - Optional paycheck amount (0 or greater)
+ * @param {number|string|null} [settings.customDays] - Optional custom interval in days
  * @returns {Object} Validation result with isValid and errors array
  * 
  * @example
@@ -367,7 +369,7 @@ export function validateRecurrence(recurrence) {
  *   frequency: 'invalid',
  *   payPeriodsToShow: -1
  * })
- * // Returns: { isValid: false, errors: ['Frequency must be weekly, bi-weekly, or monthly', 'Pay periods to show must be a positive integer'] }
+ * // Returns: { isValid: false, errors: ['Frequency must be weekly, bi-weekly, monthly, or custom', 'Pay periods to show must be a positive integer'] }
  */
 export function validatePaymentSettings(settings) {
     const errors = [];
@@ -425,11 +427,16 @@ export function validatePaymentSettings(settings) {
     if (!settings.frequency || typeof settings.frequency !== 'string') {
         errors.push('Frequency is required');
     } else {
-        const validFrequencies = ['weekly', 'bi-weekly', 'monthly'];
+        const validFrequencies = ['weekly', 'bi-weekly', 'monthly', 'custom'];
         const normalizedFrequency = settings.frequency.toLowerCase().trim();
         
         if (!validFrequencies.includes(normalizedFrequency)) {
-            errors.push('Frequency must be weekly, bi-weekly, or monthly');
+            errors.push('Frequency must be weekly, bi-weekly, monthly, or custom');
+        } else if (normalizedFrequency === 'custom') {
+            const customDays = Number.parseInt(String(settings.customDays), 10);
+            if (!Number.isInteger(customDays) || customDays < 1 || customDays > 365) {
+                errors.push('Custom frequency must include customDays between 1 and 365');
+            }
         }
     }
 

@@ -1,10 +1,17 @@
 import { createLocalDate, formatLocalDate } from '../utils/dates.js';
+import { paycheckManager } from '../utils/paycheckManager.js';
 
 const toCurrency = (value) => `$${(value || 0).toFixed(2)}`;
 
 const getPeriodLengthDays = (frequency) => {
     if (frequency === 'weekly') return 7;
     if (frequency === 'bi-weekly') return 14;
+    if (frequency === 'custom') {
+        const customDays = Number.parseInt(paycheckManager.paymentSettings?.customDays, 10);
+        if (Number.isInteger(customDays) && customDays >= 1 && customDays <= 365) {
+            return customDays;
+        }
+    }
     return 30;
 };
 

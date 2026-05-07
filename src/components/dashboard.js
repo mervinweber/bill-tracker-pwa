@@ -143,7 +143,13 @@ function getNextPaydayDate(payCheckDates = []) {
     }
 
     const frequency = paycheckManager.paymentSettings?.frequency || 'bi-weekly';
-    const days = frequency === 'weekly' ? 7 : frequency === 'monthly' ? 30 : 14;
+    const days = frequency === 'weekly'
+        ? 7
+        : frequency === 'bi-weekly'
+            ? 14
+            : frequency === 'custom'
+                ? Number.parseInt(paycheckManager.paymentSettings?.customDays, 10) || 30
+                : 30;
     return getNormalizedDate(new Date(lastKnownPayday.getTime() + (days * 24 * 60 * 60 * 1000)));
 }
 

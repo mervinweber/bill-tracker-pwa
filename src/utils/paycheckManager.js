@@ -28,6 +28,20 @@ import StorageManager from './StorageManager.js';
 import { STORAGE_KEYS } from './constants.js';
 import logger from './logger.js';
 
+const getFrequencyDays = (frequency, customDays) => {
+    if (frequency === 'weekly') return 7;
+    if (frequency === 'bi-weekly') return 14;
+    if (frequency === 'monthly') return 30;
+    if (frequency === 'custom') {
+        const parsed = Number.parseInt(customDays, 10);
+        if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 365) {
+            return parsed;
+        }
+    }
+
+    return 30;
+};
+
 /**
  * Paycheck Manager Class
  * 
@@ -93,9 +107,17 @@ class PaycheckManager {
             return validation;
         }
 
-        if (!['weekly', 'bi-weekly', 'monthly'].includes(settings.frequency)) {
-            validation.errors.push('Frequency must be weekly, bi-weekly, or monthly');
+        if (!['weekly', 'bi-weekly', 'monthly', 'custom'].includes(settings.frequency)) {
+            validation.errors.push('Frequency must be weekly, bi-weekly, monthly, or custom');
             validation.isValid = false;
+        }
+
+        if (settings.frequency === 'custom') {
+            const customDays = Number.parseInt(settings.customDays, 10);
+            if (!Number.isInteger(customDays) || customDays < 1 || customDays > 365) {
+                validation.errors.push('Custom frequency requires customDays between 1 and 365');
+                validation.isValid = false;
+            }
         }
 
         if (typeof settings.payPeriodsToShow !== 'number' || settings.payPeriodsToShow <= 0) {
@@ -119,7 +141,8 @@ class PaycheckManager {
         return {
             startDate: startDate.toISOString().split('T')[0],
             frequency: 'bi-weekly',
-            payPeriodsToShow: 6
+            payPeriodsToShow: 6,
+            customDays: 14
         };
     }
 
@@ -144,8 +167,7 @@ class PaycheckManager {
                 throw new ValidationError(`Invalid start date format`, 'startDate', startDate);
             }
 
-            const daysBetweenPaychecks =
-                frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+            const daysBetweenPaychecks = getFrequencyDays(frequency, this.paymentSettings.customDays);
 
             // Calculate how many periods to skip to start from the most recent paycheck
             // Using Math.floor includes the current/most recent pay period (helpful for first-time users)

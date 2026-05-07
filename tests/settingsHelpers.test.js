@@ -25,3 +25,8 @@ it('should ignore paycheck amount-only changes for schedule detection', () => {
     const s = { startDate: '2026-03-01', frequency: 'bi-weekly', payPeriodsToShow: 6, amount: 2500 };
     expect(hasPaymentScheduleChanged(s, { ...s, amount: 2600 })).toBe(false);
 });
+
+it('should return true when customDays changes for custom frequency', () => {
+    const s = { startDate: '2026-03-01', frequency: 'custom', payPeriodsToShow: 6, customDays: 90 };
+    expect(hasPaymentScheduleChanged(s, { ...s, customDays: 45 })).toBe(true);
+});

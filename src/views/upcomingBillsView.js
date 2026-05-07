@@ -55,7 +55,13 @@ export const getUpcomingBills = (bills = [], selectedPaycheck, payCheckDates, sh
     today.setHours(0, 0, 0, 0);
     const currentPaycheckDate = payCheckDates[selectedPaycheck] || today;
     const frequency = paycheckManager.paymentSettings?.frequency || 'bi-weekly';
-    const days = frequency === 'weekly' ? 7 : frequency === 'bi-weekly' ? 14 : 30;
+    const days = frequency === 'weekly'
+        ? 7
+        : frequency === 'bi-weekly'
+            ? 14
+            : frequency === 'custom'
+                ? Number.parseInt(paycheckManager.paymentSettings?.customDays, 10) || 30
+                : 30;
 
     const nextPaycheckDate = selectedPaycheck < payCheckDates.length - 1
         ? payCheckDates[selectedPaycheck + 1]

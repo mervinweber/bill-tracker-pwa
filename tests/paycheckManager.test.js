@@ -59,6 +59,17 @@ it('should handle monthly frequency', () => {
     expect(paychecks.length).toBe(2);
 });
 
+it('should handle custom frequency', () => {
+    paycheckManager.updateSettings({
+        startDate: formatDateString(today),
+        frequency: 'custom',
+        customDays: 90,
+        payPeriodsToShow: 2
+    });
+    const paychecks = paycheckManager.generatePaycheckDates();
+    expect(paychecks.length).toBe(2);
+});
+
 it('should backfill multiple weekly recurring instances within a bi-weekly pay period', () => {
     paycheckManager.updateSettings({
         startDate: formatDateString(today),
