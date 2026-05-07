@@ -366,17 +366,6 @@ export function showSettingsModal(categoriesList) {
             });
         }
 
-        const frequencySelect = document.getElementById('settingsFrequency');
-        const customDaysGroup = document.getElementById('settingsCustomDaysGroup');
-        if (frequencySelect && customDaysGroup) {
-            const syncCustomDaysVisibility = () => {
-                customDaysGroup.style.display = /** @type {HTMLSelectElement} */ (frequencySelect).value === 'custom' ? '' : 'none';
-            };
-
-            frequencySelect.addEventListener('change', syncCustomDaysVisibility);
-            syncCustomDaysVisibility();
-        }
-
         // Clean up unused categories handler
         document.getElementById('cleanupCategoriesBtn').addEventListener('click', () => {
             handleCleanupUnusedCategories(categoriesList, modal);
