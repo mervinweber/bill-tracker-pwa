@@ -170,6 +170,10 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 
         }
         return nextPayday ? dueDate < nextPayday : true;
     });
+    const nextUpBill = [...unpaidBills]
+        .map((bill) => ({ bill, dueDate: getBillDueDate(bill) }))
+        .filter(({ dueDate }) => dueDate >= today)
+        .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())[0] || null;
 
     const overdueTotal = overdueBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
     const beforeNextPaydayTotal = beforeNextPaydayBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
@@ -193,6 +197,9 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 
     const beforeNextActiveClass = paymentFilter === 'before_next_payday'
         ? 'ring-2 ring-primary ring-offset-1'
         : 'hover:border-primary/50 hover:bg-background/90';
+    const nextUpActiveClass = nextUpBill && paymentFilter === 'all'
+        ? 'ring-2 ring-primary ring-offset-1'
+        : 'hover:border-primary/50 hover:bg-background/90';
 
     return `
         <section class="mb-3 rounded-2xl border ${containerClass} px-4 py-3 shadow-sm" aria-label="Today's overview">
@@ -201,7 +208,7 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 
                     <div class="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">Today's Overview</div>
                     <div class="mt-1 text-sm font-medium">${subtitle}</div>
                 </div>
-                <div class="grid gap-2 sm:grid-cols-2 lg:min-w-[30rem] lg:max-w-[34rem] lg:flex-1">
+                <div class="grid gap-2 sm:grid-cols-3 lg:min-w-[42rem] lg:max-w-[48rem] lg:flex-1">
                     <button
                         type="button"
                         class="rounded-xl border border-current/10 bg-background/70 px-3 py-2 text-left shadow-sm transition ${pastDueActiveClass}"
@@ -221,6 +228,16 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 
                         <div class="text-[11px] uppercase tracking-[0.15em] opacity-65">Before Next Payday</div>
                         <div class="mt-1 text-lg font-semibold">${beforeNextPaydayBills.length} bill${beforeNextPaydayBills.length === 1 ? '' : 's'}</div>
                         <div class="text-xs opacity-75">$${beforeNextPaydayTotal.toFixed(2)} due before ${nextPaydayLabel}</div>
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-xl border border-current/10 bg-background/70 px-3 py-2 text-left shadow-sm transition ${nextUpActiveClass}"
+                        data-dashboard-filter="all"
+                        aria-pressed="${paymentFilter === 'all' ? 'true' : 'false'}"
+                    >
+                        <div class="text-[11px] uppercase tracking-[0.15em] opacity-65">Next Up</div>
+                        <div class="mt-1 text-lg font-semibold">${nextUpBill ? nextUpBill.bill.name : 'All caught up'}</div>
+                        <div class="text-xs opacity-75">${nextUpBill ? `${nextUpBill.dueDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · $${nextUpBill.bill.amountDue.toFixed(2)}` : 'No upcoming unpaid bills'}</div>
                     </button>
                 </div>
             </div>

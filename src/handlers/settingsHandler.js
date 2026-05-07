@@ -113,11 +113,14 @@ export function showSettingsModal(categoriesList) {
                     <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
                     <option value="custom" ${settings.frequency === 'custom' ? 'selected' : ''}>Custom</option>
                 </select>
+                <small class="settings-help-text">Choose custom only if your pay cycle is not weekly, bi-weekly, or monthly.</small>
             </div>
             <div class="form-group" id="settingsCustomDaysGroup" style="${settings.frequency === 'custom' ? '' : 'display:none;'}">
                 <label for="settingsCustomDays"><strong>Custom Interval (days)</strong></label>
-                <input type="number" id="settingsCustomDays" min="1" max="365" step="1" value="${Number.isInteger(settings.customDays) ? settings.customDays : ''}" placeholder="e.g. 90">
-                <small class="settings-help-text">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
+                <div class="settings-inline-group">
+                    <input type="number" id="settingsCustomDays" min="1" max="365" step="1" value="${Number.isInteger(settings.customDays) ? settings.customDays : ''}" placeholder="e.g. 90" style="max-width: 160px;">
+                    <small class="settings-help-text" style="margin-bottom: 0;">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
+                </div>
             </div>
             <div class="form-group">
                 <label><strong>Number of Pay Periods to Show:</strong></label>
