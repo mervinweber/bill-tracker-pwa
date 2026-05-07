@@ -274,8 +274,16 @@
     margin-bottom: 0;
 }
 
+#settingsModal .settings-section-card {
+    margin-top: 1rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;
+    background: hsl(var(--muted) / 0.18);
+}
+
 #settingsModal .settings-form h3 {
-    margin: 1rem 0 0.6rem;
+    margin: 0 0 0.75rem;
     font-size: 1.05rem;
     font-weight: 700;
 }
@@ -352,7 +360,7 @@
 }
 
 #settingsModal .settings-history-list {
-    max-height: 140px;
+    max-height: 112px;
     overflow-y: auto;
     border: 1px solid hsl(var(--border)) !important;
     border-radius: 0.5rem;
@@ -361,10 +369,10 @@
 }
 
 #settingsModal .settings-household-section {
-    background: hsl(var(--muted) / 0.45) !important;
-    border: 1px solid hsl(var(--border)) !important;
-    border-radius: 0.65rem !important;
-    padding: 0.9rem !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
 }
 
 #settingsModal .settings-household-stack {
