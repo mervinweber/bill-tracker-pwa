@@ -82,6 +82,13 @@ export function showSettingsModal(categoriesList) {
         subtitle.className = 'settings-modal-subtitle';
         subtitle.textContent = 'Update your payment configuration';
 
+        const intro = document.createElement('div');
+        intro.className = 'settings-intro';
+        intro.innerHTML = `
+            <span class="settings-intro-badge">Step 1 of 1</span>
+            <p class="settings-intro-copy">Set your pay cycle, then add reminders and household sharing later if you need them.</p>
+        `;
+
         const form = document.createElement('form');
         form.id = 'settingsForm';
         form.className = 'settings-form';
@@ -101,124 +108,129 @@ export function showSettingsModal(categoriesList) {
 
         // Static Form Fields
         form.innerHTML = `
-            <div class="form-group">
-                <label><strong>First Paycheck Date:</strong></label>
-                <input type="date" id="settingsStartDate" value="${settings.startDate}" required>
-            </div>
-            <div class="form-group">
-                <label><strong>Payment Frequency:</strong></label>
-                <select id="settingsFrequency" required>
-                    <option value="weekly" ${settings.frequency === 'weekly' ? 'selected' : ''}>Weekly (every 7 days)</option>
-                    <option value="bi-weekly" ${settings.frequency === 'bi-weekly' ? 'selected' : ''}>Bi-weekly (every 14 days)</option>
-                    <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
-                    <option value="custom" ${settings.frequency === 'custom' ? 'selected' : ''}>Custom</option>
-                </select>
-                <small class="settings-help-text">Choose custom only if your pay cycle is not weekly, bi-weekly, or monthly.</small>
-            </div>
-            <div class="form-group" id="settingsCustomDaysGroup" style="${settings.frequency === 'custom' ? '' : 'display:none;'}">
-                <label for="settingsCustomDays"><strong>Custom Interval (days)</strong></label>
-                <div class="settings-inline-group">
-                    <input type="number" id="settingsCustomDays" min="1" max="365" step="1" value="${Number.isInteger(settings.customDays) ? settings.customDays : ''}" placeholder="e.g. 90" style="max-width: 160px;">
-                    <small class="settings-help-text" style="margin-bottom: 0;">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label><strong>First Paycheck Date:</strong></label>
+                    <input type="date" id="settingsStartDate" value="${settings.startDate}" required>
                 </div>
-            </div>
-            <div class="form-group">
-                <label><strong>Number of Pay Periods to Show:</strong></label>
-                <select id="settingsWeeks" required>
-                    <option value="3" ${settings.payPeriodsToShow === 3 ? 'selected' : ''}>3 Pay Periods</option>
-                    <option value="4" ${settings.payPeriodsToShow === 4 ? 'selected' : ''}>4 Pay Periods</option>
-                    <option value="6" ${settings.payPeriodsToShow === 6 ? 'selected' : ''}>6 Pay Periods</option>
-                    <option value="8" ${settings.payPeriodsToShow === 8 ? 'selected' : ''}>8 Pay Periods</option>
-                    <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
-                </select>
+                <div class="form-group">
+                    <label><strong>Payment Frequency:</strong></label>
+                    <select id="settingsFrequency" required>
+                        <option value="weekly" ${settings.frequency === 'weekly' ? 'selected' : ''}>Weekly (every 7 days)</option>
+                        <option value="bi-weekly" ${settings.frequency === 'bi-weekly' ? 'selected' : ''}>Bi-weekly (every 14 days)</option>
+                        <option value="monthly" ${settings.frequency === 'monthly' ? 'selected' : ''}>Monthly (every 30 days)</option>
+                        <option value="custom" ${settings.frequency === 'custom' ? 'selected' : ''}>Custom</option>
+                    </select>
+                    <small class="settings-help-text">Choose custom only if your pay cycle is not weekly, bi-weekly, or monthly.</small>
+                </div>
+                <div class="form-group" id="settingsCustomDaysGroup" style="${settings.frequency === 'custom' ? '' : 'display:none;'}">
+                    <label for="settingsCustomDays"><strong>Custom Interval (days)</strong></label>
+                    <div class="settings-inline-group">
+                        <input type="number" id="settingsCustomDays" min="1" max="365" step="1" value="${Number.isInteger(settings.customDays) ? settings.customDays : ''}" placeholder="e.g. 90" style="max-width: 160px;">
+                        <small class="settings-help-text" style="margin-bottom: 0;">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><strong>Number of Pay Periods to Show:</strong></label>
+                    <select id="settingsWeeks" required>
+                        <option value="3" ${settings.payPeriodsToShow === 3 ? 'selected' : ''}>3 Pay Periods</option>
+                        <option value="4" ${settings.payPeriodsToShow === 4 ? 'selected' : ''}>4 Pay Periods</option>
+                        <option value="6" ${settings.payPeriodsToShow === 6 ? 'selected' : ''}>6 Pay Periods</option>
+                        <option value="8" ${settings.payPeriodsToShow === 8 ? 'selected' : ''}>8 Pay Periods</option>
+                        <option value="12" ${settings.payPeriodsToShow === 12 ? 'selected' : ''}>12 Pay Periods</option>
+                    </select>
+                </div>
             </div>
             <div class="form-group">
                 <label><strong>Paycheck Amount (optional):</strong></label>
                 <input type="number" id="settingsAmount" min="0" step="0.01" value="${typeof settings.amount === 'number' ? settings.amount : ''}" placeholder="e.g. 2500">
                 <small class="settings-help-text">Used for upcoming bill coverage calculations.</small>
             </div>
-            <hr class="settings-divider">
-            <h3>Reminders</h3>
-            <div class="form-group settings-reminder-row">
-                <label class="settings-inline-label">
-                    <input type="checkbox" id="settingsNotificationsEnabled" ${notificationSettings.enabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
-                    <strong>Enable due reminders</strong>
-                </label>
-                <div class="settings-help-text settings-help-inline">
-                    ${isNotificationSupported()
-                        ? 'Browser alerts for upcoming unpaid bills.'
-                        : 'Notifications are not supported in this browser.'}
+            <div class="settings-section-card">
+                <h3>Reminders</h3>
+                <div class="form-group settings-reminder-row">
+                    <label class="settings-inline-label">
+                        <input type="checkbox" id="settingsNotificationsEnabled" ${notificationSettings.enabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
+                        <strong>Enable due reminders</strong>
+                    </label>
+                    <div class="settings-help-text settings-help-inline">
+                        ${isNotificationSupported()
+                            ? 'Browser alerts for upcoming unpaid bills.'
+                            : 'Notifications are not supported in this browser.'}
+                    </div>
                 </div>
-            </div>
-            <div class="form-group">
-                <label><strong>Remind me this many days before due date:</strong></label>
-                <select id="settingsReminderDays" ${isNotificationSupported() ? '' : 'disabled'}>
-                    <option value="0" ${notificationSettings.daysBefore === 0 ? 'selected' : ''}>Due date only</option>
-                    <option value="1" ${notificationSettings.daysBefore === 1 ? 'selected' : ''}>1 day before</option>
-                    <option value="2" ${notificationSettings.daysBefore === 2 ? 'selected' : ''}>2 days before</option>
-                    <option value="3" ${notificationSettings.daysBefore === 3 ? 'selected' : ''}>3 days before</option>
-                    <option value="7" ${notificationSettings.daysBefore === 7 ? 'selected' : ''}>7 days before</option>
-                </select>
-            </div>
-            <div class="form-group settings-reminder-row">
-                <label class="settings-inline-label">
-                    <input type="checkbox" id="settingsOverdueReminders" ${notificationSettings.overdueEnabled !== false ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
-                    <strong>Overdue reminders</strong>
-                </label>
-                <div class="settings-help-text settings-help-inline">
-                    Daily alert for overdue unpaid bills.
+                <div class="form-group">
+                    <label><strong>Remind me this many days before due date:</strong></label>
+                    <select id="settingsReminderDays" ${isNotificationSupported() ? '' : 'disabled'}>
+                        <option value="0" ${notificationSettings.daysBefore === 0 ? 'selected' : ''}>Due date only</option>
+                        <option value="1" ${notificationSettings.daysBefore === 1 ? 'selected' : ''}>1 day before</option>
+                        <option value="2" ${notificationSettings.daysBefore === 2 ? 'selected' : ''}>2 days before</option>
+                        <option value="3" ${notificationSettings.daysBefore === 3 ? 'selected' : ''}>3 days before</option>
+                        <option value="7" ${notificationSettings.daysBefore === 7 ? 'selected' : ''}>7 days before</option>
+                    </select>
                 </div>
-            </div>
-            <div class="form-group settings-reminder-row">
-                <label class="settings-inline-label">
-                    <input type="checkbox" id="settingsQuietHoursEnabled" ${notificationSettings.quietHoursEnabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
-                    <strong>Quiet hours</strong>
-                </label>
-                <div class="settings-help-text settings-help-inline">
-                    Mute reminders during quiet hours.
+                <div class="form-group settings-reminder-row">
+                    <label class="settings-inline-label">
+                        <input type="checkbox" id="settingsOverdueReminders" ${notificationSettings.overdueEnabled !== false ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
+                        <strong>Overdue reminders</strong>
+                    </label>
+                    <div class="settings-help-text settings-help-inline">
+                        Daily alert for overdue unpaid bills.
+                    </div>
                 </div>
-            </div>
-            <div class="form-group settings-inline-group" id="settingsQuietHoursFields" style="${notificationSettings.quietHoursEnabled ? '' : 'opacity: 0.5; pointer-events: none'}">
-                <label><strong>From:</strong></label>
-                <input type="time" id="settingsQuietHoursStart" value="${notificationSettings.quietHoursStart || '22:00'}" ${isNotificationSupported() ? '' : 'disabled'}>
-                <label style="margin-left: 12px;"><strong>Until:</strong></label>
-                <input type="time" id="settingsQuietHoursEnd" value="${notificationSettings.quietHoursEnd || '08:00'}" ${isNotificationSupported() ? '' : 'disabled'}>
-            </div>
-            <div class="form-group settings-inline-group">
-                <button type="button" id="sendTestReminderBtn" class="view-btn" ${isNotificationSupported() ? '' : 'disabled'}>
-                    🔔 Send Test Reminder
-                </button>
-                <span class="settings-help-text">Use this to verify browser notifications are working.</span>
-            </div>
-            <div class="form-group">
-                <label><strong>Reminder History (most recent first):</strong></label>
-                <div id="reminderHistoryList" class="settings-history-list"></div>
-            </div>
-            <hr class="settings-divider">
-            <h3>Household Sharing</h3>
-            <div id="householdSection" class="form-group settings-household-section">
-                <p class="settings-help-text" style="margin-bottom: 15px;">
-                    Share your bill data with a partner. Both users will see and update the same bill list in real-time.
-                </p>
-                <div id="householdStatusContainer" class="settings-household-stack">
-                    <button type="button" id="createHouseholdBtn" class="view-btn settings-primary-btn">
-                        🏠 Create Shared Household
+                <div class="form-group settings-reminder-row">
+                    <label class="settings-inline-label">
+                        <input type="checkbox" id="settingsQuietHoursEnabled" ${notificationSettings.quietHoursEnabled ? 'checked' : ''} ${isNotificationSupported() ? '' : 'disabled'}>
+                        <strong>Quiet hours</strong>
+                    </label>
+                    <div class="settings-help-text settings-help-inline">
+                        Mute reminders during quiet hours.
+                    </div>
+                </div>
+                <div class="form-group settings-inline-group" id="settingsQuietHoursFields" style="${notificationSettings.quietHoursEnabled ? '' : 'opacity: 0.5; pointer-events: none'}">
+                    <label><strong>From:</strong></label>
+                    <input type="time" id="settingsQuietHoursStart" value="${notificationSettings.quietHoursStart || '22:00'}" ${isNotificationSupported() ? '' : 'disabled'}>
+                    <label style="margin-left: 12px;"><strong>Until:</strong></label>
+                    <input type="time" id="settingsQuietHoursEnd" value="${notificationSettings.quietHoursEnd || '08:00'}" ${isNotificationSupported() ? '' : 'disabled'}>
+                </div>
+                <div class="form-group settings-inline-group">
+                    <button type="button" id="sendTestReminderBtn" class="view-btn" ${isNotificationSupported() ? '' : 'disabled'}>
+                        🔔 Send Test Reminder
                     </button>
-                    <div class="settings-join-row">
-                        <input type="text" id="joinHouseholdInput" placeholder="Paste Household ID here">
-                        <button type="button" id="joinHouseholdBtn" class="view-btn settings-secondary-btn">Join</button>
+                    <span class="settings-help-text">Use this to verify browser notifications are working.</span>
+                </div>
+                <div class="form-group">
+                    <label><strong>Reminder History (most recent first):</strong></label>
+                    <div id="reminderHistoryList" class="settings-history-list"></div>
+                </div>
+            </div>
+            <div class="settings-section-card">
+                <h3>Household Sharing</h3>
+                <div id="householdSection" class="form-group settings-household-section">
+                    <p class="settings-help-text" style="margin-bottom: 15px;">
+                        Share your bill data with a partner. Both users will see and update the same bill list in real-time.
+                    </p>
+                    <div id="householdStatusContainer" class="settings-household-stack">
+                        <button type="button" id="createHouseholdBtn" class="view-btn settings-primary-btn">
+                            🏠 Create Shared Household
+                        </button>
+                        <div class="settings-join-row">
+                            <input type="text" id="joinHouseholdInput" placeholder="Paste Household ID here">
+                            <button type="button" id="joinHouseholdBtn" class="view-btn settings-secondary-btn">Join</button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <hr class="settings-divider">
-            <h3>Manage Categories</h3>
-            <div class="form-group">
-                <div class="settings-join-row">
-                    <input type="text" id="newCategoryInput" placeholder="New Category Name">
-                    <button type="button" id="addNewCategoryBtn" class="view-btn">Add</button>
+            <div class="settings-section-card">
+                <h3>Manage Categories</h3>
+                <div class="form-group">
+                    <div class="settings-join-row">
+                        <input type="text" id="newCategoryInput" placeholder="New Category Name">
+                        <button type="button" id="addNewCategoryBtn" class="view-btn">Add</button>
+                    </div>
                 </div>
+                ${accountSecuritySection}
             </div>
-            ${accountSecuritySection}
         `;
 
         // Category List Container
@@ -307,6 +319,7 @@ export function showSettingsModal(categoriesList) {
 
         modalContent.appendChild(title);
         modalContent.appendChild(subtitle);
+        modalContent.appendChild(intro);
         modalContent.appendChild(form);
         modal.appendChild(modalContent);
 

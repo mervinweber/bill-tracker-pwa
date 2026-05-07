@@ -248,11 +248,12 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         actionGroup.className = "flex flex-wrap items-center justify-end gap-1";
 
         const btnStyle = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-7 w-7";
+        const overflowBtnStyle = "inline-flex items-center justify-center rounded-md border border-input bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground";
 
         if (bill.website) {
             const linkBtn = document.createElement('button');
             linkBtn.className = btnStyle;
-            linkBtn.title = "Pay Website";
+            linkBtn.title = "Open Website";
             linkBtn.innerHTML = "🌐";
             linkBtn.addEventListener('click', () => window.open(bill.website, '_blank'));
             actionGroup.appendChild(linkBtn);
@@ -272,21 +273,38 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         editBtn.addEventListener('click', () => actions.onEditBill(bill.id));
         actionGroup.appendChild(editBtn);
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = `${btnStyle} hover:text-destructive`;
-        deleteBtn.title = "Delete";
-        deleteBtn.innerHTML = "🗑️";
-        deleteBtn.addEventListener('click', () => actions.onDeleteBill(bill.id));
-        actionGroup.appendChild(deleteBtn);
+        const moreMenu = document.createElement('details');
+        moreMenu.className = "relative";
+
+        const moreSummary = document.createElement('summary');
+        moreSummary.className = overflowBtnStyle;
+        moreSummary.textContent = 'More';
+        moreMenu.appendChild(moreSummary);
+
+        const morePanel = document.createElement('div');
+        morePanel.className = "absolute right-0 z-20 mt-2 w-44 rounded-md border bg-card p-1 shadow-lg";
+
+        const appendMenuButton = (label, onClick, toneClass = '') => {
+            const menuBtn = document.createElement('button');
+            menuBtn.type = 'button';
+            menuBtn.className = `flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent ${toneClass}`;
+            menuBtn.textContent = label;
+            menuBtn.addEventListener('click', () => {
+                onClick();
+                moreMenu.removeAttribute('open');
+            });
+            morePanel.appendChild(menuBtn);
+        };
+
+        appendMenuButton('Edit', () => actions.onEditBill(bill.id));
+        appendMenuButton('Delete', () => actions.onDeleteBill(bill.id), 'text-destructive hover:text-destructive');
 
         if (primaryReconciliationIssue && typeof actions.onApplyReconcileFix === 'function') {
-            const fixBtn = document.createElement('button');
-            fixBtn.className = `${btnStyle} hover:text-amber-700`;
-            fixBtn.title = `Apply reconcile fix: ${primaryReconciliationIssue.message}`;
-            fixBtn.innerHTML = '🩹';
-            fixBtn.addEventListener('click', () => actions.onApplyReconcileFix(bill.id, primaryReconciliationIssue.code));
-            actionGroup.appendChild(fixBtn);
+            appendMenuButton(`Fix: ${primaryReconciliationIssue.code}`, () => actions.onApplyReconcileFix(bill.id, primaryReconciliationIssue.code), 'text-amber-700 hover:text-amber-700');
         }
+
+        moreMenu.appendChild(morePanel);
+        actionGroup.appendChild(moreMenu);
 
         actionsCell.appendChild(actionGroup);
         row.appendChild(actionsCell);

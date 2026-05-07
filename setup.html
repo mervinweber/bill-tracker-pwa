@@ -10,7 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,55 +20,90 @@
             align-items: center;
             padding: 20px;
         }
-        
+
         .setup-container {
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            padding: 40px;
-            max-width: 500px;
+            padding: 32px;
+            max-width: 720px;
             width: 100%;
         }
-        
+
         .setup-header {
             text-align: center;
             margin-bottom: 30px;
         }
-        
+
         .setup-header h1 {
             color: #2c3e50;
             margin-bottom: 10px;
             font-size: 28px;
         }
-        
+
         .setup-header p {
             color: #7f8c8d;
             font-size: 16px;
         }
-        
+
+        .setup-intro {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 14px 16px;
+            border: 1px solid #e8ebf0;
+            border-radius: 10px;
+            background: rgba(102, 126, 234, 0.06);
+        }
+
+        .setup-intro-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(102, 126, 234, 0.12);
+            color: #4f63d2;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .setup-intro-copy {
+            margin: 0;
+            flex: 1;
+            min-width: 220px;
+            color: #2c3e50;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
         .setup-icon {
             font-size: 48px;
             margin-bottom: 15px;
         }
-        
+
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 18px;
         }
-        
+
         .form-group label {
             display: block;
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 8px;
         }
-        
+
         .form-group small {
             display: block;
             color: #95a5a6;
             font-size: 13px;
             margin-top: 5px;
         }
-        
+
         .form-group input,
         .form-group select {
             width: 100%;
@@ -78,14 +113,14 @@
             font-size: 14px;
             transition: border-color 0.3s;
         }
-        
+
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
+
         .submit-btn {
             width: 100%;
             padding: 14px;
@@ -99,14 +134,45 @@
             transition: transform 0.2s, box-shadow 0.2s;
             margin-top: 10px;
         }
-        
+
         .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
-        
+
         .submit-btn:active {
             transform: translateY(0);
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px 18px;
+        }
+
+        .setup-grid .form-group {
+            margin-bottom: 0;
+        }
+
+        .setup-full {
+            grid-column: 1 / -1;
+        }
+
+        .helper-text {
+            display: block;
+            color: #95a5a6;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 680px) {
+            .setup-container {
+                padding: 22px;
+            }
+
+            .setup-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -117,48 +183,56 @@
             <h1>Payment Schedule Setup</h1>
             <p>Configure your payment schedule to get started</p>
         </div>
-        
+
+        <div class="setup-intro">
+            <span class="setup-intro-badge">Quick setup</span>
+            <p class="setup-intro-copy">Set your pay cycle once, then the app can map future bills and coverage with fewer surprises.</p>
+        </div>
+
         <form id="setupForm">
-            <div class="form-group">
-                <label for="setupStartDate"><strong>First Paycheck Date</strong></label>
-                <input type="date" id="setupStartDate" required>
-                <small>When do you get your first paycheck?</small>
-            </div>
-            
-            <div class="form-group">
-                <label for="setupFrequency"><strong>Payment Frequency</strong></label>
-                <select id="setupFrequency" required>
-                    <option value="weekly">Weekly (every 7 days)</option>
-                    <option value="bi-weekly" selected>Bi-weekly (every 14 days)</option>
-                    <option value="monthly">Monthly (every 30 days)</option>
-                    <option value="custom">Custom</option>
-                </select>
+            <div class="setup-grid">
+                <div class="form-group">
+                    <label for="setupStartDate"><strong>First Paycheck Date</strong></label>
+                    <input type="date" id="setupStartDate" required>
+                    <small class="helper-text">When do you get your first paycheck?</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="setupFrequency"><strong>Payment Frequency</strong></label>
+                    <select id="setupFrequency" required>
+                        <option value="weekly">Weekly (every 7 days)</option>
+                        <option value="bi-weekly" selected>Bi-weekly (every 14 days)</option>
+                        <option value="monthly">Monthly (every 30 days)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                    <small class="helper-text">Choose custom only if your cycle is different.</small>
+                </div>
+
+                <div class="form-group setup-full" id="setupCustomDaysGroup" style="display: none;">
+                    <label for="setupCustomDays"><strong>Custom Interval (days)</strong></label>
+                    <input type="number" id="setupCustomDays" min="1" max="365" step="1" placeholder="e.g. 90">
+                    <small class="helper-text">Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="setupWeeks"><strong>Number of Pay Periods to Show</strong></label>
+                    <select id="setupWeeks" required>
+                        <option value="3">3 Pay Periods</option>
+                        <option value="4">4 Pay Periods</option>
+                        <option value="6" selected>6 Pay Periods</option>
+                        <option value="8">8 Pay Periods</option>
+                        <option value="12">12 Pay Periods</option>
+                    </select>
+                    <small class="helper-text">How far ahead do you want to plan?</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="setupAmount"><strong>Paycheck Amount (optional)</strong></label>
+                    <input type="number" id="setupAmount" step="0.01" min="0" placeholder="e.g. 2500">
+                    <small class="helper-text">Used for upcoming bill coverage calculations.</small>
+                </div>
             </div>
 
-            <div class="form-group" id="setupCustomDaysGroup" style="display: none;">
-                <label for="setupCustomDays"><strong>Custom Interval (days)</strong></label>
-                <input type="number" id="setupCustomDays" min="1" max="365" step="1" placeholder="e.g. 90">
-                <small>Enter the number of days between paychecks. Example: 90 for quarterly paychecks.</small>
-            </div>
-            
-            <div class="form-group">
-                <label for="setupWeeks"><strong>Number of Pay Periods to Show</strong></label>
-                <select id="setupWeeks" required>
-                    <option value="3">3 Pay Periods</option>
-                    <option value="4">4 Pay Periods</option>
-                    <option value="6" selected>6 Pay Periods</option>
-                    <option value="8">8 Pay Periods</option>
-                    <option value="12">12 Pay Periods</option>
-                </select>
-                <small>How far ahead do you want to plan?</small>
-            </div>
-
-            <div class="form-group">
-                <label for="setupAmount"><strong>Paycheck Amount (optional)</strong></label>
-                <input type="number" id="setupAmount" step="0.01" min="0" placeholder="e.g. 2500">
-                <small>Used for upcoming bill coverage calculations.</small>
-            </div>
-            
             <button type="submit" class="submit-btn">Save Settings & Continue</button>
         </form>
     </div>

@@ -393,24 +393,41 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         dashboard.className = "w-full pt-3 pb-1";
         dashboard.innerHTML = `
             ${todayOverviewHtml}
-            <div class="flex flex-wrap gap-2 sm:gap-3 mb-1">
-                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
-                    <span>📋</span><span class="font-medium">Total Bills</span><span class="font-bold text-foreground">0</span>
+            <div class="mb-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Summary</div>
+                        <div class="mt-1 text-sm font-medium text-foreground">No bills are in this view yet.</div>
+                    </div>
+                    <div class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                        Ready for first bill
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
-                    <span>💰</span><span class="font-medium">Total Due</span><span class="font-bold text-foreground">$0.00</span>
-                </div>
-                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
-                    <span>🧮</span><span class="font-medium">Net Due</span><span class="font-bold text-foreground">$0.00</span>
-                </div>
-                <div class="flex items-center gap-2 rounded-lg border bg-emerald-50 px-3 py-2 shadow-sm text-xs text-emerald-700 border-emerald-200">
-                    <span>💚</span><span class="font-medium">Total Credit</span><span class="font-bold text-emerald-800">$0.00</span>
-                </div>
-                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
-                    <span>⚠️</span><span class="font-medium">Unpaid</span><span class="font-bold text-foreground">0</span>
-                </div>
-                <div class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm text-xs text-muted-foreground">
-                    <span>🔴</span><span class="font-medium">Overdue</span><span class="font-bold text-foreground">0</span>
+                <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Total Bills</div>
+                        <div class="mt-1 text-lg font-semibold text-foreground">0</div>
+                    </div>
+                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Total Due</div>
+                        <div class="mt-1 text-lg font-semibold text-foreground">$0.00</div>
+                    </div>
+                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Net Due</div>
+                        <div class="mt-1 text-lg font-semibold text-foreground">$0.00</div>
+                    </div>
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 shadow-sm">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">Total Credit</div>
+                        <div class="mt-1 text-lg font-semibold text-emerald-800">$0.00</div>
+                    </div>
+                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Unpaid</div>
+                        <div class="mt-1 text-lg font-semibold text-foreground">0</div>
+                    </div>
+                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Overdue</div>
+                        <div class="mt-1 text-lg font-semibold text-foreground">0</div>
+                    </div>
                 </div>
             </div>
             ${debtWidgetHtml}

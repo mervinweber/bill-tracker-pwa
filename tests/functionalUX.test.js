@@ -160,8 +160,9 @@ it('Bill Grid: History button listeners are attached', () => {
     expect(billGridContent).toContain('actions.onRecordPayment');
 });
 
-it('Bill Grid: Delete button listeners are attached', () => {
-    expect(billGridContent).toContain("deleteBtn.addEventListener('click'");
+it('Bill Grid: Delete action is available in the overflow menu', () => {
+    expect(billGridContent).toContain("appendMenuButton('Delete'");
+    expect(billGridContent).toContain("moreSummary.textContent = 'More'");
     expect(billGridContent).toContain('actions.onDeleteBill');
 });
 

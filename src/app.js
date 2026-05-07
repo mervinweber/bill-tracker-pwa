@@ -779,38 +779,46 @@ class AppOrchestrator {
                         }
                         billGrid.className = 'flex flex-col gap-4 p-4 sm:p-6';
                         billGrid.innerHTML = `
-                            <div class="flex flex-col items-center justify-center gap-6 py-14 px-6 max-w-lg mx-auto w-full">
-                                <div class="rounded-full bg-muted p-5 text-4xl" aria-hidden="true">📋</div>
-                                <div class="text-center space-y-1">
-                                    <h2 class="text-xl font-semibold text-foreground">Welcome to Bill Tracker</h2>
-                                    <p class="text-sm text-muted-foreground">You haven't added any bills yet. Follow these steps to get started.</p>
-                                </div>
-                                <div class="w-full space-y-4 rounded-xl border bg-card p-5 shadow-sm">
-                                    <div class="flex items-start gap-3">
-                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
-                                        <div>
-                                            <p class="text-sm font-medium text-foreground">Add your first bill</p>
-                                            <p class="text-xs text-muted-foreground mt-0.5">Enter a bill name, amount, and due date to start tracking.</p>
-                                        </div>
+                            <div class="mx-auto grid w-full max-w-5xl gap-5 rounded-2xl border border-border bg-card p-5 shadow-sm lg:grid-cols-[1fr_1.1fr] lg:p-6">
+                                <div class="flex flex-col items-center justify-center gap-4 text-center lg:items-start lg:text-left">
+                                    <div class="rounded-full bg-muted p-5 text-4xl" aria-hidden="true">📋</div>
+                                    <div class="space-y-1">
+                                        <h2 class="text-2xl font-semibold text-foreground">Welcome to Bill Tracker</h2>
+                                        <p class="text-sm text-muted-foreground">You haven't added any bills yet. Start with one bill, then layer in reminders and upcoming planning.</p>
                                     </div>
-                                    <div class="border-t border-border"></div>
-                                    <div class="flex items-start gap-3">
-                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">2</span>
-                                        <div>
-                                            <p class="text-sm font-medium text-foreground">Enable reminders</p>
-                                            <p class="text-xs text-muted-foreground mt-0.5">Turn on notifications so you're alerted before payments are due.</p>
-                                        </div>
-                                    </div>
-                                    <div class="border-t border-border"></div>
-                                    <div class="flex items-start gap-3">
-                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">3</span>
-                                        <div>
-                                            <p class="text-sm font-medium text-foreground">Review upcoming bills</p>
-                                            <p class="text-xs text-muted-foreground mt-0.5">Use the Upcoming view to see what's due each pay period.</p>
-                                        </div>
+                                    <div class="rounded-xl border border-border bg-muted/30 px-4 py-3 text-left text-sm text-muted-foreground">
+                                        <p class="font-medium text-foreground">Quick start</p>
+                                        <p class="mt-1">Use the button below to add your first bill. Once you do, the dashboard and upcoming views will fill in automatically.</p>
                                     </div>
                                 </div>
-                                <div class="flex flex-col sm:flex-row gap-3 w-full sm:justify-center">
+                                <div class="space-y-4">
+                                    <div class="rounded-xl border bg-background p-5">
+                                        <div class="flex items-start gap-3">
+                                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                                            <div>
+                                                <p class="text-sm font-medium text-foreground">Add your first bill</p>
+                                                <p class="text-xs text-muted-foreground mt-0.5">Enter a bill name, amount, and due date to start tracking.</p>
+                                            </div>
+                                        </div>
+                                        <div class="my-4 border-t border-border"></div>
+                                        <div class="flex items-start gap-3">
+                                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">2</span>
+                                            <div>
+                                                <p class="text-sm font-medium text-foreground">Enable reminders</p>
+                                                <p class="text-xs text-muted-foreground mt-0.5">Turn on notifications so you're alerted before payments are due.</p>
+                                            </div>
+                                        </div>
+                                        <div class="my-4 border-t border-border"></div>
+                                        <div class="flex items-start gap-3">
+                                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-bold border border-border">3</span>
+                                            <div>
+                                                <p class="text-sm font-medium text-foreground">Review upcoming bills</p>
+                                                <p class="text-xs text-muted-foreground mt-0.5">Use the Upcoming view to see what's due each pay period.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-3 lg:col-span-2 lg:justify-center">
                                     <button id="emptyStateAddBill" type="button"
                                         class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-10 px-6 bg-primary text-primary-foreground shadow hover:bg-primary/90">
                                         + Add Your First Bill
