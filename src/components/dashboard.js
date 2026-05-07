@@ -101,15 +101,25 @@ function buildHealthCardHtml() {
         return `<span class="${cls}">${c.icon} ${c.label} <span class="font-bold">${icon}</span></span>`;
     }).join('');
 
-    const ctaHtml = `<button type="button" id="healthCardSettingsLink" class="ml-auto inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">Review Setup →</button>`;
+    const issueLabel = failCount === 1 ? '1 issue' : `${failCount} issues`;
+    const ctaHtml = `<button type="button" id="healthCardSettingsLink" class="inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">Review Setup →</button>`;
 
     return `
-        <div class="mt-2 flex flex-wrap items-center gap-2 rounded-xl border ${badgeClass} px-4 py-2.5 text-xs">
-            <span class="inline-block h-2 w-2 rounded-full ${dotColor}"></span>
-            <span class="font-semibold">Setup Health</span>
-            <span class="text-xs opacity-60">•</span>
-            ${checkBadges}
-            ${ctaHtml}
+        <div class="mt-2 rounded-2xl border ${badgeClass} px-4 py-3 text-xs shadow-sm">
+            <div class="flex flex-wrap items-start justify-between gap-2 border-b border-current/10 pb-3">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block h-2 w-2 rounded-full ${dotColor}"></span>
+                        <span class="font-semibold">Setup Health</span>
+                        <span class="rounded-full border border-current/15 bg-background/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]">${issueLabel}</span>
+                    </div>
+                    <div class="text-sm font-medium">A few setup checks still need attention.</div>
+                </div>
+                ${ctaHtml}
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                ${checkBadges}
+            </div>
         </div>`;
 }
 
