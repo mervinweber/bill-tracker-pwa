@@ -30,84 +30,88 @@ export const initializeHeader = (paychecks, actions) => {
     const inputBase = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
     header.innerHTML = `
-        <div class="grid grid-cols-1 gap-4 px-4 sm:px-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-center lg:grid-cols-[240px_minmax(0,1fr)]">
-            <div class="space-y-1">
+        <div class="grid grid-cols-1 gap-3 px-4 sm:px-6">
+            <div class="flex flex-col gap-1">
                 <h1 class="text-xl font-bold tracking-tight text-foreground sm:text-2xl">💰 Bill Tracker</h1>
                 <p class="text-xs text-muted-foreground sm:text-sm" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>
             </div>
-            
-            <div class="header-controls flex w-full items-center justify-start gap-2 overflow-x-auto pb-1 sm:gap-3 md:flex-nowrap">
-                <div class="flex shrink-0 items-center gap-2">
-                    <label for="payPeriodSelect" class="text-xs font-medium text-foreground sm:text-sm">Pay Period:</label>
-                    <select id="payPeriodSelect" class="${inputBase} h-8 w-auto min-w-[150px] sm:h-9" aria-label="Select pay period" aria-describedby="payPeriodHelp">
-                        <option value="">-- Choose a pay period --</option>
-                        ${paychecks.map((c, i) => `<option value="${i}">${c}</option>`).join('')}
-                    </select>
-                    <span id="payPeriodHelp" class="sr-only">Choose when to view bills due between this paycheck and the next</span>
-                </div>
-                
-                <div class="flex shrink-0 items-center gap-1.5 rounded-lg border bg-muted/50 p-1 shadow-sm">
-                    <button id="allBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
-                    <button id="upcomingBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View upcoming bills" aria-pressed="false">📅 Upcoming</button>
-                    <button id="paycheckPlannerBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View paycheck planner" aria-pressed="false">💵 Planner</button>
-                    <button id="debtSnowballBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View debt snowball planner" aria-pressed="false">🏔️ Debt</button>
-                </div>
 
-                <button
-                    id="mobileSidebarToggle"
-                    class="${btnOutline} h-8 px-3 text-xs sm:hidden"
-                    aria-label="Open navigation menu"
-                    aria-haspopup="dialog"
-                    aria-controls="sidebar"
-                >
-                    ☰ Menu
-                </button>
-
-                <button
-                    id="mobileControlsToggle"
-                    class="${btnOutline} h-8 px-3 text-xs sm:hidden"
-                    aria-label="Show advanced filters"
-                    aria-expanded="false"
-                    aria-controls="headerAdvancedControls"
-                >
-                    ⚙️ More
-                </button>
-
-                <div id="headerAdvancedControls" class="flex shrink-0 items-center gap-2 sm:gap-3">
-                    <div class="flex shrink-0 items-center gap-1 rounded-md bg-muted/50 p-1">
-                        <button id="listViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs active" title="List View">📋 List</button>
-                        <button id="calendarViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Calendar View">📅 Calendar</button>
-                        <button id="analyticsViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Analytics View">📊 Analytics</button>
-                    </div>
-
-                    <div class="flex shrink-0 items-center gap-2">
-                        <label for="paymentFilter" class="text-xs font-medium text-foreground sm:text-sm">Filter:</label>
-                        <select id="paymentFilter" class="${inputBase} h-8 w-auto min-w-[80px] sm:h-9" aria-label="Filter bills by payment status">
-                            <option value="all">All</option>
-                            <option value="unpaid">Unpaid</option>
-                            <option value="paid">Paid</option>
-                            <option value="overdue">Overdue</option>
-                            <option value="before_next_payday">Before Next Payday</option>
-                            <option value="credit">Has Credit</option>
-                            <option value="reconcile">Needs Reconcile</option>
+            <div class="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="payPeriodSelect" class="text-xs font-medium text-foreground sm:text-sm">Pay Period:</label>
+                        <select id="payPeriodSelect" class="${inputBase} h-8 w-auto min-w-[150px] sm:h-9" aria-label="Select pay period" aria-describedby="payPeriodHelp">
+                            <option value="">-- Choose a pay period --</option>
+                            ${paychecks.map((c, i) => `<option value="${i}">${c}</option>`).join('')}
                         </select>
+                        <span id="payPeriodHelp" class="sr-only">Choose when to view bills due between this paycheck and the next</span>
                     </div>
 
-                    <div class="flex shrink-0 items-center gap-2">
-                        <label for="allBillsScopeFilter" class="text-xs font-medium text-foreground sm:text-sm">All Bills:</label>
-                        <select id="allBillsScopeFilter" class="${inputBase} h-8 w-auto min-w-[160px] sm:h-9" aria-label="Scope for all bills view">
-                            <option value="everything">Everything</option>
-                            <option value="open-through-next-pay-date">Open Through Next Pay Date</option>
-                            <option value="open-only">Open Only</option>
-                        </select>
+                    <div class="flex shrink-0 items-center gap-1.5 rounded-lg border bg-muted/50 p-1 shadow-sm">
+                        <button id="allBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View all bills" aria-pressed="false">📋 All Bills</button>
+                        <button id="upcomingBillsBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View upcoming bills" aria-pressed="false">📅 Upcoming</button>
+                        <button id="paycheckPlannerBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View paycheck planner" aria-pressed="false">💵 Planner</button>
+                        <button id="debtSnowballBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View debt snowball planner" aria-pressed="false">🏔️ Debt</button>
                     </div>
+                </div>
 
-                    <div class="flex shrink-0 items-center gap-2">
-                        <label class="relative inline-flex cursor-pointer items-center transition-opacity hover:opacity-80">
-                            <input type="checkbox" id="carriedForwardToggle" class="peer sr-only" checked>
-                            <div class="peer h-5 w-9 rounded-full bg-muted transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring"></div>
-                            <span class="ml-2 text-xs font-medium text-foreground sm:text-sm">Show Overdue</span>
-                        </label>
+                <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                    <button
+                        id="mobileSidebarToggle"
+                        class="${btnOutline} h-8 px-3 text-xs sm:hidden"
+                        aria-label="Open navigation menu"
+                        aria-haspopup="dialog"
+                        aria-controls="sidebar"
+                    >
+                        ☰ Menu
+                    </button>
+
+                    <button
+                        id="mobileControlsToggle"
+                        class="${btnOutline} h-8 px-3 text-xs sm:hidden"
+                        aria-label="Show advanced filters"
+                        aria-expanded="false"
+                        aria-controls="headerAdvancedControls"
+                    >
+                        ⚙️ More
+                    </button>
+
+                    <div id="headerAdvancedControls" class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div class="flex shrink-0 items-center gap-1 rounded-md bg-muted/50 p-1">
+                            <button id="listViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs active" title="List View">📋 List</button>
+                            <button id="calendarViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Calendar View">📅 Calendar</button>
+                            <button id="analyticsViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Analytics View">📊 Analytics</button>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-2">
+                            <label for="paymentFilter" class="text-xs font-medium text-foreground sm:text-sm">Filter:</label>
+                            <select id="paymentFilter" class="${inputBase} h-8 w-auto min-w-[80px] sm:h-9" aria-label="Filter bills by payment status">
+                                <option value="all">All</option>
+                                <option value="unpaid">Unpaid</option>
+                                <option value="paid">Paid</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="before_next_payday">Before Next Payday</option>
+                                <option value="credit">Has Credit</option>
+                                <option value="reconcile">Needs Reconcile</option>
+                            </select>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-2">
+                            <label for="allBillsScopeFilter" class="text-xs font-medium text-foreground sm:text-sm">All Bills:</label>
+                            <select id="allBillsScopeFilter" class="${inputBase} h-8 w-auto min-w-[160px] sm:h-9" aria-label="Scope for all bills view">
+                                <option value="everything">Everything</option>
+                                <option value="open-through-next-pay-date">Open Through Next Pay Date</option>
+                                <option value="open-only">Open Only</option>
+                            </select>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-2">
+                            <label class="relative inline-flex cursor-pointer items-center transition-opacity hover:opacity-80">
+                                <input type="checkbox" id="carriedForwardToggle" class="peer sr-only" checked>
+                                <div class="peer h-5 w-9 rounded-full bg-muted transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring"></div>
+                                <span class="ml-2 text-xs font-medium text-foreground sm:text-sm">Show Overdue</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
