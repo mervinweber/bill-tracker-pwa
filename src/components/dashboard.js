@@ -414,30 +414,30 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                     </div>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                    <button type="button" class="rounded-xl border border-border bg-background px-3 py-2 text-left shadow-sm transition hover:border-primary/40 hover:bg-accent/40" data-dashboard-filter="all">
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Total Bills</div>
                         <div class="mt-1 text-lg font-semibold text-foreground">0</div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                    </button>
+                    <button type="button" class="rounded-xl border border-border bg-background px-3 py-2 text-left shadow-sm transition hover:border-primary/40 hover:bg-accent/40" data-dashboard-filter="all">
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Total Due</div>
                         <div class="mt-1 text-lg font-semibold text-foreground">$0.00</div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                    </button>
+                    <button type="button" class="rounded-xl border border-border bg-background px-3 py-2 text-left shadow-sm transition hover:border-primary/40 hover:bg-accent/40" data-dashboard-filter="all">
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Net Due</div>
                         <div class="mt-1 text-lg font-semibold text-foreground">$0.00</div>
-                    </div>
-                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 shadow-sm">
+                    </button>
+                    <button type="button" class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100" data-dashboard-filter="credit">
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">Total Credit</div>
                         <div class="mt-1 text-lg font-semibold text-emerald-800">$0.00</div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                    </button>
+                    <button type="button" class="rounded-xl border border-border bg-background px-3 py-2 text-left shadow-sm transition hover:border-primary/40 hover:bg-accent/40" data-dashboard-filter="unpaid">
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Unpaid</div>
                         <div class="mt-1 text-lg font-semibold text-foreground">0</div>
-                    </div>
-                    <div class="rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                    </button>
+                    <button type="button" class="rounded-xl border border-border bg-background px-3 py-2 text-left shadow-sm transition hover:border-primary/40 hover:bg-accent/40" data-dashboard-filter="overdue">
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Overdue</div>
                         <div class="mt-1 text-lg font-semibold text-foreground">0</div>
-                    </div>
+                    </button>
                 </div>
             </div>
             ${debtWidgetHtml}
