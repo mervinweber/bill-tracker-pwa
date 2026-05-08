@@ -37,8 +37,8 @@ export const initializeHeader = (paychecks, actions) => {
                 <p class="text-xs text-muted-foreground sm:text-sm" id="headerStatus" role="status" aria-live="polite" aria-atomic="true">Select a pay period to get started</p>
             </div>
 
-            <div class="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
+            <div class="grid gap-2 lg:grid-cols-[minmax(0,1fr)] lg:items-center">
+                <div class="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:gap-3">
                     <div class="flex items-center gap-2">
                         <label for="payPeriodSelect" class="text-xs font-medium text-foreground sm:text-sm">Pay Period:</label>
                         <select id="payPeriodSelect" class="${inputBase} h-8 w-auto min-w-[150px] sm:h-9" aria-label="Select pay period" aria-describedby="payPeriodHelp">
@@ -54,58 +54,59 @@ export const initializeHeader = (paychecks, actions) => {
                         <button id="paycheckPlannerBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View paycheck planner" aria-pressed="false">💵 Planner</button>
                         <button id="debtSnowballBtn" class="${btnGhost} h-7 px-2.5 text-xs sm:h-8 sm:px-3 sm:text-sm" aria-label="View debt snowball planner" aria-pressed="false">🏔️ Debt</button>
                     </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-                    <button
-                        id="mobileSearchToggle"
-                        class="${btnOutline} h-8 px-3 text-xs xl:hidden"
-                        aria-label="Show search"
-                        aria-expanded="true"
-                        aria-controls="billSearchGroup"
-                    >
-                        🔎 Search
-                    </button>
-                    <div id="billSearchGroup" class="flex min-w-[220px] flex-1 items-center gap-2 lg:max-w-[340px]">
-                        <label for="billSearchInput" class="sr-only">Search bills</label>
-                        <div class="relative w-full">
-                            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">⌕</span>
-                            <input
-                                id="billSearchInput"
-                                type="search"
-                                placeholder="Search bills, notes, categories..."
-                                class="${inputBase} h-8 w-full pl-8 pr-3"
-                                aria-label="Search bills"
+                    <div class="flex w-full flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+                        <div class="flex items-center gap-2 xl:min-w-[320px] xl:flex-1">
+                            <button
+                                id="mobileSearchToggle"
+                                class="${btnOutline} h-8 px-3 text-xs xl:hidden"
+                                aria-label="Show search"
+                                aria-expanded="true"
+                                aria-controls="billSearchGroup"
                             >
+                                🔎 Search
+                            </button>
+                            <div id="billSearchGroup" class="flex min-w-0 flex-1 items-center gap-2 rounded-lg border bg-background/60 px-2 py-1 shadow-sm xl:max-w-[420px]">
+                                <label for="billSearchInput" class="sr-only">Search bills</label>
+                                <div class="relative w-full">
+                                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">⌕</span>
+                                    <input
+                                        id="billSearchInput"
+                                        type="search"
+                                        placeholder="Search bills, notes, categories..."
+                                        class="${inputBase} h-8 w-full pl-8 pr-3 shadow-none"
+                                        aria-label="Search bills"
+                                    >
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <button
-                        id="mobileSidebarToggle"
-                        class="${btnOutline} h-8 px-3 text-xs xl:hidden"
-                        aria-label="Open navigation menu"
-                        aria-haspopup="dialog"
-                        aria-controls="sidebar"
-                    >
-                        ☰ Menu
-                    </button>
+                        <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+                            <button
+                                id="mobileSidebarToggle"
+                                class="${btnOutline} h-8 px-3 text-xs xl:hidden"
+                                aria-label="Open navigation menu"
+                                aria-haspopup="dialog"
+                                aria-controls="sidebar"
+                            >
+                                ☰ Menu
+                            </button>
 
-                    <button
-                        id="mobileControlsToggle"
-                        class="${btnOutline} h-8 px-3 text-xs xl:hidden"
-                        aria-label="Show advanced filters"
-                        aria-expanded="false"
-                        aria-controls="headerAdvancedControls"
-                    >
-                        ⚙️ More
-                    </button>
+                            <button
+                                id="mobileControlsToggle"
+                                class="${btnOutline} h-8 px-3 text-xs xl:hidden"
+                                aria-label="Show advanced filters"
+                                aria-expanded="false"
+                                aria-controls="headerAdvancedControls"
+                            >
+                                ⚙️ More
+                            </button>
 
-                    <div id="headerAdvancedControls" class="flex flex-wrap items-center gap-2 sm:gap-3">
-                        <div class="flex shrink-0 items-center gap-1 rounded-md bg-muted/50 p-1">
-                            <button id="listViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs active" title="List View">📋 List</button>
-                            <button id="calendarViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Calendar View">📅 Calendar</button>
-                            <button id="analyticsViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Analytics View">📊 Analytics</button>
-                        </div>
+                            <div id="headerAdvancedControls" class="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <div class="flex shrink-0 items-center gap-1 rounded-md bg-muted/50 p-1">
+                                <button id="listViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs active" title="List View">📋 List</button>
+                                <button id="calendarViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Calendar View">📅 Calendar</button>
+                                <button id="analyticsViewBtn" class="${btnGhost} h-7 w-auto px-2 text-xs" title="Analytics View">📊 Analytics</button>
+                            </div>
 
                         <div class="flex shrink-0 items-center gap-2">
                             <label for="paymentFilter" class="text-xs font-medium text-foreground sm:text-sm">Filter:</label>
