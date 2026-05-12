@@ -37,6 +37,8 @@ import { appState } from '../store/appState.js';
  */
 function buildHealthCardHtml() {
     const checks = [];
+    const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+    const themeClasses = getThemeSurfaceClasses(theme);
 
     // 1. Cloud sync configured
     const syncOk = isSupabaseConfigured();
@@ -90,20 +92,20 @@ function buildHealthCardHtml() {
     }
 
     const badgeClass = allOk
-        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-        : 'border-amber-200 bg-amber-50 text-amber-800';
+        ? themeClasses.healthOk
+        : themeClasses.healthWarn;
     const dotColor = allOk ? 'bg-emerald-500' : 'bg-amber-400';
 
     const checkBadges = checks.map(c => {
         const cls = c.ok
-            ? 'inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700'
-            : 'inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 cursor-pointer hover:bg-amber-200';
+            ? `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${theme === 'dark' ? 'border-emerald-800 bg-emerald-950/40 text-emerald-100' : 'border-emerald-200 bg-emerald-100 text-emerald-700'}`
+            : `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium cursor-pointer ${theme === 'dark' ? 'border-amber-800 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50' : 'border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200'}`;
         const icon = c.ok ? '✓' : '!';
         return `<span class="${cls}">${c.icon} ${c.label} <span class="font-bold">${icon}</span></span>`;
     }).join('');
 
     const issueLabel = failCount === 1 ? '1 issue' : `${failCount} issues`;
-    const ctaHtml = `<button type="button" id="healthCardSettingsLink" class="inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">Review Setup →</button>`;
+    const ctaHtml = `<button type="button" id="healthCardSettingsLink" class="inline-flex items-center rounded-md border px-3 py-1 text-xs font-medium transition-colors ${theme === 'dark' ? 'border-amber-700 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50' : 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200'}">Review Setup →</button>`;
 
     return `
         <div class="mt-2 rounded-2xl border ${badgeClass} px-4 py-3 text-xs shadow-sm">
@@ -112,7 +114,7 @@ function buildHealthCardHtml() {
                     <div class="flex items-center gap-2">
                         <span class="inline-block h-2 w-2 rounded-full ${dotColor}"></span>
                         <span class="font-semibold">Setup Health</span>
-                        <span class="rounded-full border border-current/15 bg-background/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]">${issueLabel}</span>
+                        <span class="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${themeClasses.pillMuted}">${issueLabel}</span>
                     </div>
                     <div class="text-sm font-medium">A few setup checks still need attention.</div>
                 </div>
@@ -211,9 +213,11 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 
     const nextUpActiveClass = nextUpBill && paymentFilter === 'all'
         ? 'ring-2 ring-primary ring-offset-1'
         : 'hover:border-primary/50 hover:bg-background/90';
+    const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+    const themeClasses = getThemeSurfaceClasses(theme);
 
     return `
-        <section class="mb-3 rounded-2xl border ${containerClass} px-4 py-3 shadow-sm" aria-label="Today's overview">
+        <section class="mb-3 rounded-2xl border ${themeClasses.overview} px-4 py-3 shadow-sm" aria-label="Today's overview">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <div class="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">Today's Overview</div>
@@ -264,6 +268,20 @@ function getNextPaycheckDate(payCheckDates = []) {
     return future || null;
 }
 
+function getThemeSurfaceClasses(theme) {
+    const isDark = theme === 'dark';
+    return {
+        overview: isDark ? 'border-slate-700 bg-slate-900/85 text-slate-100' : 'border-rose-200 bg-rose-50 text-rose-950',
+        coveragePositive: isDark ? 'border-emerald-900/50 bg-emerald-950/35 text-emerald-50' : 'border-emerald-200 bg-emerald-50 text-emerald-950',
+        coverageNegative: isDark ? 'border-rose-900/50 bg-rose-950/35 text-rose-50' : 'border-rose-200 bg-rose-50 text-rose-950',
+        forecast: isDark ? 'border-sky-900/50 bg-sky-950/35 text-sky-50' : 'border-sky-200 bg-sky-50 text-sky-950',
+        forecastStat: isDark ? 'border-sky-800/60 bg-slate-950/40 text-sky-50' : 'border-sky-200 bg-white/70 text-sky-950',
+        healthOk: isDark ? 'border-slate-700 bg-slate-900/85 text-slate-100' : 'border-emerald-200 bg-emerald-50 text-emerald-800',
+        healthWarn: isDark ? 'border-amber-900/50 bg-amber-950/30 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-800',
+        pillMuted: isDark ? 'border-slate-600 bg-slate-800/70 text-slate-200' : 'border-current/15 bg-background/70 text-muted-foreground'
+    };
+}
+
 function buildPaycheckCoverageHtml(bills = [], payCheckDates = [], paymentFilter = 'all', allBillsScope = 'everything') {
     if (!Array.isArray(bills) || bills.length === 0) {
         return '';
@@ -274,6 +292,8 @@ function buildPaycheckCoverageHtml(bills = [], payCheckDates = [], paymentFilter
         return '';
     }
 
+    const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+    const themeClasses = getThemeSurfaceClasses(theme);
     const settings = paycheckManager.paymentSettings || {};
     const paycheckAmount = Math.max(0, Number.parseFloat(settings.amount) || 0);
     const today = getNormalizedDate();
@@ -288,8 +308,8 @@ function buildPaycheckCoverageHtml(bills = [], payCheckDates = [], paymentFilter
     const coverageRemaining = Math.max(0, paycheckAmount - dueTotal);
     const nextPaycheckLabel = nextPaycheck.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     const coverageClass = coverageGap > 0
-        ? 'border-rose-200 bg-rose-50 text-rose-950'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-950';
+        ? themeClasses.coverageNegative
+        : themeClasses.coveragePositive;
     const coverageText = paycheckAmount > 0
         ? coverageGap > 0
             ? `Short by $${coverageGap.toFixed(2)} before ${nextPaycheckLabel}.`
@@ -342,20 +362,21 @@ export const initializeDashboard = () => {
 };
 
 function buildMetricCard({ label, icon, value, tone = 'default', filter = 'all', isActive = false, columns = '' }) {
+    const isDark = document.body.classList.contains('dark');
     const toneClass = tone === 'success'
-        ? 'border-emerald-200 bg-emerald-50'
+        ? (isDark ? 'border-emerald-900/50 bg-emerald-950/35' : 'border-emerald-200 bg-emerald-50')
         : tone === 'danger'
-            ? 'border-destructive/20 bg-destructive/5'
+            ? (isDark ? 'border-rose-900/50 bg-rose-950/30' : 'border-destructive/20 bg-destructive/5')
             : 'bg-card';
     const labelClass = tone === 'success'
-        ? 'text-emerald-700'
+        ? (isDark ? 'text-emerald-200' : 'text-emerald-700')
         : tone === 'danger'
-            ? 'text-destructive'
+            ? (isDark ? 'text-rose-200' : 'text-destructive')
             : 'text-muted-foreground';
     const valueClass = tone === 'success'
-        ? 'text-emerald-800'
+        ? (isDark ? 'text-emerald-100' : 'text-emerald-800')
         : tone === 'danger'
-            ? 'text-destructive'
+            ? (isDark ? 'text-rose-100' : 'text-destructive')
             : 'text-foreground';
     const activeClass = isActive ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/40 hover:bg-accent/40';
 
@@ -434,16 +455,16 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         return sum + (debt * (rate / 100) / 12);
     }, 0);
     const debtWidgetHtml = debtCandidates.length > 0 ? `
-        <div class="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+        <div class="mt-3 flex flex-wrap items-center gap-2 rounded-xl border ${document.body.classList.contains('dark') ? 'border-amber-900/50 bg-amber-950/30 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-800'} px-4 py-3 text-xs">
             <span class="text-base">🏔️</span>
             <span class="font-semibold">Debt Overview</span>
-            <span class="text-amber-600">•</span>
+            <span class="${document.body.classList.contains('dark') ? 'text-amber-300' : 'text-amber-600'}">•</span>
             <span>${debtCandidates.length} tracked debt${debtCandidates.length !== 1 ? 's' : ''}</span>
-            <span class="text-amber-600">•</span>
+            <span class="${document.body.classList.contains('dark') ? 'text-amber-300' : 'text-amber-600'}">•</span>
             <span>Total: <strong>$${totalDebtAmount.toFixed(2)}</strong></span>
-            <span class="text-amber-600">•</span>
+            <span class="${document.body.classList.contains('dark') ? 'text-amber-300' : 'text-amber-600'}">•</span>
             <span>Est. Monthly Interest: <strong>$${totalDebtMonthlyInterest.toFixed(2)}</strong></span>
-            <button id="dashboardDebtLink" type="button" class="ml-auto inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 transition-colors">View Debt Snowball →</button>
+            <button id="dashboardDebtLink" type="button" class="ml-auto inline-flex items-center rounded-md border px-3 py-1 text-xs font-medium transition-colors ${document.body.classList.contains('dark') ? 'border-amber-700 bg-amber-950/40 text-amber-100 hover:bg-amber-900/50' : 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200'}">View Debt Snowball →</button>
         </div>` : '';
 
     const totalBills = displayBills.length;
@@ -472,21 +493,21 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     const topForecastCategory = Object.entries(forecast.byCategory || {})
         .sort((a, b) => b[1] - a[1])[0] || null;
     const forecastCardHtml = `
-        <div class="mb-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sky-950 shadow-sm">
+        <div class="mb-3 rounded-2xl border ${themeClasses.forecast} px-4 py-3 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">Next Month Forecast</div>
+                    <div class="text-[11px] font-bold uppercase tracking-[0.18em] ${theme === 'dark' ? 'text-sky-200' : 'text-sky-700'}">Next Month Forecast</div>
                     <div class="mt-1 text-sm font-medium">${forecast.recurringCount} recurring bill${forecast.recurringCount === 1 ? '' : 's'} mapped</div>
-                    <div class="mt-1 text-xs text-sky-700">Projected recurring total: <strong>$${forecast.total.toFixed(2)}</strong>${topForecastCategory ? ` · Largest category: ${topForecastCategory[0]}` : ''}</div>
+                    <div class="mt-1 text-xs ${theme === 'dark' ? 'text-sky-100' : 'text-sky-700'}">Projected recurring total: <strong>$${forecast.total.toFixed(2)}</strong>${topForecastCategory ? ` · Largest category: ${topForecastCategory[0]}` : ''}</div>
                 </div>
                 <div class="grid grid-cols-2 gap-2 sm:min-w-[220px]">
-                    <div class="rounded-xl border border-sky-200 bg-white/70 px-3 py-2">
-                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">Recurring</div>
-                        <div class="mt-1 text-lg font-semibold text-sky-950">${forecast.recurringCount}</div>
+                    <div class="rounded-xl border px-3 py-2 ${themeClasses.forecastStat}">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] ${theme === 'dark' ? 'text-sky-200' : 'text-sky-700'}">Recurring</div>
+                        <div class="mt-1 text-lg font-semibold">${forecast.recurringCount}</div>
                     </div>
-                    <div class="rounded-xl border border-sky-200 bg-white/70 px-3 py-2">
-                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">Monthly Total</div>
-                        <div class="mt-1 text-lg font-semibold text-sky-950">$${forecast.total.toFixed(2)}</div>
+                    <div class="rounded-xl border px-3 py-2 ${themeClasses.forecastStat}">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] ${theme === 'dark' ? 'text-sky-200' : 'text-sky-700'}">Monthly Total</div>
+                        <div class="mt-1 text-lg font-semibold">$${forecast.total.toFixed(2)}</div>
                     </div>
                 </div>
             </div>
@@ -503,7 +524,7 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                         <div class="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Summary</div>
                         <div class="mt-1 text-sm font-medium text-foreground">No bills are in this view yet.</div>
                     </div>
-                    <div class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    <div class="rounded-full border px-3 py-1 text-xs font-medium ${document.body.classList.contains('dark') ? 'border-emerald-900/50 bg-emerald-950/35 text-emerald-100' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}">
                         Ready for first bill
                     </div>
                 </div>
@@ -520,9 +541,9 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Net Due</div>
                         <div class="mt-1 text-lg font-semibold text-foreground">$0.00</div>
                     </button>
-                    <button type="button" class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-left shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100" data-dashboard-filter="credit">
-                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700">Total Credit</div>
-                        <div class="mt-1 text-lg font-semibold text-emerald-800">$0.00</div>
+                    <button type="button" class="rounded-xl border px-3 py-2 text-left shadow-sm transition hover:border-emerald-300 hover:bg-accent/40 ${document.body.classList.contains('dark') ? 'border-emerald-900/50 bg-emerald-950/35' : 'border-emerald-200 bg-emerald-50'}" data-dashboard-filter="credit">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.14em] ${document.body.classList.contains('dark') ? 'text-emerald-200' : 'text-emerald-700'}">Total Credit</div>
+                        <div class="mt-1 text-lg font-semibold ${document.body.classList.contains('dark') ? 'text-emerald-100' : 'text-emerald-800'}">$0.00</div>
                     </button>
                     <button type="button" class="rounded-xl border border-border bg-background px-3 py-2 text-left shadow-sm transition hover:border-primary/40 hover:bg-accent/40" data-dashboard-filter="unpaid">
                         <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Unpaid</div>
