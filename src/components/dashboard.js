@@ -442,6 +442,8 @@ function wireDashboardFilterCards() {
  */
 export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward = true, allBillsScope = 'everything') => {
     const dashboard = document.getElementById('dashboard');
+    const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+    const themeClasses = getThemeSurfaceClasses(theme);
 
     // Use shared filtering logic to ensure consistency with grid
     const displayBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
