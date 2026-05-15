@@ -328,17 +328,17 @@ export function showConfirmationModal({
 
 /**
  * Show a printable/shareable summary modal for the current dashboard scope.
- * @param {Object} options
- * @param {Array} options.bills
- * @param {string} options.viewMode
- * @param {number|null} options.selectedPaycheck
- * @param {string|null} options.selectedCategory
- * @param {string} options.paymentFilter
- * @param {Array<Date>} options.payCheckDates
- * @param {boolean} options.showCarriedForward
- * @param {string} options.allBillsScope
+ * @param {Object} [options={}]
+ * @param {Array} [options.bills]
+ * @param {string} [options.viewMode]
+ * @param {number|null} [options.selectedPaycheck]
+ * @param {string|null} [options.selectedCategory]
+ * @param {string} [options.paymentFilter]
+ * @param {Array<Date>} [options.payCheckDates]
+ * @param {boolean} [options.showCarriedForward]
+ * @param {string} [options.allBillsScope]
  * @param {string} [options.title]
- * @returns {Promise<void>}
+ * @returns {void}
  */
 export function showSummaryReportModal({
     bills = [],
