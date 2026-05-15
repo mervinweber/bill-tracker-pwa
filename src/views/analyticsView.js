@@ -195,13 +195,13 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                     </div>
                     <div class="mt-4 space-y-3">
                         ${categoryTrends.topCategories.length > 0 ? categoryTrends.topCategories.map((item, index) => `
-                            <div class="rounded-lg border border-border bg-muted/20 px-3 py-2">
-                                <div class="flex items-center justify-between gap-3">
-                                    <div>
-                                        <div class="text-sm font-medium text-foreground">${index + 1}. ${item.category}</div>
-                                        <div class="text-xs text-muted-foreground">${item.share}% of tracked spending</div>
+                            <div class="rounded-lg border border-border bg-muted/20 px-3 py-3">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-medium leading-tight text-foreground">${index + 1}. ${item.category}</div>
+                                        <div class="text-xs leading-tight text-muted-foreground">${item.share}% of tracked spending</div>
                                     </div>
-                                    <div class="text-sm font-mono font-semibold text-foreground">$${item.total.toFixed(2)}</div>
+                                    <div class="text-base font-mono font-semibold leading-none text-foreground sm:text-sm sm:whitespace-nowrap">$${item.total.toFixed(2)}</div>
                                 </div>
                             </div>
                         `).join('') : `
@@ -217,24 +217,24 @@ export function renderAnalytics({ bills: providedBills, viewMode, selectedPayche
                         <span class="text-xs text-muted-foreground">Recent 3 vs previous 3</span>
                     </div>
                     <div class="mt-4 grid gap-3">
-                        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3">
                             <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Moving Up</div>
                             <div class="mt-2 space-y-2">
                                 ${categoryTrends.trendingUp.length > 0 ? categoryTrends.trendingUp.map((item) => `
-                                    <div class="flex items-center justify-between gap-2 text-sm">
-                                        <span class="font-medium text-emerald-950">${item.category}</span>
-                                        <span class="font-mono text-emerald-800">+${item.delta.toFixed(2)}</span>
+                                    <div class="flex flex-col gap-1 rounded-md bg-white/40 px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                                        <span class="min-w-0 text-sm font-medium leading-tight text-emerald-950">${item.category}</span>
+                                        <span class="font-mono text-sm leading-none text-emerald-800 sm:whitespace-nowrap">+${item.delta.toFixed(2)}</span>
                                     </div>
                                 `).join('') : '<div class="text-sm text-emerald-900/70">No categories trending up.</div>'}
                             </div>
                         </div>
-                        <div class="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2">
+                        <div class="rounded-lg border border-sky-200 bg-sky-50 px-3 py-3">
                             <div class="text-[10px] font-bold uppercase tracking-wider text-sky-700">Moving Down</div>
                             <div class="mt-2 space-y-2">
                                 ${categoryTrends.trendingDown.length > 0 ? categoryTrends.trendingDown.map((item) => `
-                                    <div class="flex items-center justify-between gap-2 text-sm">
-                                        <span class="font-medium text-sky-950">${item.category}</span>
-                                        <span class="font-mono text-sky-800">${item.delta.toFixed(2)}</span>
+                                    <div class="flex flex-col gap-1 rounded-md bg-white/40 px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                                        <span class="min-w-0 text-sm font-medium leading-tight text-sky-950">${item.category}</span>
+                                        <span class="font-mono text-sm leading-none text-sky-800 sm:whitespace-nowrap">${item.delta.toFixed(2)}</span>
                                     </div>
                                 `).join('') : '<div class="text-sm text-sky-900/70">No categories trending down.</div>'}
                             </div>
