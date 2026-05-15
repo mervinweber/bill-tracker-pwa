@@ -47,6 +47,8 @@ it('Bill history drawer exposes direct quick actions and metadata', () => {
     if (!appContent.includes('Open Pay Link')) throw new Error('Missing pay link quick action');
     if (!appContent.includes('Mark Paid')) throw new Error('Missing mark paid quick action');
     if (!appContent.includes('Reminders on')) throw new Error('Missing reminder status tag');
+    if (!appContent.includes('Category')) throw new Error('Missing category detail row in drawer');
+    if (!appContent.includes('Autopay')) throw new Error('Missing autopay detail row in drawer');
     if (!appContent.includes('Balance')) throw new Error('Missing balance stat in drawer');
     if (!appContent.includes('Snooze 3 Days')) throw new Error('Missing snooze quick action');
     if (!appContent.includes('Clear Snooze')) throw new Error('Missing snooze clear action');

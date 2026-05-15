@@ -84,7 +84,7 @@ import {
     handleOpenAddBill
 } from './app/navigationHandlers.js';
 import { handleLogin, handleSignUp, handleLogout, handleResetPassword } from './app/loginHandlers.js';
-import { initializePaymentModals, openRecordPaymentModal, showConfirmationModal } from './app/initializeModals.js';
+import { initializePaymentModals, openRecordPaymentModal, showConfirmationModal, showSummaryReportModal } from './app/initializeModals.js';
 
 class AppOrchestrator {
     constructor() {
@@ -779,6 +779,18 @@ class AppOrchestrator {
                                 state.allBillsScope
                             );
                             document.getElementById('dashboardDebtLink')?.addEventListener('click', () => handleDebtSnowballSelect());
+                            document.getElementById('dashboardReportBtn')?.addEventListener('click', () => {
+                                showSummaryReportModal({
+                                    bills,
+                                    viewMode: state.viewMode,
+                                    selectedPaycheck: state.selectedPaycheck,
+                                    selectedCategory: state.selectedCategory,
+                                    paymentFilter: state.paymentFilter,
+                                    payCheckDates: paycheckManager.payCheckDates,
+                                    showCarriedForward: state.showCarriedForward,
+                                    allBillsScope: state.allBillsScope
+                                });
+                            });
                         }
                         billGrid.className = 'flex flex-col gap-4 p-4 sm:p-6';
                         billGrid.innerHTML = `
@@ -858,6 +870,18 @@ class AppOrchestrator {
                     if (dashboard) dashboard.style.display = 'block';
                     renderDashboard(bills, state.viewMode, state.selectedPaycheck, state.selectedCategory, state.paymentFilter, paycheckManager.payCheckDates, state.showCarriedForward, state.allBillsScope);
                     document.getElementById('dashboardDebtLink')?.addEventListener('click', () => handleDebtSnowballSelect());
+                    document.getElementById('dashboardReportBtn')?.addEventListener('click', () => {
+                        showSummaryReportModal({
+                            bills,
+                            viewMode: state.viewMode,
+                            selectedPaycheck: state.selectedPaycheck,
+                            selectedCategory: state.selectedCategory,
+                            paymentFilter: state.paymentFilter,
+                            payCheckDates: paycheckManager.payCheckDates,
+                            showCarriedForward: state.showCarriedForward,
+                            allBillsScope: state.allBillsScope
+                        });
+                    });
 
                     renderBillGrid(
                         {
@@ -1233,6 +1257,46 @@ class AppOrchestrator {
         detailHeader.appendChild(editButton);
 
         detailCard.appendChild(detailHeader);
+
+        const detailInfoGrid = document.createElement('div');
+        detailInfoGrid.className = 'mt-4 grid gap-3 rounded-xl border bg-muted/20 p-4 sm:grid-cols-2';
+
+        const addInfoRow = (label, value) => {
+            const row = document.createElement('div');
+            row.className = 'space-y-1';
+            const rowLabel = document.createElement('div');
+            rowLabel.className = 'text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground';
+            rowLabel.textContent = label;
+            const rowValue = document.createElement('div');
+            rowValue.className = 'text-sm font-medium leading-relaxed break-words text-foreground';
+            rowValue.textContent = value || 'Not set';
+            row.appendChild(rowLabel);
+            row.appendChild(rowValue);
+            return row;
+        };
+
+        detailInfoGrid.appendChild(addInfoRow('Category', bill.category || 'Uncategorized'));
+        detailInfoGrid.appendChild(addInfoRow('Due Date', bill.dueDate || 'Not set'));
+        detailInfoGrid.appendChild(addInfoRow('Account', bill.accountName || 'Not set'));
+        detailInfoGrid.appendChild(addInfoRow('Payee', bill.payee || 'Not set'));
+        detailInfoGrid.appendChild(addInfoRow('Website', bill.website || 'Not set'));
+        detailInfoGrid.appendChild(addInfoRow('Autopay', bill.autopayEnabled ? 'Enabled' : 'Disabled'));
+
+        if (bill.notes) {
+            const notesWrap = document.createElement('div');
+            notesWrap.className = 'rounded-lg border border-border bg-background p-3 sm:col-span-2';
+            const notesLabel = document.createElement('div');
+            notesLabel.className = 'text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground';
+            notesLabel.textContent = 'Notes';
+            const notesValue = document.createElement('div');
+            notesValue.className = 'mt-1 text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground';
+            notesValue.textContent = bill.notes;
+            notesWrap.appendChild(notesLabel);
+            notesWrap.appendChild(notesValue);
+            detailInfoGrid.appendChild(notesWrap);
+        }
+
+        detailCard.appendChild(detailInfoGrid);
 
         const quickActions = document.createElement('div');
         quickActions.className = 'mt-3 flex flex-wrap gap-2';

@@ -81,6 +81,11 @@ it('Header: Mobile controls toggle is wired for progressive disclosure', () => {
     expect(headerContent).toContain('headerAdvancedControls');
 });
 
+it('Dashboard: summary report button is available', () => {
+    expect(dashboardContent).toContain('dashboardReportBtn');
+    expect(dashboardContent).toContain('Print / Share Summary');
+});
+
 it('Header: Mobile sidebar toggle is wired', () => {
     expect(headerContent).toContain('mobileSidebarToggle');
     expect(headerContent).toContain('billtracker:toggle-mobile-sidebar');

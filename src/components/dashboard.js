@@ -256,6 +256,15 @@ function buildTodayOverviewHtml(bills = [], payCheckDates = [], paymentFilter = 
                     </button>
                 </div>
             </div>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                    type="button"
+                    id="dashboardReportBtn"
+                    class="inline-flex items-center justify-center rounded-md border border-current/10 bg-background/70 px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:border-primary/40 hover:bg-accent/40"
+                >
+                    Print / Share Summary
+                </button>
+            </div>
         </section>`;
 }
 
@@ -520,6 +529,15 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         dashboard.innerHTML = `
             ${todayOverviewHtml}
             ${paycheckCoverageHtml}
+            <div class="mb-1 flex flex-wrap items-center gap-2">
+                <button
+                    type="button"
+                    id="dashboardReportBtn"
+                    class="inline-flex items-center justify-center rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:border-primary/40 hover:bg-accent/40"
+                >
+                    Print / Share Summary
+                </button>
+            </div>
             <div class="mb-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                     <div>
@@ -572,6 +590,15 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
         ${todayOverviewHtml}
         ${paycheckCoverageHtml}
         ${forecast.recurringCount > 0 ? forecastCardHtml : ''}
+        <div class="mb-1 flex flex-wrap items-center gap-2">
+            <button
+                type="button"
+                id="dashboardReportBtn"
+                class="inline-flex items-center justify-center rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:border-primary/40 hover:bg-accent/40"
+            >
+                Print / Share Summary
+            </button>
+        </div>
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-7 sm:gap-3 mb-2">
             ${buildMetricCard({ label: 'Total Bills', icon: '📋', value: `${totalBills}`, filter: 'all', isActive: paymentFilter === 'all' })}
             ${buildMetricCard({ label: 'Total Due', icon: '💰', value: `$${totalAmountDue.toFixed(2)}`, filter: 'all', isActive: paymentFilter === 'all' })}

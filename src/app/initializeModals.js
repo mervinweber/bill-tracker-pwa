@@ -7,6 +7,11 @@
 import { billActionHandlers } from '../handlers/billActionHandlers.js';
 import { getMissedCycles, createLocalDate } from '../utils/dates.js';
 import { billStore } from '../store/BillStore.js';
+import { filterBillsByPeriod } from '../utils/billHelpers.js';
+
+function formatCurrency(value) {
+    return `$${(Number.parseFloat(value) || 0).toFixed(2)}`;
+}
 
 function getRecurrenceCycleLabel(recurrence) {
     switch (recurrence) {
@@ -319,4 +324,176 @@ export function showConfirmationModal({
         document.getElementById('confirmDialogConfirm')?.addEventListener('click', () => cleanup(true));
         document.getElementById('confirmDialogConfirm')?.focus();
     });
+}
+
+/**
+ * Show a printable/shareable summary modal for the current dashboard scope.
+ * @param {Object} options
+ * @param {Array} options.bills
+ * @param {string} options.viewMode
+ * @param {number|null} options.selectedPaycheck
+ * @param {string|null} options.selectedCategory
+ * @param {string} options.paymentFilter
+ * @param {Array<Date>} options.payCheckDates
+ * @param {boolean} options.showCarriedForward
+ * @param {string} options.allBillsScope
+ * @param {string} [options.title]
+ * @returns {Promise<void>}
+ */
+export function showSummaryReportModal({
+    bills = [],
+    viewMode,
+    selectedPaycheck,
+    selectedCategory,
+    paymentFilter,
+    payCheckDates,
+    showCarriedForward,
+    allBillsScope,
+    title = 'Bill Summary Report'
+} = {}) {
+    const existing = document.getElementById('summaryReportModal');
+    if (existing) {
+        existing.remove();
+    }
+
+    const visibleBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
+    const unpaidBills = visibleBills.filter((bill) => !bill.isPaid);
+    const overdueBills = unpaidBills.filter((bill) => {
+        const due = new Date(bill.dueDate);
+        due.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return due < today;
+    });
+    const totalDue = visibleBills.reduce((sum, bill) => sum + (bill.amountDue || 0), 0);
+    const totalCredit = visibleBills.reduce((sum, bill) => sum + Math.max(0, Number.parseFloat(bill.creditBalance) || 0), 0);
+    const netDue = Math.max(0, totalDue - totalCredit);
+    const topCategories = Array.from(
+        visibleBills.reduce((map, bill) => {
+            const key = bill.category || 'Uncategorized';
+            map.set(key, (map.get(key) || 0) + (bill.amountDue || 0));
+            return map;
+        }, new Map())
+    )
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+    const modal = document.createElement('div');
+    modal.id = 'summaryReportModal';
+    modal.className = 'fixed inset-0 z-50 overflow-y-auto bg-background/80 backdrop-blur-sm';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'summaryReportTitle');
+    modal.style.display = 'block';
+
+    modal.innerHTML = `
+        <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
+            <div class="relative w-full max-w-3xl overflow-hidden rounded-2xl border bg-background shadow-2xl">
+                <div class="flex flex-col gap-2 border-b px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Printable / Shareable</p>
+                        <h2 id="summaryReportTitle" class="text-xl font-semibold tracking-tight">${title}</h2>
+                        <p class="mt-1 text-sm text-muted-foreground">Reflects the current filtered view so it matches what you’re seeing in the app.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="summaryReportPrint" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold shadow-sm hover:bg-accent hover:text-accent-foreground">Print</button>
+                        <button type="button" id="summaryReportShare" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold shadow-sm hover:bg-accent hover:text-accent-foreground">Share</button>
+                        <button type="button" id="summaryReportCopy" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold shadow-sm hover:bg-accent hover:text-accent-foreground">Copy Text</button>
+                    </div>
+                </div>
+                <div class="max-h-[75vh] overflow-y-auto px-6 py-5">
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div class="rounded-xl border bg-muted/30 p-4">
+                            <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Bills Shown</div>
+                            <div class="mt-1 text-2xl font-bold">${visibleBills.length}</div>
+                        </div>
+                        <div class="rounded-xl border bg-muted/30 p-4">
+                            <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Unpaid</div>
+                            <div class="mt-1 text-2xl font-bold">${unpaidBills.length}</div>
+                        </div>
+                        <div class="rounded-xl border bg-muted/30 p-4">
+                            <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Overdue</div>
+                            <div class="mt-1 text-2xl font-bold">${overdueBills.length}</div>
+                        </div>
+                        <div class="rounded-xl border bg-muted/30 p-4">
+                            <div class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Net Due</div>
+                            <div class="mt-1 text-2xl font-bold">${formatCurrency(netDue)}</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+                        <div class="rounded-xl border bg-card p-4">
+                            <h3 class="text-sm font-bold uppercase tracking-[0.16em] text-muted-foreground">Upcoming / Due Breakdown</h3>
+                            <div class="mt-3 space-y-2">
+                                ${visibleBills.slice(0, 8).map((bill) => `
+                                    <div class="flex flex-col gap-1 rounded-lg border border-border bg-muted/20 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm font-medium">${bill.name}</div>
+                                            <div class="text-xs text-muted-foreground">${bill.category || 'Uncategorized'} · Due ${bill.dueDate}</div>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-xs font-semibold">
+                                            <span>${bill.isPaid ? 'Paid' : overdueBills.some((item) => item.id === bill.id) ? 'Overdue' : 'Open'}</span>
+                                            <span class="font-mono">${formatCurrency(bill.amountDue)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="rounded-xl border bg-card p-4">
+                            <h3 class="text-sm font-bold uppercase tracking-[0.16em] text-muted-foreground">Top Categories</h3>
+                            <div class="mt-3 space-y-2">
+                                ${topCategories.length > 0 ? topCategories.map(([category, amount]) => `
+                                    <div class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2">
+                                        <span class="min-w-0 truncate text-sm font-medium">${category}</span>
+                                        <span class="font-mono text-sm font-semibold">${formatCurrency(amount)}</span>
+                                    </div>
+                                `).join('') : '<div class="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">No categories to summarize yet.</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap justify-between gap-2 border-t px-6 py-4">
+                    <p class="text-xs text-muted-foreground">Use Print for a paper/PDF export, or Share to send the summary from supported devices.</p>
+                    <button type="button" id="summaryReportClose" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold shadow-sm hover:bg-accent hover:text-accent-foreground">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const cleanup = () => modal.remove();
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) cleanup();
+    });
+
+    document.body.appendChild(modal);
+
+    document.getElementById('summaryReportClose')?.addEventListener('click', cleanup);
+    document.getElementById('summaryReportPrint')?.addEventListener('click', () => window.print());
+    document.getElementById('summaryReportCopy')?.addEventListener('click', async () => {
+        const lines = [
+            title,
+            `Bills shown: ${visibleBills.length}`,
+            `Unpaid: ${unpaidBills.length}`,
+            `Overdue: ${overdueBills.length}`,
+            `Net due: ${formatCurrency(netDue)}`,
+            '',
+            ...visibleBills.map((bill) => `${bill.name} | ${bill.category || 'Uncategorized'} | Due ${bill.dueDate} | ${formatCurrency(bill.amountDue)}`)
+        ].join('\n');
+        try {
+            await navigator.clipboard.writeText(lines);
+        } catch {
+            // Ignore clipboard failures in unsupported contexts.
+        }
+    });
+    document.getElementById('summaryReportShare')?.addEventListener('click', async () => {
+        const text = `${title}\nBills shown: ${visibleBills.length}\nUnpaid: ${unpaidBills.length}\nOverdue: ${overdueBills.length}\nNet due: ${formatCurrency(netDue)}`;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title, text });
+            } catch {
+                // user cancelled
+            }
+        }
+    });
+    document.getElementById('summaryReportClose')?.focus();
 }
