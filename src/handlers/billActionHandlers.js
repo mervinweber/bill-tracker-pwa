@@ -233,6 +233,14 @@ function findExistingRecurringOccurrence(bills, bill, dueDate) {
     );
 }
 
+function getSeriesBills(bills, bill) {
+    if (!bill?.recurrence || bill.recurrence === 'One-time') {
+        return [bill];
+    }
+
+    return bills.filter((candidate) => isSameRecurringSeries(candidate, bill));
+}
+
 /**
  * Update bill balance with validation
  */
@@ -382,6 +390,61 @@ export function deleteBill(billId) {
     } catch (error) {
         logger.error('Error deleting bill', error);
         showErrorNotification(error.message, 'Delete Failed');
+        return false;
+    }
+}
+
+/**
+ * Archive or restore a bill. Recurring bills are handled as a matching series.
+ */
+export function setBillArchived(billId, archived = true) {
+    try {
+        const currentBills = billStore.getAll();
+        const bill = currentBills.find(b => b.id === billId);
+
+        if (!bill) {
+            throw new Error('Bill not found.');
+        }
+
+        const seriesBills = getSeriesBills(currentBills, bill);
+        const affectedIds = new Set(seriesBills.map((seriesBill) => seriesBill.id));
+        const count = affectedIds.size;
+        const actionLabel = archived ? 'Archive' : 'Restore';
+        const targetLabel = count > 1 ? `${count} occurrences of "${bill.name}"` : `"${bill.name}"`;
+
+        if (!confirm(`${actionLabel} ${targetLabel}?`)) {
+            return false;
+        }
+
+        const archivedAt = archived ? new Date().toISOString() : null;
+        const updatedBills = currentBills.map((candidate) => {
+            if (!affectedIds.has(candidate.id)) {
+                return candidate;
+            }
+
+            return {
+                ...candidate,
+                archived,
+                archivedAt
+            };
+        });
+
+        billStore.setBills(updatedBills);
+        recordAuditEvent(archived ? 'bill.archived' : 'bill.restored', {
+            entityType: 'bill',
+            entityId: billId,
+            summary: `${archived ? 'Archived' : 'Restored'} ${targetLabel}`,
+            metadata: {
+                count,
+                recurrence: bill.recurrence || 'One-time'
+            }
+        });
+
+        showSuccessNotification(`${targetLabel} ${archived ? 'archived' : 'restored'}`);
+        return true;
+    } catch (error) {
+        logger.error('Error updating archive state', error);
+        showErrorNotification(error.message, archived ? 'Archive Failed' : 'Restore Failed');
         return false;
     }
 }
@@ -598,6 +661,197 @@ export function bulkFillZeroBalances(options = {}) {
         logger.error('Error in bulk fill zero balances', error);
         showErrorNotification(error.message, 'Bulk Update Failed');
         return false;
+    }
+}
+
+function normalizeDuplicateKeyPart(value) {
+    return String(value ?? '').trim().toLowerCase();
+}
+
+function normalizeDuplicateAmount(value) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00';
+}
+
+function getDuplicateBillKey(bill) {
+    return [
+        normalizeDuplicateKeyPart(bill.name),
+        normalizeDuplicateKeyPart(bill.category),
+        normalizeDuplicateKeyPart(bill.recurrence || 'One-time'),
+        normalizeDuplicateKeyPart(bill.dueDate),
+        normalizeDuplicateAmount(bill.amountDue)
+    ].join('|');
+}
+
+function scoreDuplicateBill(bill) {
+    const paymentHistoryCount = Array.isArray(bill.paymentHistory) ? bill.paymentHistory.length : 0;
+    const populatedFieldCount = Object.values(bill).filter((value) => {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'string') return value.trim() !== '';
+        if (Array.isArray(value)) return value.length > 0;
+        return true;
+    }).length;
+
+    return (
+        paymentHistoryCount * 20 +
+        (bill.isPaid ? 8 : 0) +
+        (Number.parseFloat(bill.creditBalance) > 0 ? 6 : 0) +
+        (bill.notes ? 4 : 0) +
+        (bill.website ? 3 : 0) +
+        (bill.payee ? 3 : 0) +
+        (bill.accountName ? 3 : 0) +
+        populatedFieldCount
+    );
+}
+
+function mergePaymentHistory(group) {
+    const seen = new Set();
+    const merged = [];
+
+    group.forEach((bill) => {
+        if (!Array.isArray(bill.paymentHistory)) {
+            return;
+        }
+
+        bill.paymentHistory.forEach((payment) => {
+            const key = payment?.id
+                ? `id:${payment.id}`
+                : [
+                    payment?.date || '',
+                    payment?.amount ?? '',
+                    payment?.method || '',
+                    payment?.confirmationNumber || '',
+                    payment?.notes || ''
+                ].join('|');
+
+            if (!seen.has(key)) {
+                seen.add(key);
+                merged.push({ ...payment });
+            }
+        });
+    });
+
+    return merged.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+}
+
+function mergeDuplicateBillGroup(group) {
+    const sorted = [...group].sort((a, b) => {
+        const scoreDelta = scoreDuplicateBill(b) - scoreDuplicateBill(a);
+        return scoreDelta !== 0 ? scoreDelta : String(a.id).localeCompare(String(b.id));
+    });
+
+    const keeper = { ...sorted[0] };
+    const mergedHistory = mergePaymentHistory(group);
+    if (mergedHistory.length > 0) {
+        keeper.paymentHistory = mergedHistory;
+    }
+
+    ['notes', 'website', 'payee', 'accountName'].forEach((field) => {
+        if (!keeper[field]) {
+            const source = group.find((bill) => bill[field]);
+            if (source) {
+                keeper[field] = source[field];
+            }
+        }
+    });
+
+    const highestCreditBalance = Math.max(
+        ...group.map((bill) => Number.parseFloat(bill.creditBalance || 0)).filter(Number.isFinite),
+        Number.parseFloat(keeper.creditBalance || 0)
+    );
+    keeper.creditBalance = highestCreditBalance;
+
+    return {
+        keeper,
+        removedIds: group.filter((bill) => bill.id !== keeper.id).map((bill) => bill.id)
+    };
+}
+
+export function getDuplicateBillCleanupPlan(bills = billStore.getAll()) {
+    const groups = new Map();
+
+    bills.forEach((bill) => {
+        const key = getDuplicateBillKey(bill);
+        const group = groups.get(key) || [];
+        group.push(bill);
+        groups.set(key, group);
+    });
+
+    const duplicateGroups = [...groups.values()]
+        .filter((group) => group.length > 1)
+        .map((group) => {
+            const { keeper, removedIds } = mergeDuplicateBillGroup(group);
+            return {
+                keeperId: keeper.id,
+                removedIds,
+                billName: keeper.name,
+                dueDate: keeper.dueDate,
+                amountDue: keeper.amountDue
+            };
+        });
+
+    return {
+        groupCount: duplicateGroups.length,
+        duplicateCount: duplicateGroups.reduce((count, group) => count + group.removedIds.length, 0),
+        groups: duplicateGroups
+    };
+}
+
+export function cleanupDuplicateBills(options = {}) {
+    try {
+        const { suppressSuccessNotification = false } = options;
+        const currentBills = billStore.getAll();
+        const plan = getDuplicateBillCleanupPlan(currentBills);
+
+        if (plan.duplicateCount === 0) {
+            showErrorNotification('No exact duplicate bills found.', 'Cleanup');
+            return { success: false, duplicateCount: 0, groupCount: 0 };
+        }
+
+        const groupedBills = new Map();
+        currentBills.forEach((bill) => {
+            const key = getDuplicateBillKey(bill);
+            const group = groupedBills.get(key) || [];
+            group.push(bill);
+            groupedBills.set(key, group);
+        });
+
+        const updatedById = new Map();
+        const removedIds = new Set();
+
+        groupedBills.forEach((group) => {
+            if (group.length <= 1) {
+                return;
+            }
+
+            const { keeper, removedIds: groupRemovedIds } = mergeDuplicateBillGroup(group);
+            updatedById.set(keeper.id, keeper);
+            groupRemovedIds.forEach((id) => removedIds.add(id));
+        });
+
+        const updatedBills = currentBills
+            .filter((bill) => !removedIds.has(bill.id))
+            .map((bill) => updatedById.get(bill.id) || bill);
+
+        billStore.setBills(updatedBills);
+        recordAuditEvent('bill.duplicates_cleaned', {
+            entityType: 'bill',
+            summary: `Cleaned up ${plan.duplicateCount} duplicate bill records`,
+            metadata: {
+                duplicateCount: plan.duplicateCount,
+                groupCount: plan.groupCount
+            }
+        });
+
+        if (!suppressSuccessNotification) {
+            showSuccessNotification(`Cleaned up ${plan.duplicateCount} duplicate bill${plan.duplicateCount === 1 ? '' : 's'}`);
+        }
+
+        return { success: true, ...plan };
+    } catch (error) {
+        logger.error('Error cleaning duplicate bills', error);
+        showErrorNotification(error.message, 'Cleanup Failed');
+        return { success: false, duplicateCount: 0, groupCount: 0 };
     }
 }
 
@@ -826,6 +1080,8 @@ function buildBillsCsv(bills) {
         'balance',
         'isPaid',
         'recurrence',
+        'archived',
+        'archivedAt',
         'reminderEnabled',
         'creditBalance',
         'snoozeUntil',
@@ -1097,6 +1353,7 @@ export const billActionHandlers = {
     updateBillBalance,
     togglePaymentStatus,
     deleteBill,
+    setBillArchived,
     recordPayment,
     getTotalPaid,
     getRemainingBalance,
@@ -1108,6 +1365,8 @@ export const billActionHandlers = {
     bulkMarkAsPaid,
     bulkMarkAsUnpaid,
     bulkFillZeroBalances,
+    getDuplicateBillCleanupPlan,
+    cleanupDuplicateBills,
     showErrorNotification,
     showSuccessNotification
 };

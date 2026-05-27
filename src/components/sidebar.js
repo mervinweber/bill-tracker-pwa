@@ -15,6 +15,7 @@
  * @param {Function} actions.onBulkDelete - Called when user clicks "Clear All Data" button
  * @param {Function} actions.onBulkMarkPaid - Called when user clicks "Mark All Paid" button
  * @param {Function} actions.onBulkFillBalances - Called when user clicks "Fill Balance" button
+ * @param {Function} actions.onCleanupDuplicates - Called when user clicks "Cleanup Dupes" button
  * @returns {void}
  * @description Sets up the sidebar with:
  *   - Category list with keyboard navigation (arrow keys)
@@ -300,6 +301,18 @@ export const initializeSidebar = (categories, actions) => {
         closeMobileSidebar();
     });
     dataDiv.appendChild(bulkFillBtn);
+
+    const cleanupDuplicatesBtn = document.createElement('button');
+    cleanupDuplicatesBtn.id = 'cleanupDuplicatesBtn';
+    cleanupDuplicatesBtn.type = 'button';
+    cleanupDuplicatesBtn.className = `${btnOutline} ${dataBtnClass}`;
+    cleanupDuplicatesBtn.ariaLabel = 'Clean up exact duplicate bills';
+    cleanupDuplicatesBtn.innerHTML = `<span class="${dataIconClass}">🧹</span> <span>Cleanup Dupes</span>`;
+    cleanupDuplicatesBtn.addEventListener('click', () => {
+        actions.onCleanupDuplicates();
+        closeMobileSidebar();
+    });
+    dataDiv.appendChild(cleanupDuplicatesBtn);
 
     const bulkDelBtn = document.createElement('button');
     bulkDelBtn.id = 'bulkDeleteBtn';

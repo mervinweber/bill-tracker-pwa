@@ -31,6 +31,8 @@ import {
     bulkMarkAsPaid,
     bulkMarkAsUnpaid,
     bulkFillZeroBalances,
+    getDuplicateBillCleanupPlan,
+    cleanupDuplicateBills,
     migrateBillsToPaymentHistory
 } from './handlers/billActionHandlers.js';
 import { filterBillsByPeriod } from './utils/billHelpers.js';
@@ -213,6 +215,7 @@ class AppOrchestrator {
                 onBulkDelete: () => this.handleBulkDelete(),
                 onBulkMarkPaid: () => this.handleBulkMarkPaid(),
                 onBulkFillBalances: () => this.handleBulkFillBalances(),
+                onCleanupDuplicates: () => this.handleCleanupDuplicates(),
                 onShowSettings: () => this.handleShowSettings(),
                 onExportCsv: () => this.handleExportData('csv')
             });
@@ -903,6 +906,7 @@ class AppOrchestrator {
                             onRecordPayment: (billId) => openRecordPaymentModal(billId),
                             onViewHistory: (billId) => this.handleViewHistory(billId),
                             onDeleteBill: (billId) => this.handleDeleteBill(billId),
+                            onToggleArchive: (billId, archived) => this.handleToggleArchive(billId, archived),
                             onEditBill: (billId) => this.handleEditBill(billId),
                             onToggleReminder: (billId, enabled) => this.handleToggleReminder(billId, enabled),
                             onApplyReconcileFix: (billId, issueCode) => this.handleApplyReconcileFix(billId, issueCode)
@@ -1158,6 +1162,12 @@ class AppOrchestrator {
 
     handleDeleteBill(billId) {
         if (billActionHandlers.deleteBill(billId)) {
+            this.rerender();
+        }
+    }
+
+    handleToggleArchive(billId, archived) {
+        if (billActionHandlers.setBillArchived(billId, archived)) {
             this.rerender();
         }
     }
@@ -1702,6 +1712,60 @@ class AppOrchestrator {
             );
             this.rerender();
         }
+    }
+
+    async handleCleanupDuplicates() {
+        const plan = getDuplicateBillCleanupPlan(billStore.getAll());
+        if (plan.duplicateCount === 0) {
+            billActionHandlers.showSuccessNotification('No exact duplicate bills found.');
+            return;
+        }
+
+        const confirmed = await showConfirmationModal({
+            title: 'Clean up duplicate bills?',
+            message: `Found ${plan.duplicateCount} duplicate record${plan.duplicateCount === 1 ? '' : 's'} across ${plan.groupCount} exact match group${plan.groupCount === 1 ? '' : 's'}. This keeps one bill from each group and removes only the extras.`,
+            confirmText: 'Cleanup Dupes',
+            confirmVariant: 'primary'
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        const previousBills = structuredClone(billStore.getAll());
+        const result = cleanupDuplicateBills({ suppressSuccessNotification: true });
+        if (!result.success) {
+            return;
+        }
+
+        const undoAction = enqueueUndoAction({
+            durationMs: 10000,
+            onUndo: () => {
+                billStore.setBills(previousBills);
+                recordAuditEvent('bulk.undo.applied', {
+                    entityType: 'bill',
+                    summary: 'Undo applied for duplicate cleanup',
+                    metadata: {
+                        count: result.duplicateCount,
+                        action: 'cleanup-duplicates'
+                    }
+                });
+                billActionHandlers.showSuccessNotification('Duplicate cleanup undone.');
+                this.rerender();
+            }
+        });
+
+        billActionHandlers.showSuccessNotification(
+            `Cleaned up ${result.duplicateCount} duplicate bill${result.duplicateCount === 1 ? '' : 's'}.`,
+            {
+                actionLabel: 'Undo',
+                durationMs: 10000,
+                onAction: () => {
+                    undoAction.consume();
+                }
+            }
+        );
+        this.rerender();
     }
 
     handleApplyReconcileFix(billId, issueCode = null) {

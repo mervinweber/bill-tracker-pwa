@@ -44,7 +44,7 @@ export const getUpcomingBills = (bills = [], selectedPaycheck, payCheckDates, sh
             .filter((bill) => {
                 const dueDate = createLocalDate(bill.dueDate);
                 dueDate.setHours(0, 0, 0, 0);
-                return !bill.isPaid && dueDate >= today && dueDate <= sevenDaysOut;
+                return !bill.archived && !bill.isPaid && dueDate >= today && dueDate <= sevenDaysOut;
             })
             .sort((a, b) => createLocalDate(a.dueDate).getTime() - createLocalDate(b.dueDate).getTime());
     }
@@ -71,6 +71,7 @@ export const getUpcomingBills = (bills = [], selectedPaycheck, payCheckDates, sh
         .filter((bill) => {
             const billDate = createLocalDate(bill.dueDate);
             billDate.setHours(0, 0, 0, 0);
+            if (bill.archived) return false;
             const isInPeriod = !bill.isPaid && billDate >= currentPaycheckDate && billDate < nextPaycheckDate;
             const isOverdue = showCarriedForward && !bill.isPaid && billDate < currentPaycheckDate;
 

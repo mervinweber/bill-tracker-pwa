@@ -458,7 +458,7 @@ export const renderDashboard = (bills, viewMode, selectedPaycheck, selectedCateg
     const displayBills = filterBillsByPeriod(bills, viewMode, selectedPaycheck, selectedCategory, paymentFilter, payCheckDates, showCarriedForward, allBillsScope);
 
     // Debt overview widget — uses ALL bills (not filtered) to show full debt picture
-    const debtCandidates = (bills || []).filter(isDebtSnowballCandidate);
+    const debtCandidates = (bills || []).filter((bill) => !bill.archived && isDebtSnowballCandidate(bill));
     const totalDebtAmount = debtCandidates.reduce((sum, b) => sum + Math.max(0, Number.parseFloat(b.debtTotal) || 0), 0);
     const totalDebtMonthlyInterest = debtCandidates.reduce((sum, b) => {
         const rate = Math.max(0, Number.parseFloat(b.interestRate) || 0);

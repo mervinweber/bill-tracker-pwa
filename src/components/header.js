@@ -5,7 +5,7 @@
  * @param {Object} actions - Object containing action handler functions
  * @param {Function} actions.onPaycheckSelect - Called when user selects a pay period (receives index)
  * @param {Function} actions.onAllBillsSelect - Called when user clicks "All Bills" button
- * @param {Function} actions.onFilterChange - Called when user changes payment filter (receives filter value: 'all'|'paid'|'unpaid'|'overdue'|'credit'|'before_next_payday'|'reconcile')
+ * @param {Function} actions.onFilterChange - Called when user changes payment filter (receives filter value: 'all'|'paid'|'unpaid'|'overdue'|'credit'|'before_next_payday'|'reconcile'|'archived')
  * @param {Function} [actions.onSearchQueryChange] - Called when user types a search query
  * @param {Function} [actions.onAllBillsScopeChange] - Called when user changes all bills scope
  * @param {Function} [actions.onUpcomingBillsSelect] - Called when user clicks "Upcoming" button
@@ -118,6 +118,7 @@ export const initializeHeader = (paychecks, actions) => {
                                 <option value="before_next_payday">Before Next Payday</option>
                                 <option value="credit">Has Credit</option>
                                 <option value="reconcile">Needs Reconcile</option>
+                                <option value="archived">Archived</option>
                             </select>
                         </div>
 

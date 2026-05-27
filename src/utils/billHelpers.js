@@ -216,6 +216,10 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
     const hasCredit = (bill) => (Number.parseFloat(bill.creditBalance) || 0) > 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const includeArchivedOnly = paymentFilter === 'archived';
+    const sourceBills = includeArchivedOnly
+        ? bills.filter((bill) => bill.archived)
+        : bills.filter((bill) => !bill.archived);
 
     const parseBillDate = (rawDate) => {
         if (typeof rawDate !== 'string') return null;
@@ -259,7 +263,11 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
     };
 
     if (viewMode === 'all') {
-        let filtered = [...bills];
+        let filtered = [...sourceBills];
+
+        if (includeArchivedOnly) {
+            return filtered.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        }
 
         if (allBillsScope === 'open-only') {
             filtered = filtered.filter(b => !b.isPaid);
@@ -301,7 +309,7 @@ export const filterBillsByPeriod = (bills, viewMode, selectedPaycheck, selectedC
         ? payCheckDates[selectedPaycheck + 1]
         : new Date(currentPaycheckDate.getTime() + (days * 24 * 60 * 60 * 1000));
 
-    let filtered = bills.filter(bill => {
+    let filtered = sourceBills.filter(bill => {
         const billDate = createLocalDate(bill.dueDate);
         const isMatch = bill.category === selectedCategory;
         if (!isMatch) return false;

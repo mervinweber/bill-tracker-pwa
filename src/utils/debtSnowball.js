@@ -21,6 +21,7 @@ export function isDebtSnowballCandidate(bill) {
  */
 export function buildDebtSnowballPlan(bills, extraPayment = 0, strategy = 'snowball') {
     const candidates = (bills || [])
+        .filter((bill) => !bill.archived)
         .filter(isDebtSnowballCandidate)
         .map((bill) => {
             const debtTotal = Math.max(0, toNumber(bill.debtTotal));

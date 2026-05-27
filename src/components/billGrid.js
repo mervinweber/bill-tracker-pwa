@@ -227,6 +227,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
                 <span class="font-semibold text-foreground leading-tight">${bill.name}</span>
                 <div class="mt-1 flex flex-wrap items-center gap-2">
                     <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">${bill.recurrence}</span>
+                    ${bill.archived ? '<span class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">Archived</span>' : ''}
                     ${primaryReconciliationIssue ? '<span class="text-[10px] font-semibold uppercase tracking-wide text-amber-700">Needs Reconcile</span>' : ''}
                 </div>
                 ${hasNotes ? `<span class="mt-1 max-w-[220px] truncate text-[10px] text-muted-foreground">${bill.notes}</span>` : ''}
@@ -358,6 +359,11 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
         };
 
         appendMenuButton('Edit', () => actions.onEditBill(bill.id));
+        appendMenuButton(
+            bill.archived ? 'Restore' : 'Archive',
+            () => actions.onToggleArchive?.(bill.id, !bill.archived),
+            bill.archived ? 'text-primary hover:text-primary' : ''
+        );
         appendMenuButton('Delete', () => actions.onDeleteBill(bill.id), 'text-destructive hover:text-destructive');
 
         if (primaryReconciliationIssue && typeof actions.onApplyReconcileFix === 'function') {

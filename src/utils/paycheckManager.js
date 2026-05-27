@@ -416,7 +416,7 @@ class PaycheckManager {
     addMissingRecurringBillInstances() {
         try {
             const currentBills = billStore.getAll();
-            const recurringBills = currentBills.filter(b => b.recurrence && b.recurrence !== 'One-time');
+            const recurringBills = currentBills.filter(b => !b.archived && b.recurrence && b.recurrence !== 'One-time');
 
             if (recurringBills.length === 0) {
                 return 0;
@@ -458,7 +458,7 @@ class PaycheckManager {
     regenerateAllRecurringBills() {
         try {
             const currentBills = billStore.getAll();
-            const recurringBills = currentBills.filter(b => b.recurrence !== 'One-time');
+            const recurringBills = currentBills.filter(b => !b.archived && b.recurrence !== 'One-time');
             const uniqueBills = [];
             const seen = new Set();
 
@@ -474,6 +474,7 @@ class PaycheckManager {
             let newBills = currentBills.filter(
                 b =>
                     b.recurrence === 'One-time' ||
+                    b.archived ||
                     b.isPaid ||
                     new Date(b.dueDate) <= today
             );

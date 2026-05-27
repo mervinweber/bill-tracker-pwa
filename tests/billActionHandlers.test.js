@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { getRemainingBalance } from '../src/utils/billHelpers.js';
-import { deleteBill, recordPayment, togglePaymentStatus, validateBill } from '../src/handlers/billActionHandlers.js';
+import {
+    cleanupDuplicateBills,
+    deleteBill,
+    getDuplicateBillCleanupPlan,
+    recordPayment,
+    setBillArchived,
+    togglePaymentStatus,
+    validateBill
+} from '../src/handlers/billActionHandlers.js';
 import { billStore } from '../src/store/BillStore.js';
 
 const mockBill = {
@@ -114,6 +122,116 @@ describe('deleteBill', () => {
         expect(deleteBill('one-time')).toBe(true);
 
         expect(billStore.getAll().map((bill) => bill.id)).toEqual(['monthly']);
+    });
+});
+
+describe('setBillArchived', () => {
+    beforeEach(() => {
+        billStore.setBills([]);
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+    });
+
+    afterEach(() => {
+        billStore.setBills([]);
+        vi.restoreAllMocks();
+        document.body.innerHTML = '';
+    });
+
+    it('archives every matching recurring occurrence at once', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'card-1', name: 'Paid Off Card', dueDate: '2026-06-01', recurrence: 'Monthly' },
+            { ...mockBill, id: 'card-2', name: 'Paid Off Card', dueDate: '2026-07-01', recurrence: 'Monthly' },
+            { ...mockBill, id: 'other', name: 'Other Card', dueDate: '2026-06-01', recurrence: 'Monthly' }
+        ]);
+
+        expect(setBillArchived('card-1', true)).toBe(true);
+
+        const bills = billStore.getAll();
+        expect(bills.filter((bill) => bill.name === 'Paid Off Card').every((bill) => bill.archived)).toBe(true);
+        expect(bills.find((bill) => bill.id === 'other').archived).not.toBe(true);
+    });
+
+    it('restores archived recurring occurrences', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'card-1', name: 'Paid Off Card', dueDate: '2026-06-01', recurrence: 'Monthly', archived: true, archivedAt: '2026-05-27T00:00:00.000Z' },
+            { ...mockBill, id: 'card-2', name: 'Paid Off Card', dueDate: '2026-07-01', recurrence: 'Monthly', archived: true, archivedAt: '2026-05-27T00:00:00.000Z' }
+        ]);
+
+        expect(setBillArchived('card-1', false)).toBe(true);
+
+        expect(billStore.getAll().every((bill) => bill.archived === false && bill.archivedAt === null)).toBe(true);
+    });
+});
+
+describe('cleanupDuplicateBills', () => {
+    beforeEach(() => {
+        billStore.setBills([]);
+    });
+
+    afterEach(() => {
+        billStore.setBills([]);
+        vi.restoreAllMocks();
+        document.body.innerHTML = '';
+    });
+
+    it('removes only exact duplicate bill records and preserves payment history', () => {
+        billStore.setBills([
+            {
+                ...mockBill,
+                id: 'safe-1',
+                name: 'Simpli Safe',
+                category: 'Utilities',
+                dueDate: '2026-06-08',
+                amountDue: 32.99,
+                balance: 32.99,
+                recurrence: 'Monthly',
+                notes: '',
+                paymentHistory: []
+            },
+            {
+                ...mockBill,
+                id: 'safe-2',
+                name: ' Simpli Safe ',
+                category: 'utilities',
+                dueDate: '2026-06-08',
+                amountDue: '32.99',
+                balance: 0,
+                recurrence: 'Monthly',
+                notes: 'Paid from cleanup',
+                isPaid: true,
+                paymentHistory: [{ id: 'payment-1', date: '2026-05-08', amount: 32.99, method: 'Manual' }]
+            },
+            { ...mockBill, id: 'water', name: 'Bcws / Water', dueDate: '2026-06-09', recurrence: 'Monthly' }
+        ]);
+
+        const plan = getDuplicateBillCleanupPlan();
+        expect(plan.duplicateCount).toBe(1);
+        expect(plan.groupCount).toBe(1);
+
+        const result = cleanupDuplicateBills({ suppressSuccessNotification: true });
+        expect(result.success).toBe(true);
+        expect(result.duplicateCount).toBe(1);
+
+        const bills = billStore.getAll();
+        expect(bills).toHaveLength(2);
+        expect(bills.find((bill) => bill.id === 'water')).toBeTruthy();
+
+        const keptBill = bills.find((bill) => bill.name.trim().toLowerCase() === 'simpli safe');
+        expect(keptBill.paymentHistory).toHaveLength(1);
+        expect(keptBill.notes).toBe('Paid from cleanup');
+    });
+
+    it('leaves same-name bills alone when the amount differs', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'card-1', name: 'Credit Card', dueDate: '2026-06-01', amountDue: 100, recurrence: 'Monthly' },
+            { ...mockBill, id: 'card-2', name: 'Credit Card', dueDate: '2026-06-01', amountDue: 125, recurrence: 'Monthly' }
+        ]);
+
+        expect(getDuplicateBillCleanupPlan().duplicateCount).toBe(0);
+        const result = cleanupDuplicateBills({ suppressSuccessNotification: true });
+
+        expect(result.success).toBe(false);
+        expect(billStore.getAll()).toHaveLength(2);
     });
 });
 

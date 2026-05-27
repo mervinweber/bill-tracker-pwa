@@ -171,6 +171,10 @@ export function normalizeImportPayload(data, options = {}) {
         }
 
         newBill.isPaid = Boolean(newBill.isPaid);
+        newBill.archived = Boolean(newBill.archived);
+        newBill.archivedAt = newBill.archived && typeof newBill.archivedAt === 'string'
+            ? sanitizeInput(newBill.archivedAt, 50)
+            : null;
         if (newBill.balance === undefined) {
             newBill.balance = newBill.amountDue || 0;
         } else {

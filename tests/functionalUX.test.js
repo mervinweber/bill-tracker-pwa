@@ -158,6 +158,13 @@ it('Sidebar: Mobile drawer controls are present', () => {
     expect(sidebarContent).toContain('billtracker:toggle-mobile-sidebar');
 });
 
+it('Sidebar: Duplicate cleanup action is wired separately from clear all', () => {
+    expect(sidebarContent).toContain('cleanupDuplicatesBtn');
+    expect(sidebarContent).toContain('actions.onCleanupDuplicates');
+    expect(appContent).toContain('handleCleanupDuplicates');
+    expect(appContent).toContain('cleanupDuplicateBills');
+});
+
 // ============ BILL GRID TESTS ============
 
 it('Bill Grid: Balance input change listeners are attached', () => {
@@ -324,6 +331,15 @@ it('App: Bulk paid action lets users select which visible bills to update', () =
     expect(appContent).toContain('showBillSelectionModal');
     expect(appContent).toContain('eligibleBills');
     expect(appContent).toContain('Mark Selected Paid');
+});
+
+it('Bill Grid: Archive and restore actions are available from the overflow menu', () => {
+    expect(billGridContent).toContain("bill.archived ? 'Restore' : 'Archive'");
+    expect(billGridContent).toContain('onToggleArchive');
+});
+
+it('Header: Archived bills filter is available', () => {
+    expect(headerContent).toContain('<option value="archived">Archived</option>');
 });
 
 it('Dashboard: Summary cards are clickable filters', () => {

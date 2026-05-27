@@ -7,7 +7,7 @@
  * - selectedCategory: Current category filter
  * - viewMode: 'filtered' (paycheck+category view), 'all' (all bills), 'upcoming', 'planner', or 'debt-snowball'
  * - displayMode: 'list', 'calendar', or 'analytics'
- * - paymentFilter: 'all', 'paid', 'unpaid', 'overdue', 'credit', 'before_next_payday', or 'reconcile'
+ * - paymentFilter: 'all', 'paid', 'unpaid', 'overdue', 'credit', 'before_next_payday', 'reconcile', or 'archived'
  * - isLoading: Loading state for async operations
  * - error: Current error message if any
  * 
@@ -28,7 +28,7 @@ class AppState {
             selectedCategory: null,
             viewMode: 'filtered', // 'filtered', 'all', 'upcoming', 'planner', or 'debt-snowball'
             displayMode: 'list', // 'list', 'calendar', 'analytics'
-            paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'before_next_payday', 'reconcile'
+            paymentFilter: 'all', // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'before_next_payday', 'reconcile', 'archived'
             allBillsScope: 'open-through-next-pay-date', // 'everything', 'open-through-next-pay-date', 'open-only'
             searchQuery: '',
             showCarriedForward: true,
@@ -135,7 +135,7 @@ class AppState {
     }
 
     setPaymentFilter(filter) {
-        this.state.paymentFilter = filter; // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'before_next_payday', 'reconcile'
+        this.state.paymentFilter = filter; // 'all', 'unpaid', 'paid', 'overdue', 'credit', 'before_next_payday', 'reconcile', 'archived'
         this.notifySubscribers();
     }
 

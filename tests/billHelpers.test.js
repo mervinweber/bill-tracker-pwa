@@ -440,4 +440,44 @@ describe('filterBillsByPeriod', () => {
             paycheckManager.paymentSettings = originalPaySettings;
         }
     });
+
+    it('hides archived bills from normal all-bills views', () => {
+        const bills = [
+            { id: 'active', category: 'Credit Cards', dueDate: '2026-06-05', isPaid: false, archived: false, creditBalance: 0 },
+            { id: 'archived', category: 'Credit Cards', dueDate: '2026-06-06', isPaid: false, archived: true, creditBalance: 0 }
+        ];
+
+        const result = filterBillsByPeriod(
+            bills,
+            'all',
+            null,
+            null,
+            'all',
+            [new Date('2026-06-01'), new Date('2026-06-15')],
+            true,
+            'everything'
+        );
+
+        expect(result.map((bill) => bill.id)).toEqual(['active']);
+    });
+
+    it('shows archived bills only when archived filter is selected', () => {
+        const bills = [
+            { id: 'active', category: 'Credit Cards', dueDate: '2026-06-05', isPaid: false, archived: false, creditBalance: 0 },
+            { id: 'archived', category: 'Credit Cards', dueDate: '2026-06-06', isPaid: false, archived: true, creditBalance: 0 }
+        ];
+
+        const result = filterBillsByPeriod(
+            bills,
+            'all',
+            null,
+            null,
+            'archived',
+            [new Date('2026-06-01'), new Date('2026-06-15')],
+            true,
+            'everything'
+        );
+
+        expect(result.map((bill) => bill.id)).toEqual(['archived']);
+    });
 });
