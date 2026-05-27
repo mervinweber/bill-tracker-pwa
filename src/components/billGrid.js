@@ -170,21 +170,32 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
     tableWrapper.className = "relative w-full overflow-x-auto overflow-y-visible rounded-xl border bg-card shadow-sm";
 
     const table = document.createElement('table');
-    table.className = "w-full table-fixed caption-bottom text-sm min-w-[1040px]";
+    table.className = "w-full table-fixed caption-bottom text-sm min-w-[1120px]";
     table.setAttribute('role', 'table');
+
+    const colgroup = document.createElement('colgroup');
+    const columnWidths = viewMode === 'all'
+        ? ['24%', '13%', '12%', '10%', '18%', '9%', '5%', '9%']
+        : ['30%', '15%', '12%', '20%', '10%', '5%', '8%'];
+    columnWidths.forEach((width) => {
+        const col = document.createElement('col');
+        col.style.width = width;
+        colgroup.appendChild(col);
+    });
+    table.appendChild(colgroup);
 
     const thead = document.createElement('thead');
     thead.className = "[&_tr]:border-b";
     thead.innerHTML = `
         <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[30%]">Bill</th>
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[15%]">Due</th>
+            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Bill</th>
+            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Due</th>
             ${viewMode === 'all' ? '<th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Category</th>' : ''}
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[12%]">Amount</th>
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[20%]">Balance</th>
-            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[10%]">Credit</th>
-            <th class="h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[8%]">Paid</th>
-            <th class="h-9 px-3 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap w-[15%]">Actions</th>
+            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Amount</th>
+            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Balance</th>
+            <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Credit</th>
+            <th class="h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Paid</th>
+            <th class="h-9 px-3 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Actions</th>
         </tr>
     `;
     table.appendChild(thead);
