@@ -1,6 +1,7 @@
-import { it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { getRemainingBalance } from '../src/utils/billHelpers.js';
-import { validateBill } from '../src/handlers/billActionHandlers.js';
+import { deleteBill, validateBill } from '../src/handlers/billActionHandlers.js';
+import { billStore } from '../src/store/BillStore.js';
 
 const mockBill = {
     id: 'bill_001',
@@ -73,4 +74,45 @@ it('should reject negative credit balance in validation', () => {
     const result = validateBill({ ...mockBill, creditBalance: -10 });
     expect(result.isValid).toBe(false);
     expect(result.errors.some(e => /credit balance/i.test(e))).toBe(true);
+});
+
+describe('deleteBill', () => {
+    beforeEach(() => {
+        billStore.setBills([]);
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+    });
+
+    afterEach(() => {
+        billStore.setBills([]);
+        vi.restoreAllMocks();
+        document.body.innerHTML = '';
+    });
+
+    it('deletes every matching recurring occurrence at once', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'grass-1', name: 'Grass Cutting week 1', dueDate: '2026-05-15', recurrence: 'Weekly' },
+            { ...mockBill, id: 'grass-2', name: 'Grass Cutting week 1', dueDate: '2026-05-22', recurrence: 'Weekly' },
+            { ...mockBill, id: 'grass-3', name: 'Grass Cutting week 1', dueDate: '2026-05-29', recurrence: 'Weekly' },
+            { ...mockBill, id: 'safe', name: 'Simpli Safe', dueDate: '2026-06-08', recurrence: 'Monthly' }
+        ]);
+
+        expect(deleteBill('grass-2')).toBe(true);
+
+        const remainingBills = billStore.getAll();
+        expect(remainingBills.map((bill) => bill.id)).toEqual(['safe']);
+        expect(window.confirm).toHaveBeenCalledWith(
+            'Delete all 3 occurrences of "Grass Cutting week 1"? This action cannot be undone.'
+        );
+    });
+
+    it('deletes only the selected one-time bill', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'one-time', name: 'One-time Repair', recurrence: 'One-time' },
+            { ...mockBill, id: 'monthly', name: 'Simpli Safe', recurrence: 'Monthly' }
+        ]);
+
+        expect(deleteBill('one-time')).toBe(true);
+
+        expect(billStore.getAll().map((bill) => bill.id)).toEqual(['monthly']);
+    });
 });

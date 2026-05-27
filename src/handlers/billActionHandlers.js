@@ -323,17 +323,47 @@ export function deleteBill(billId) {
             throw new Error('Bill not found.');
         }
 
-        if (!confirm(`Delete "${bill.name}"? This action cannot be undone.`)) {
+        const isRecurringBill = bill.recurrence && bill.recurrence !== 'One-time';
+        const seriesBills = isRecurringBill
+            ? currentBills.filter((candidate) =>
+                candidate.name === bill.name &&
+                candidate.category === bill.category &&
+                candidate.recurrence === bill.recurrence
+            )
+            : [bill];
+
+        const deleteCount = seriesBills.length;
+        const confirmMessage = isRecurringBill && deleteCount > 1
+            ? `Delete all ${deleteCount} occurrences of "${bill.name}"? This action cannot be undone.`
+            : `Delete "${bill.name}"? This action cannot be undone.`;
+
+        if (!confirm(confirmMessage)) {
             return false;
         }
 
-        billStore.delete(billId);
+        if (deleteCount > 1) {
+            const seriesIds = new Set(seriesBills.map((seriesBill) => seriesBill.id));
+            billStore.setBills(currentBills.filter((candidate) => !seriesIds.has(candidate.id)));
+        } else {
+            billStore.delete(billId);
+        }
+
         recordAuditEvent('bill.deleted', {
             entityType: 'bill',
             entityId: billId,
-            summary: `Bill deleted: ${bill.name}`
+            summary: deleteCount > 1
+                ? `Recurring bill series deleted: ${bill.name}`
+                : `Bill deleted: ${bill.name}`,
+            metadata: {
+                count: deleteCount,
+                recurrence: bill.recurrence || 'One-time'
+            }
         });
-        showSuccessNotification(`"${bill.name}" deleted successfully`);
+        showSuccessNotification(
+            deleteCount > 1
+                ? `Deleted ${deleteCount} occurrences of "${bill.name}"`
+                : `"${bill.name}" deleted successfully`
+        );
         return true;
     } catch (error) {
         logger.error('Error deleting bill', error);
