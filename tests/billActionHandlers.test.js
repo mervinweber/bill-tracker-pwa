@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { getRemainingBalance } from '../src/utils/billHelpers.js';
-import { deleteBill, validateBill } from '../src/handlers/billActionHandlers.js';
+import { deleteBill, recordPayment, togglePaymentStatus, validateBill } from '../src/handlers/billActionHandlers.js';
 import { billStore } from '../src/store/BillStore.js';
 
 const mockBill = {
@@ -114,5 +114,72 @@ describe('deleteBill', () => {
         expect(deleteBill('one-time')).toBe(true);
 
         expect(billStore.getAll().map((bill) => bill.id)).toEqual(['monthly']);
+    });
+});
+
+describe('recurring payment advancement', () => {
+    beforeEach(() => {
+        billStore.setBills([]);
+    });
+
+    afterEach(() => {
+        billStore.setBills([]);
+        vi.restoreAllMocks();
+        document.body.innerHTML = '';
+    });
+
+    it('does not advance a paid recurring bill onto an existing next occurrence', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'old-clean', name: 'Penny / House Clean', dueDate: '2026-05-18', recurrence: 'Bi-weekly', amountDue: 80, balance: 80 },
+            { ...mockBill, id: 'next-clean', name: 'Penny / House Clean', dueDate: '2026-06-01', recurrence: 'Bi-weekly', amountDue: 80, balance: 80 }
+        ]);
+
+        expect(recordPayment('old-clean', {
+            amount: 80,
+            date: '2026-05-27',
+            method: 'Cleanup',
+            notes: 'Clearing overdue bill'
+        })).toBe(true);
+
+        const bills = billStore.getAll();
+        const oldBill = bills.find((bill) => bill.id === 'old-clean');
+        const nextBill = bills.find((bill) => bill.id === 'next-clean');
+
+        expect(oldBill.dueDate).toBe('2026-05-18');
+        expect(oldBill.isPaid).toBe(true);
+        expect(oldBill.balance).toBe(0);
+        expect(nextBill.dueDate).toBe('2026-06-01');
+        expect(nextBill.isPaid).toBe(false);
+        expect(bills.filter((bill) => bill.name === 'Penny / House Clean' && bill.dueDate === '2026-06-01')).toHaveLength(1);
+    });
+
+    it('still advances a paid recurring bill when the next occurrence does not exist yet', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'only-clean', name: 'Penny / House Clean', dueDate: '2026-05-18', recurrence: 'Bi-weekly', amountDue: 80, balance: 80 }
+        ]);
+
+        expect(recordPayment('only-clean', {
+            amount: 80,
+            date: '2026-05-27',
+            method: 'Cleanup'
+        })).toBe(true);
+
+        const bill = billStore.getAll().find((item) => item.id === 'only-clean');
+        expect(bill.dueDate).toBe('2026-06-01');
+    });
+
+    it('quick paid toggle uses the same duplicate-safe payment path', () => {
+        billStore.setBills([
+            { ...mockBill, id: 'old-safe', name: 'Simpli Safe', dueDate: '2026-05-08', recurrence: 'Monthly', amountDue: 32.99, balance: 32.99 },
+            { ...mockBill, id: 'next-safe', name: 'Simpli Safe', dueDate: '2026-06-08', recurrence: 'Monthly', amountDue: 32.99, balance: 32.99 }
+        ]);
+
+        expect(togglePaymentStatus('old-safe', true)).toBe(true);
+
+        const bills = billStore.getAll();
+        const oldBill = bills.find((bill) => bill.id === 'old-safe');
+        expect(oldBill.dueDate).toBe('2026-05-08');
+        expect(oldBill.isPaid).toBe(true);
+        expect(bills.filter((bill) => bill.name === 'Simpli Safe' && bill.dueDate === '2026-06-08')).toHaveLength(1);
     });
 });

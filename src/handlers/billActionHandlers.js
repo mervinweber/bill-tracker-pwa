@@ -213,6 +213,26 @@ function getMostRecentPaymentDate(bill) {
     return sortedDates[0] || bill.lastPaymentDate || null;
 }
 
+function isSameRecurringSeries(a, b) {
+    return Boolean(
+        a &&
+        b &&
+        a.recurrence &&
+        a.recurrence !== 'One-time' &&
+        a.name === b.name &&
+        a.category === b.category &&
+        a.recurrence === b.recurrence
+    );
+}
+
+function findExistingRecurringOccurrence(bills, bill, dueDate) {
+    return bills.find((candidate) =>
+        candidate.id !== bill.id &&
+        isSameRecurringSeries(candidate, bill) &&
+        candidate.dueDate === dueDate
+    );
+}
+
 /**
  * Update bill balance with validation
  */
@@ -258,13 +278,22 @@ export function togglePaymentStatus(billId, isPaid) {
             throw new Error('Bill not found.');
         }
 
+        if (isPaid) {
+            const remaining = getRemainingBalance(bill);
+            return recordPayment(billId, {
+                amount: remaining,
+                method: 'Quick Toggle',
+                notes: 'Marked as paid'
+            });
+        }
+
         const updated = { ...bill };
         const mostRecentPaymentDate = getMostRecentPaymentDate(bill);
-        updated.isPaid = isPaid;
-        updated.lastPaymentDate = isPaid ? new Date().toISOString() : null;
+        updated.isPaid = false;
+        updated.lastPaymentDate = null;
 
         // When marking unpaid, reset balance to amountDue if it's zero or missing
-        if (!isPaid && (updated.balance === 0 || !updated.balance)) {
+        if (updated.balance === 0 || !updated.balance) {
             updated.balance = updated.amountDue;
         }
 
@@ -272,37 +301,22 @@ export function togglePaymentStatus(billId, isPaid) {
         if (updated.split?.enabled) {
             updated.split.payers = updated.split.payers.map(p => ({
                 ...p,
-                isPaid: isPaid
+                isPaid: false
             }));
         }
-
-        // If marking as paid and bill is recurring, move to next payment cycle
-        advanceBillToNextCycle(bill, updated);
 
         billStore.update(updated);
         recordAuditEvent('bill.payment_status.toggled', {
             entityType: 'bill',
             entityId: billId,
-            summary: isPaid
-                ? `Payment status set to paid for ${bill.name}`
-                : `Payment status set to unpaid for ${bill.name}. Most recent payment date: ${mostRecentPaymentDate || 'none recorded'}`,
+            summary: `Payment status set to unpaid for ${bill.name}. Most recent payment date: ${mostRecentPaymentDate || 'none recorded'}`,
             metadata: {
-                isPaid,
-                lastMarkedPaymentDate: isPaid ? null : mostRecentPaymentDate
+                isPaid: false,
+                lastMarkedPaymentDate: mostRecentPaymentDate
             }
         });
 
-        // If marking as paid, record payment automatically
-        if (isPaid) {
-            const remaining = getRemainingBalance(updated);
-            recordPayment(billId, {
-                amount: remaining,
-                method: 'Quick Toggle',
-                notes: 'Marked as paid'
-            });
-        }
-
-        showSuccessNotification(`Bill ${isPaid ? 'marked as paid' : 'marked as unpaid'}`);
+        showSuccessNotification('Bill marked as unpaid');
         return true;
     } catch (error) {
         logger.error('Error toggling payment status', error);
@@ -708,7 +722,13 @@ export function recordPayment(billId, paymentData) {
         });
 
         const advancedToNewCycle = updated.dueDate !== bill.dueDate;
-        if (advancedToNewCycle) {
+        const existingNextOccurrence = advancedToNewCycle
+            ? findExistingRecurringOccurrence(currentBills, bill, updated.dueDate)
+            : null;
+
+        if (existingNextOccurrence) {
+            updated.dueDate = bill.dueDate;
+        } else if (advancedToNewCycle) {
             const nextCycleDue = Math.max(0, Number.parseFloat(updated.amountDue) || 0);
             const appliedCredit = Math.min(totalCredit, nextCycleDue);
             remaining = Math.max(0, nextCycleDue - appliedCredit);
@@ -726,6 +746,7 @@ export function recordPayment(billId, paymentData) {
                 amount,
                 paymentDate: payment.date,
                 recurrenceStrategy,
+                skippedAdvanceDueToExistingOccurrence: Boolean(existingNextOccurrence),
                 overpaymentCredit,
                 creditBalance: updated.creditBalance || 0
             }
