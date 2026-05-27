@@ -84,7 +84,7 @@ import {
     handleOpenAddBill
 } from './app/navigationHandlers.js';
 import { handleLogin, handleSignUp, handleLogout, handleResetPassword } from './app/loginHandlers.js';
-import { initializePaymentModals, openRecordPaymentModal, showConfirmationModal, showSummaryReportModal } from './app/initializeModals.js';
+import { initializePaymentModals, openRecordPaymentModal, showBillSelectionModal, showConfirmationModal, showSummaryReportModal } from './app/initializeModals.js';
 
 class AppOrchestrator {
     constructor() {
@@ -1611,11 +1611,11 @@ class AppOrchestrator {
         const unpaidCount = visibleBills.length - paidCount;
         const shouldMarkPaid = unpaidCount >= paidCount;
 
-        const ids = shouldMarkPaid
-            ? visibleBills.filter(b => !b.isPaid).map(b => b.id)
-            : visibleBills.filter(b => b.isPaid).map(b => b.id);
+        const eligibleBills = shouldMarkPaid
+            ? visibleBills.filter(b => !b.isPaid)
+            : visibleBills.filter(b => b.isPaid);
 
-        if (ids.length === 0) {
+        if (eligibleBills.length === 0) {
             const message = shouldMarkPaid
                 ? ERROR_CODES.BULK_NO_UNPAID_VISIBLE.message
                 : 'All visible bills are already marked as unpaid.';
@@ -1623,14 +1623,14 @@ class AppOrchestrator {
             return;
         }
 
-        const confirmed = await showConfirmationModal({
-            title: shouldMarkPaid ? 'Mark bills as paid?' : 'Mark bills as unpaid?',
-            message: `This will mark ${ids.length} visible bill${ids.length === 1 ? '' : 's'} as ${shouldMarkPaid ? 'paid' : 'unpaid'}.`,
-            confirmText: shouldMarkPaid ? 'Mark Paid' : 'Mark Unpaid',
-            confirmVariant: 'primary'
+        const ids = await showBillSelectionModal({
+            title: shouldMarkPaid ? 'Choose bills to mark paid' : 'Choose bills to mark unpaid',
+            message: `Uncheck any visible bill you want to omit from this batch update.`,
+            bills: eligibleBills,
+            confirmText: shouldMarkPaid ? 'Mark Selected Paid' : 'Mark Selected Unpaid'
         });
 
-        if (confirmed) {
+        if (ids && ids.length > 0) {
             const previousBills = structuredClone(billStore.getAll());
             const success = shouldMarkPaid
                 ? bulkMarkAsPaid(ids, true, { suppressSuccessNotification: true })

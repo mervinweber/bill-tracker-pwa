@@ -327,6 +327,175 @@ export function showConfirmationModal({
 }
 
 /**
+ * Show a checklist dialog and return selected bill IDs.
+ * @param {Object} options
+ * @param {string} options.title
+ * @param {string} options.message
+ * @param {Array<Object>} options.bills
+ * @param {string} [options.confirmText]
+ * @returns {Promise<string[]|null>}
+ */
+export function showBillSelectionModal({
+    title,
+    message,
+    bills,
+    confirmText = 'Apply'
+}) {
+    return new Promise((resolve) => {
+        const existingModal = document.getElementById('billSelectionModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'billSelectionModal';
+        modal.className = 'modal confirm-modal-overlay';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-content confirm-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-labelledby', 'billSelectionTitle');
+
+        const titleEl = document.createElement('h2');
+        titleEl.id = 'billSelectionTitle';
+        titleEl.className = 'confirm-dialog-title';
+        titleEl.textContent = title;
+        dialog.appendChild(titleEl);
+
+        const messageEl = document.createElement('p');
+        messageEl.className = 'confirm-dialog-message';
+        messageEl.textContent = message;
+        dialog.appendChild(messageEl);
+
+        const tools = document.createElement('div');
+        tools.className = 'mb-3 flex flex-wrap items-center justify-between gap-2';
+
+        const countLabel = document.createElement('div');
+        countLabel.className = 'text-xs font-semibold uppercase tracking-wide text-muted-foreground';
+        tools.appendChild(countLabel);
+
+        const selectTools = document.createElement('div');
+        selectTools.className = 'flex gap-2';
+
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.type = 'button';
+        selectAllBtn.className = 'confirm-btn confirm-btn-secondary text-xs';
+        selectAllBtn.textContent = 'Select All';
+        selectTools.appendChild(selectAllBtn);
+
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'confirm-btn confirm-btn-secondary text-xs';
+        clearBtn.textContent = 'Clear';
+        selectTools.appendChild(clearBtn);
+        tools.appendChild(selectTools);
+        dialog.appendChild(tools);
+
+        const list = document.createElement('div');
+        list.className = 'max-h-[50vh] space-y-2 overflow-y-auto rounded-lg border bg-muted/20 p-2';
+
+        bills.forEach((bill) => {
+            const label = document.createElement('label');
+            label.className = 'flex cursor-pointer items-start gap-3 rounded-md bg-background px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary bill-selection-checkbox';
+            checkbox.value = bill.id;
+            checkbox.checked = true;
+            label.appendChild(checkbox);
+
+            const content = document.createElement('span');
+            content.className = 'min-w-0 flex-1';
+
+            const name = document.createElement('span');
+            name.className = 'block font-semibold';
+            name.textContent = bill.name || 'Unnamed bill';
+            content.appendChild(name);
+
+            const meta = document.createElement('span');
+            meta.className = 'mt-0.5 block text-xs text-muted-foreground';
+            const amount = Number.parseFloat(bill.amountDue) || 0;
+            meta.textContent = `${bill.dueDate || 'No due date'} · ${bill.category || 'Uncategorized'} · $${amount.toFixed(2)}`;
+            content.appendChild(meta);
+
+            label.appendChild(content);
+            list.appendChild(label);
+        });
+
+        dialog.appendChild(list);
+
+        const actions = document.createElement('div');
+        actions.className = 'confirm-dialog-actions mt-4';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'confirm-btn confirm-btn-secondary';
+        cancelBtn.textContent = 'Cancel';
+        actions.appendChild(cancelBtn);
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'confirm-btn confirm-btn-primary';
+        confirmBtn.textContent = confirmText;
+        actions.appendChild(confirmBtn);
+        dialog.appendChild(actions);
+
+        modal.appendChild(dialog);
+
+        const getCheckboxes = () => /** @type {HTMLInputElement[]} */ (
+            Array.from(modal.querySelectorAll('.bill-selection-checkbox'))
+        );
+        const updateCount = () => {
+            const selectedCount = getCheckboxes().filter((checkbox) => checkbox.checked).length;
+            countLabel.textContent = `${selectedCount} of ${bills.length} selected`;
+            confirmBtn.disabled = selectedCount === 0;
+            confirmBtn.style.opacity = selectedCount === 0 ? '0.55' : '1';
+            confirmBtn.style.cursor = selectedCount === 0 ? 'not-allowed' : 'pointer';
+        };
+
+        const cleanup = (result) => {
+            modal.remove();
+            resolve(result);
+        };
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                cleanup(null);
+            }
+        });
+
+        selectAllBtn.addEventListener('click', () => {
+            getCheckboxes().forEach((checkbox) => {
+                checkbox.checked = true;
+            });
+            updateCount();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            getCheckboxes().forEach((checkbox) => {
+                checkbox.checked = false;
+            });
+            updateCount();
+        });
+
+        list.addEventListener('change', updateCount);
+        cancelBtn.addEventListener('click', () => cleanup(null));
+        confirmBtn.addEventListener('click', () => {
+            const selectedIds = getCheckboxes()
+                .filter((checkbox) => checkbox.checked)
+                .map((checkbox) => checkbox.value);
+            cleanup(selectedIds);
+        });
+
+        document.body.appendChild(modal);
+        updateCount();
+        confirmBtn.focus();
+    });
+}
+
+/**
  * Show a printable/shareable summary modal for the current dashboard scope.
  * @param {Object} [options={}]
  * @param {Array} [options.bills]

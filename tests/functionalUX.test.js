@@ -320,6 +320,12 @@ it('App: Upcoming bulk actions use the same upcoming bill selection logic', () =
     expect(appContent).toContain('getUpcomingBills');
 });
 
+it('App: Bulk paid action lets users select which visible bills to update', () => {
+    expect(appContent).toContain('showBillSelectionModal');
+    expect(appContent).toContain('eligibleBills');
+    expect(appContent).toContain('Mark Selected Paid');
+});
+
 it('Dashboard: Summary cards are clickable filters', () => {
     expect(dashboardContent).toContain('data-dashboard-filter');
     expect(dashboardContent).toContain('appState.setPaymentFilter');
