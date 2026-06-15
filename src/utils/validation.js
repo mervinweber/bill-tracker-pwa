@@ -94,7 +94,7 @@ export function safeJSONParse(jsonString, defaultValue = null) {
 
         return JSON.parse(jsonString);
     } catch (error) {
-        logger.error('JSON parse error', error);
+        logger.debug('JSON parse error', error);
         return defaultValue;
     }
 }
