@@ -1,4 +1,5 @@
 import { buildDebtPayoffPlan, compareDebtStrategies } from '../utils/debtPayoffEngine.js';
+import { getDebtImportCandidates } from '../utils/debtAdapter.js';
 import { bindCashFlowPanel, getCashFlowPanelMarkup } from './cashFlowPanel.js';
 
 const currency = (value) => new Intl.NumberFormat('en-US', {
@@ -40,6 +41,22 @@ export function renderDebtSnowballView({ bills = [], debts, financialPlan, payme
     const plan = buildDebtPayoffPlan(debts, extraPayment, strategy);
     const comparison = compareDebtStrategies(debts, extraPayment);
     const selected = strategy === 'avalanche' ? comparison.avalanche : comparison.snowball;
+    const importCandidates = getDebtImportCandidates(bills, debts);
+    const importRows = importCandidates.map((bill) => {
+        const balance = Number.parseFloat(bill.debtTotal) || Number.parseFloat(bill.balance) || Number.parseFloat(bill.amountDue) || 0;
+        const minimumPayment = Number.parseFloat(bill.amountDue) || 0;
+        const apr = Number.parseFloat(bill.interestRate) || 0;
+        const searchText = `${bill.name || ''} ${bill.category || ''}`.toLowerCase();
+        return `
+            <label class="bill-import-row flex cursor-pointer items-start gap-3 border-b px-2 py-2.5 last:border-b-0 hover:bg-muted/40" data-search="${escapeHtml(searchText)}">
+                <input type="checkbox" name="billImport" value="${escapeHtml(bill.id)}" class="mt-0.5 h-4 w-4 shrink-0 rounded border-input">
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-medium text-foreground">${escapeHtml(bill.name || 'Untitled bill')}</span>
+                    <span class="block text-xs text-muted-foreground">Balance ${currency(balance)} · Minimum ${currency(minimumPayment)} · APR ${apr.toFixed(2)}%</span>
+                </span>
+            </label>
+        `;
+    }).join('');
 
     const debtRows = plan.items.map((item, index) => `
         <article class="border-b px-3 py-3 last:border-b-0 sm:px-4" data-debt-row="${escapeHtml(item.id)}">
@@ -89,6 +106,32 @@ export function renderDebtSnowballView({ bills = [], debts, financialPlan, payme
                 </label>
                 <button type="submit" class="${buttonClass} bg-primary text-primary-foreground hover:bg-primary/90">Update plan</button>
             </form>
+
+            <div class="rounded-md border bg-card p-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-medium text-foreground">Import existing bills</h3>
+                        <p class="text-xs text-muted-foreground">Select bills to add to this debt plan.</p>
+                    </div>
+                    <button id="openBillDebtImportBtn" type="button" class="${buttonClass} border border-input bg-background hover:bg-accent" ${importCandidates.length ? '' : 'disabled'}>
+                        ${importCandidates.length ? `Choose bills (${importCandidates.length})` : 'No bills available'}
+                    </button>
+                </div>
+                <form id="billDebtImportForm" class="mt-3 hidden border-t pt-3">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <input id="billDebtImportSearch" type="search" class="${inputClass} sm:max-w-xs" placeholder="Search bills" aria-label="Search bills">
+                        <label class="inline-flex h-9 items-center gap-2 text-sm text-muted-foreground">
+                            <input id="selectAllBillDebts" type="checkbox" class="h-4 w-4 rounded border-input"> Select all shown
+                        </label>
+                    </div>
+                    <div id="billDebtImportList" class="mt-2 max-h-64 overflow-y-auto rounded-md border">${importRows}</div>
+                    <p id="billDebtImportEmpty" class="mt-3 hidden text-center text-sm text-muted-foreground">No matching bills.</p>
+                    <div class="mt-3 flex flex-wrap justify-end gap-2">
+                        <button id="cancelBillDebtImportBtn" type="button" class="${buttonClass} border border-input bg-background hover:bg-accent">Cancel</button>
+                        <button type="submit" class="${buttonClass} bg-primary text-primary-foreground hover:bg-primary/90">Import selected</button>
+                    </div>
+                </form>
+            </div>
 
             <form id="planningDebtForm" class="hidden rounded-md border bg-card p-3" aria-label="Add or edit debt">
                 <input id="planningDebtId" type="hidden">
@@ -165,6 +208,36 @@ export function renderDebtSnowballView({ bills = [], debts, financialPlan, payme
 
     container.querySelector('#addPlanningDebtBtn')?.addEventListener('click', () => showForm());
     container.querySelector('#cancelPlanningDebtBtn')?.addEventListener('click', () => form?.classList.add('hidden'));
+    const importForm = /** @type {HTMLFormElement|null} */ (container.querySelector('#billDebtImportForm'));
+    container.querySelector('#openBillDebtImportBtn')?.addEventListener('click', () => {
+        importForm?.classList.toggle('hidden');
+        if (!importForm?.classList.contains('hidden')) {
+            /** @type {HTMLInputElement|null} */ (container.querySelector('#billDebtImportSearch'))?.focus();
+        }
+    });
+    container.querySelector('#cancelBillDebtImportBtn')?.addEventListener('click', () => importForm?.classList.add('hidden'));
+    container.querySelector('#billDebtImportSearch')?.addEventListener('input', (event) => {
+        const query = /** @type {HTMLInputElement} */ (event.currentTarget).value.trim().toLowerCase();
+        let visibleCount = 0;
+        container.querySelectorAll('.bill-import-row').forEach((row) => {
+            const isVisible = !query || row.getAttribute('data-search')?.includes(query);
+            row.classList.toggle('hidden', !isVisible);
+            if (isVisible) visibleCount += 1;
+        });
+        container.querySelector('#billDebtImportEmpty')?.classList.toggle('hidden', visibleCount > 0);
+    });
+    container.querySelector('#selectAllBillDebts')?.addEventListener('change', (event) => {
+        const checked = /** @type {HTMLInputElement} */ (event.currentTarget).checked;
+        container.querySelectorAll('.bill-import-row:not(.hidden) input[name="billImport"]').forEach((checkbox) => {
+            /** @type {HTMLInputElement} */ (checkbox).checked = checked;
+        });
+    });
+    importForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const selectedIds = [...importForm.querySelectorAll('input[name="billImport"]:checked')]
+            .map((checkbox) => /** @type {HTMLInputElement} */ (checkbox).value);
+        actions.onImportBills?.(selectedIds);
+    });
     container.querySelector('#debtSettingsForm')?.addEventListener('submit', (event) => {
         event.preventDefault();
         const amount = Number.parseFloat(/** @type {HTMLInputElement} */ (container.querySelector('#debtExtraPayment')).value) || 0;

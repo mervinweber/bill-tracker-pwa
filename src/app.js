@@ -72,7 +72,12 @@ import {
     RECONCILIATION_ISSUES
 } from './utils/reconciliation.js';
 import { buildBillTimeline } from './utils/historyTimeline.js';
-import { mergeDebtsWithBills, migrateLegacyBillDebts } from './utils/debtAdapter.js';
+import {
+    debtFromImportedBill,
+    getDebtImportCandidates,
+    mergeDebtsWithBills,
+    migrateLegacyBillDebts
+} from './utils/debtAdapter.js';
 
 import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
 import {
@@ -520,6 +525,26 @@ class AppOrchestrator {
         }
     }
 
+    handleImportBillsToDebtPlan(billIds) {
+        try {
+            const selectedIds = new Set((billIds || []).map(String));
+            const candidates = getDebtImportCandidates(billStore.getAll(), financialPlanStore.getPlan().debts);
+            const importedDebts = candidates
+                .filter((bill) => selectedIds.has(String(bill.id)))
+                .map(debtFromImportedBill);
+            if (!importedDebts.length) {
+                billActionHandlers.showErrorNotification('Select at least one available bill.', 'Debt Import');
+                return;
+            }
+            financialPlanStore.upsertDebts(importedDebts);
+            const label = importedDebts.length === 1 ? 'bill' : 'bills';
+            billActionHandlers.showSuccessNotification(`${importedDebts.length} ${label} added to the debt plan.`);
+        } catch (error) {
+            logger.error('Failed importing bills into debt plan', error);
+            billActionHandlers.showErrorNotification(error.message, 'Debt Import');
+        }
+    }
+
     handleDeletePlanningDebt(id) {
         try {
             financialPlanStore.removeDebt(id);
@@ -848,6 +873,7 @@ class AppOrchestrator {
                         {
                             onSaveSettings: (s) => this.handleSaveDebtSnowballSettings(s),
                             onSaveDebt: (debt) => this.handleSavePlanningDebt(debt),
+                            onImportBills: (billIds) => this.handleImportBillsToDebtPlan(billIds),
                             onDeleteDebt: (id) => this.handleDeletePlanningDebt(id),
                             onSaveIncomeSource: (source) => this.handleSaveIncomeSource(source),
                             onDeleteIncomeSource: (id) => this.handleDeleteIncomeSource(id),

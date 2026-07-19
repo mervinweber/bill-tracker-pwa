@@ -18,12 +18,46 @@ export const getBillSeriesKey = (bill) => {
     return String(bill?.id || '');
 };
 
+/**
+ * @param {Array<Record<string, any>>} bills
+ * @param {(bill: Record<string, any>) => boolean} predicate
+ */
+const getPreferredBillsBySeries = (bills = [], predicate = (_bill) => true) => {
+    const now = Date.now();
+    const preferredBills = new Map();
+    const rank = (candidate) => {
+        const due = Date.parse(`${candidate.dueDate || ''}T00:00:00Z`);
+        const distance = Number.isFinite(due) ? Math.abs(due - now) : Number.MAX_SAFE_INTEGER;
+        return [candidate.archived ? 1 : 0, due >= now ? 0 : 1, distance];
+    };
+    const ranksBefore = (left, right) => left.some((value, index) => (
+        value < right[index] && left.slice(0, index).every((prior, priorIndex) => prior === right[priorIndex])
+    ));
+
+    for (const bill of bills || []) {
+        if (!bill?.id || !predicate(bill)) continue;
+        const key = getBillSeriesKey(bill);
+        const current = preferredBills.get(key);
+        if (!current || ranksBefore(rank(bill), rank(current))) preferredBills.set(key, bill);
+    }
+    return preferredBills;
+};
+
 export function debtFromBill(bill, existingDebt = null) {
     const now = new Date().toISOString();
+    const billDebtBalance = toNumber(bill.debtTotal);
+    const billBalance = toNumber(bill.balance);
+    const balance = billDebtBalance > 0
+        ? billDebtBalance
+        : billBalance > 0
+            ? billBalance
+            : isDebtSnowballCandidate(bill)
+                ? 0
+                : toNumber(existingDebt?.balance);
     return {
         id: existingDebt?.id || `bill-debt-${bill.id}`,
         name: String(bill.name || existingDebt?.name || 'Untitled debt'),
-        balance: Math.max(0, toNumber(bill.debtTotal ?? existingDebt?.balance)),
+        balance: Math.max(0, balance),
         apr: Math.max(0, toNumber(bill.interestRate ?? existingDebt?.apr)),
         minimumPayment: Math.max(0, toNumber(bill.amountDue ?? existingDebt?.minimumPayment)),
         dueDay: getDueDay(bill.dueDate) || existingDebt?.dueDay || 1,
@@ -35,24 +69,29 @@ export function debtFromBill(bill, existingDebt = null) {
     };
 }
 
+export function debtFromImportedBill(bill) {
+    const balance = toNumber(bill.debtTotal) || toNumber(bill.balance) || toNumber(bill.amountDue);
+    return debtFromBill({ ...bill, debtTotal: balance });
+}
+
+export function getDebtImportCandidates(bills = [], debts = []) {
+    const billById = new Map((bills || []).map((bill) => [String(bill.id), bill]));
+    const representedSeries = new Set((debts || []).flatMap((debt) => {
+        if (debt.source !== 'bill' || !debt.linkedBillId) return [];
+        const linkedBill = billById.get(String(debt.linkedBillId));
+        return linkedBill ? [getBillSeriesKey(linkedBill)] : [];
+    }));
+
+    return [...getPreferredBillsBySeries(bills, (bill) => !bill.archived).entries()]
+        .filter(([seriesKey]) => !representedSeries.has(seriesKey))
+        .map(([, bill]) => bill)
+        .sort((left, right) => String(left.name || '').localeCompare(String(right.name || '')));
+}
+
 export function mergeDebtsWithBills(debts = [], bills = []) {
     const billById = new Map((bills || []).map((bill) => [String(bill.id), bill]));
-    const now = Date.now();
-    const preferredBills = new Map();
-    for (const bill of bills || []) {
-        if (!bill?.id || !isDebtSnowballCandidate(bill)) continue;
-        const key = getBillSeriesKey(bill);
-        const current = preferredBills.get(key);
-        const rank = (candidate) => {
-            const due = Date.parse(`${candidate.dueDate || ''}T00:00:00Z`);
-            return [candidate.archived ? 1 : 0, due >= now ? 0 : 1, Math.abs(due - now) || Number.MAX_SAFE_INTEGER];
-        };
-        const nextRank = rank(bill);
-        const currentRank = current ? rank(current) : null;
-        if (!current || nextRank.some((value, index) => value < currentRank[index] && nextRank.slice(0, index).every((prior, priorIndex) => prior === currentRank[priorIndex]))) {
-            preferredBills.set(key, bill);
-        }
-    }
+    const preferredBills = getPreferredBillsBySeries(bills, (bill) => !bill.archived);
+    const automaticDebtBills = getPreferredBillsBySeries(bills, isDebtSnowballCandidate);
 
     const representedSeries = new Set();
     const merged = (debts || []).filter((debt) => {
@@ -70,7 +109,7 @@ export function mergeDebtsWithBills(debts = [], bills = []) {
         return preferredBill ? debtFromBill(preferredBill, debt) : debt;
     });
 
-    for (const bill of preferredBills.values()) {
+    for (const bill of automaticDebtBills.values()) {
         const seriesKey = getBillSeriesKey(bill);
         if (representedSeries.has(seriesKey)) continue;
         merged.push(debtFromBill(bill));

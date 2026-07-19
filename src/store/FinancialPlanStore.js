@@ -38,11 +38,17 @@ export class FinancialPlanStore {
     }
 
     upsertDebt(debt) {
-        const normalized = normalizeDebt(debt);
+        return this.upsertDebts([debt]);
+    }
+
+    upsertDebts(nextDebts) {
         const debts = [...this.plan.debts];
-        const index = debts.findIndex((item) => item.id === normalized.id);
-        if (index >= 0) debts[index] = normalized;
-        else debts.push(normalized);
+        for (const debt of nextDebts) {
+            const normalized = normalizeDebt(debt);
+            const index = debts.findIndex((item) => item.id === normalized.id);
+            if (index >= 0) debts[index] = normalized;
+            else debts.push(normalized);
+        }
         return this.replace({ ...this.plan, debts });
     }
 

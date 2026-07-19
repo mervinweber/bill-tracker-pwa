@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { debtFromBill, mergeDebtsWithBills, migrateLegacyBillDebts } from '../src/utils/debtAdapter.js';
+import {
+    debtFromBill,
+    debtFromImportedBill,
+    getDebtImportCandidates,
+    mergeDebtsWithBills,
+    migrateLegacyBillDebts
+} from '../src/utils/debtAdapter.js';
 
 const bill = {
     id: 'bill-1',
@@ -60,5 +66,32 @@ describe('legacy bill debt adapter', () => {
         const merged = mergeDebtsWithBills([], [archived, active]);
         expect(merged).toHaveLength(1);
         expect(merged[0]).toMatchObject({ linkedBillId: 'current', isActive: true });
+    });
+
+    it('offers each active bill series once and excludes already linked debts', () => {
+        const monthly = { ...bill, id: 'monthly-1', recurrence: 'Monthly', dueDate: '2026-08-17' };
+        const nextMonthly = { ...monthly, id: 'monthly-2', dueDate: '2026-09-17' };
+        const utility = { id: 'utility', name: 'Electric', amountDue: 140, dueDate: '2026-08-20' };
+        const candidates = getDebtImportCandidates(
+            [monthly, nextMonthly, utility],
+            [debtFromBill(monthly)]
+        );
+        expect(candidates.map((candidate) => candidate.id)).toEqual(['utility']);
+    });
+
+    it('uses a regular bill amount as the initial balance when no debt balance exists', () => {
+        const imported = debtFromImportedBill({
+            id: 'medical', name: 'Medical bill', amountDue: 125, dueDate: '2026-08-12'
+        });
+        expect(imported).toMatchObject({ balance: 125, minimumPayment: 125, linkedBillId: 'medical' });
+    });
+
+    it('refreshes an imported recurring bill without auto-importing ordinary bills', () => {
+        const first = { id: 'first', name: 'Medical', amountDue: 100, balance: 500, dueDate: '2026-08-12', recurrence: 'Monthly' };
+        const next = { ...first, id: 'next', amountDue: 90, dueDate: '2026-09-12' };
+        expect(mergeDebtsWithBills([], [first, next])).toEqual([]);
+        expect(mergeDebtsWithBills([debtFromImportedBill(first)], [first, next])[0]).toMatchObject({
+            linkedBillId: 'first', balance: 500, minimumPayment: 100
+        });
     });
 });

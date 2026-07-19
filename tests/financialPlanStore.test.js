@@ -36,6 +36,18 @@ describe('FinancialPlanStore', () => {
         expect(storage.set).toHaveBeenCalledWith('financialPlan', expect.any(Object));
     });
 
+    it('imports multiple debts in one persisted update', () => {
+        const listener = vi.fn();
+        store.subscribe(listener);
+        store.upsertDebts([
+            { id: 'debt-1', name: 'Visa', balance: 2500 },
+            { id: 'debt-2', name: 'Medical', balance: 400 }
+        ]);
+        expect(store.getPlan().debts).toHaveLength(2);
+        expect(storage.set).toHaveBeenCalledOnce();
+        expect(listener).toHaveBeenCalledOnce();
+    });
+
     it('preserves future planning collections when settings change', () => {
         store.replace({ accounts: [{ id: 'checking' }], budgetCategories: [{ id: 'food' }] });
         store.updateSettings({ strategy: 'avalanche', extraPayment: 200 });
