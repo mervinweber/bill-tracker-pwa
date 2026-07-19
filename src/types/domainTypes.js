@@ -51,6 +51,41 @@
  */
 
 /**
+ * @typedef {Object} Debt
+ * @property {string} id
+ * @property {string} name
+ * @property {number} balance
+ * @property {number} apr
+ * @property {number} minimumPayment
+ * @property {number} dueDay
+ * @property {string|null} linkedBillId
+ * @property {'bill'|'manual'} source
+ * @property {boolean} isActive
+ */
+
+/**
+ * @typedef {Object} IncomeSource
+ * @property {string} id
+ * @property {string} name
+ * @property {number} amount
+ * @property {'weekly'|'biweekly'|'semimonthly'|'monthly'|'annual'} frequency
+ * @property {string} nextDate
+ * @property {boolean} isActive
+ */
+
+/**
+ * @typedef {Object} FinancialPlan
+ * @property {number} schemaVersion
+ * @property {Debt[]} debts
+ * @property {Object[]} accounts
+ * @property {IncomeSource[]} incomeSources
+ * @property {Object[]} budgetCategories
+ * @property {Object[]} cashFlowScenarios
+ * @property {{strategy:'snowball'|'avalanche', extraPayment:number, forecastMonths:number, activeScenarioId:string|null, activeView:'debt'|'cashflow'}} settings
+ * @property {string|null} updatedAt
+ */
+
+/**
  * @typedef {Object} PaymentSettings
  * @property {string} startDate
  * @property {('weekly'|'bi-weekly'|'monthly')} frequency

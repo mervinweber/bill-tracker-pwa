@@ -6,6 +6,7 @@
 
 import { appState } from './store/appState.js';
 import { billStore } from './store/BillStore.js';
+import { financialPlanStore } from './store/FinancialPlanStore.js';
 import { paycheckManager } from './utils/paycheckManager.js';
 import StorageManager from './utils/StorageManager.js';
 import logger from './utils/logger.js';
@@ -50,6 +51,7 @@ import {
     updatePassword,
     fetchCloudBills,
     fetchCloudPaymentSettings,
+    fetchCloudFinancialPlan,
     setupTokenRefreshMonitor
 } from './services/supabase.js';
 
@@ -59,6 +61,7 @@ import { recordAuditEvent } from './utils/auditTracker.js';
 import { enqueueUndoAction } from './utils/undoQueue.js';
 import {
     syncBillsFromCloud,
+    syncFinancialPlanFromCloud,
     syncLocalDataToCloudIfNeeded,
     syncPaymentSettingsFromCloud
 } from './utils/cloudSyncManager.js';
@@ -69,6 +72,7 @@ import {
     RECONCILIATION_ISSUES
 } from './utils/reconciliation.js';
 import { buildBillTimeline } from './utils/historyTimeline.js';
+import { mergeDebtsWithBills, migrateLegacyBillDebts } from './utils/debtAdapter.js';
 
 import { initializeTheme, handleToggleTheme } from './app/themeManager.js';
 import {
@@ -249,6 +253,12 @@ class AppOrchestrator {
                         }
                     });
 
+                    await syncFinancialPlanFromCloud({
+                        fetchCloudFinancialPlan,
+                        financialPlanStore,
+                        logger
+                    });
+
                     await syncLocalDataToCloudIfNeeded({
                         cloudBills,
                         cloudPaymentSettings,
@@ -288,6 +298,29 @@ class AppOrchestrator {
                 logger.error('Error backfilling recurring bill instances on init', error);
             }
 
+            const currentPlan = financialPlanStore.getPlan();
+            const legacyDebtSettings = StorageManager.get(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, null);
+            const debtMigration = migrateLegacyBillDebts(currentPlan, billStore.getAll());
+            if (debtMigration.changed || (!currentPlan.updatedAt && legacyDebtSettings)) {
+                financialPlanStore.replace({
+                    ...debtMigration.plan,
+                    settings: {
+                        ...currentPlan.settings,
+                        ...(legacyDebtSettings || {})
+                    }
+                });
+            }
+
+            if (user) {
+                const paymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
+                const { error } = await syncUserData(
+                    billStore.getAll(),
+                    paymentSettings,
+                    financialPlanStore.getPlan()
+                );
+                if (error) logger.error('Financial plan cloud sync failed on init', error);
+            }
+
             initializeBillForm(this.categories, {
                 onSaveBill: (billData) => this.handleSaveBill(billData),
                 onMarkPaid: (billId, isPaid) => this.handleMarkPaidFromModal(billId, isPaid)
@@ -325,6 +358,11 @@ class AppOrchestrator {
                 this.rerender();
                 this.handleCloudSync(bills);
                 this.handleDueBillReminders();
+            });
+
+            financialPlanStore.subscribe(() => {
+                this.rerender();
+                this.handleCloudSync(billStore.getAll());
             });
 
             // Auto-select current pay period if none selected
@@ -455,29 +493,71 @@ class AppOrchestrator {
         StorageManager.set(STORAGE_KEYS.PAYCHECK_ADJUSTMENTS, adjustmentsByDate);
     }
 
-    getDebtSnowballSettings() {
-        const raw = StorageManager.get(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, { extraPayment: 0, strategy: 'snowball' });
-        return {
-            extraPayment: Number.parseFloat(raw?.extraPayment) || 0,
-            strategy: raw?.strategy === 'avalanche' ? 'avalanche' : 'snowball'
-        };
-    }
-
     saveDebtSnowballSettings(settings) {
-        StorageManager.set(STORAGE_KEYS.DEBT_SNOWBALL_SETTINGS, {
-            extraPayment: Math.max(0, Number.parseFloat(settings?.extraPayment) || 0),
-            strategy: settings?.strategy === 'avalanche' ? 'avalanche' : 'snowball'
-        });
+        financialPlanStore.updateSettings(settings);
     }
 
     handleSaveDebtSnowballSettings(settings) {
         try {
             this.saveDebtSnowballSettings(settings);
-            billActionHandlers.showSuccessNotification('Debt snowball settings updated.');
-            this.rerender();
+            const isViewOnlyChange = Object.keys(settings || {}).every((key) => key === 'activeView');
+            if (!isViewOnlyChange) {
+                billActionHandlers.showSuccessNotification('Financial plan updated.');
+            }
         } catch (error) {
             logger.error('Failed saving debt snowball settings', error);
             billActionHandlers.showErrorNotification(error.message, 'Debt Snowball');
+        }
+    }
+
+    handleSavePlanningDebt(debt) {
+        try {
+            financialPlanStore.upsertDebt(debt);
+            billActionHandlers.showSuccessNotification('Debt saved.');
+        } catch (error) {
+            logger.error('Failed saving planning debt', error);
+            billActionHandlers.showErrorNotification(error.message, 'Debt Update');
+        }
+    }
+
+    handleDeletePlanningDebt(id) {
+        try {
+            financialPlanStore.removeDebt(id);
+            billActionHandlers.showSuccessNotification('Debt removed from the plan.');
+        } catch (error) {
+            logger.error('Failed deleting planning debt', error);
+            billActionHandlers.showErrorNotification(error.message, 'Debt Update');
+        }
+    }
+
+    handleSaveIncomeSource(source) {
+        try {
+            financialPlanStore.upsertIncomeSource(source);
+            billActionHandlers.showSuccessNotification('Income source saved.');
+        } catch (error) {
+            logger.error('Failed saving income source', error);
+            billActionHandlers.showErrorNotification(error.message, 'Cash Flow Update');
+        }
+    }
+
+    handleDeleteIncomeSource(id) {
+        try {
+            financialPlanStore.removeIncomeSource(id);
+            billActionHandlers.showSuccessNotification('Income source removed.');
+        } catch (error) {
+            logger.error('Failed deleting income source', error);
+            billActionHandlers.showErrorNotification(error.message, 'Cash Flow Update');
+        }
+    }
+
+    handleSaveCashFlowScenario(scenario) {
+        try {
+            financialPlanStore.upsertScenario(scenario);
+            financialPlanStore.updateSettings({ activeScenarioId: scenario.id });
+            billActionHandlers.showSuccessNotification('What-if scenario saved and applied.');
+        } catch (error) {
+            logger.error('Failed saving cash flow scenario', error);
+            billActionHandlers.showErrorNotification(error.message, 'Cash Flow Update');
         }
     }
 
@@ -626,7 +706,11 @@ class AppOrchestrator {
                 this.isSyncing = true;
                     try {
                         const paymentSettings = StorageManager.get(STORAGE_KEYS.PAYMENT_SETTINGS, null);
-                        const { error } = await syncUserData(bills, paymentSettings);
+                        const { error } = await syncUserData(
+                            bills,
+                            paymentSettings,
+                            financialPlanStore.getPlan()
+                        );
                         if (error) {
                             logger.error('Cloud sync failed', error);
                             if (!this.hasSyncErroredThisSession) {
@@ -757,10 +841,17 @@ class AppOrchestrator {
                     renderDebtSnowballView(
                         {
                             bills,
-                            settings: this.getDebtSnowballSettings()
+                            debts: mergeDebtsWithBills(financialPlanStore.getPlan().debts, bills),
+                            financialPlan: financialPlanStore.getPlan(),
+                            paymentSettings: paycheckManager.paymentSettings
                         },
                         {
                             onSaveSettings: (s) => this.handleSaveDebtSnowballSettings(s),
+                            onSaveDebt: (debt) => this.handleSavePlanningDebt(debt),
+                            onDeleteDebt: (id) => this.handleDeletePlanningDebt(id),
+                            onSaveIncomeSource: (source) => this.handleSaveIncomeSource(source),
+                            onDeleteIncomeSource: (id) => this.handleDeleteIncomeSource(id),
+                            onSaveScenario: (scenario) => this.handleSaveCashFlowScenario(scenario),
                             onEditBill: (billId) => this.handleEditBill(billId)
                         }
                     );

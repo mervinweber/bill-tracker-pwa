@@ -215,7 +215,7 @@ export const getUser = async () => {
  * @param {Array} localBills - Bills array to sync
  * @param {Object} localPaymentSettings - Payment settings to sync
  */
-export const syncUserData = async (localBills, localPaymentSettings = null) => {
+export const syncUserData = async (localBills, localPaymentSettings = null, localFinancialPlan = null) => {
     if (!supabase) return { error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
 
     const user = await getUser();
@@ -228,11 +228,11 @@ export const syncUserData = async (localBills, localPaymentSettings = null) => {
         .eq('user_id', user.id)
         .single();
 
-    const updateData = {
+    const updateData = /** @type {Record<string, any>} */ ({
         user_id: user.id,
         bills: localBills,
         last_sync: new Date().toISOString()
-    };
+    });
 
     if (userData?.household_id) {
         updateData.household_id = userData.household_id;
@@ -242,9 +242,25 @@ export const syncUserData = async (localBills, localPaymentSettings = null) => {
         updateData.paymentSettings = localPaymentSettings;
     }
 
-    const { data, error } = await supabase
+    if (localFinancialPlan) {
+        updateData.financialPlan = localFinancialPlan;
+    }
+
+    let { data, error } = await supabase
         .from('user_data')
         .upsert(updateData, { onConflict: 'user_id' });
+
+    const missingFinancialPlanColumn = error && localFinancialPlan && (
+        error.code === 'PGRST204' || String(error.message || '').includes('financialPlan')
+    );
+    if (missingFinancialPlanColumn) {
+        logger.warn('Financial plan cloud column is not available yet; bills will continue syncing.');
+        const fallbackData = { ...updateData };
+        delete fallbackData.financialPlan;
+        ({ data, error } = await supabase
+            .from('user_data')
+            .upsert(fallbackData, { onConflict: 'user_id' }));
+    }
 
     return { data, error };
 };
@@ -322,6 +338,44 @@ export const fetchCloudPaymentSettings = async () => {
         .single();
 
     return { data: data ? data.paymentSettings : null, error };
+};
+
+/**
+ * Fetch versioned financial planning data from the user or shared household.
+ * Returns null without failing bill sync when the optional column is not deployed yet.
+ */
+export const fetchCloudFinancialPlan = async () => {
+    if (!supabase) return { data: null, error: createAppErrorObject('SUPABASE_NOT_INITIALIZED') };
+
+    const user = await getUser();
+    if (!user) return { data: null, error: createAppErrorObject('SUPABASE_AUTH_REQUIRED') };
+
+    const { data: userData, error: userError } = await supabase
+        .from('user_data')
+        .select('financialPlan, household_id')
+        .eq('user_id', user.id)
+        .single();
+
+    if (userError) {
+        const missingColumn = userError.code === 'PGRST204' || String(userError.message || '').includes('financialPlan');
+        return missingColumn ? { data: null, error: null } : { data: null, error: userError };
+    }
+
+    if (userData?.household_id) {
+        const { data: householdData, error: householdError } = await supabase
+            .from('user_data')
+            .select('financialPlan')
+            .eq('household_id', userData.household_id)
+            .not('financialPlan', 'is', null)
+            .order('last_sync', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        if (!householdError && householdData?.financialPlan) {
+            return { data: householdData.financialPlan, error: null };
+        }
+    }
+
+    return { data: userData?.financialPlan || null, error: null };
 };
 
 /**

@@ -1,11 +1,43 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     syncBillsFromCloud,
+    syncFinancialPlanFromCloud,
     syncLocalDataToCloudIfNeeded,
     syncPaymentSettingsFromCloud
 } from '../src/utils/cloudSyncManager.js';
 
 describe('cloudSyncManager', () => {
+    it('applies a newer cloud financial plan', async () => {
+        const cloudPlan = { schemaVersion: 1, updatedAt: '2026-08-02T00:00:00.000Z' };
+        const financialPlanStore = {
+            getPlan: vi.fn().mockReturnValue({ updatedAt: '2026-08-01T00:00:00.000Z' }),
+            replace: vi.fn()
+        };
+        const result = await syncFinancialPlanFromCloud({
+            fetchCloudFinancialPlan: vi.fn().mockResolvedValue({ data: cloudPlan, error: null }),
+            financialPlanStore,
+            logger: { info: vi.fn(), warn: vi.fn() }
+        });
+        expect(result.synced).toBe(true);
+        expect(financialPlanStore.replace).toHaveBeenCalledWith(cloudPlan);
+    });
+
+    it('keeps a newer local financial plan', async () => {
+        const financialPlanStore = {
+            getPlan: vi.fn().mockReturnValue({ updatedAt: '2026-08-03T00:00:00.000Z' }),
+            replace: vi.fn()
+        };
+        const result = await syncFinancialPlanFromCloud({
+            fetchCloudFinancialPlan: vi.fn().mockResolvedValue({
+                data: { schemaVersion: 1, updatedAt: '2026-08-02T00:00:00.000Z' }, error: null
+            }),
+            financialPlanStore,
+            logger: { info: vi.fn(), warn: vi.fn() }
+        });
+        expect(result.synced).toBe(false);
+        expect(financialPlanStore.replace).not.toHaveBeenCalled();
+    });
+
     it('syncPaymentSettingsFromCloud stores and applies settings', async () => {
         const fetchCloudPaymentSettings = vi.fn().mockResolvedValue({
             data: { frequency: 'bi-weekly', payPeriodsToShow: 6 }
