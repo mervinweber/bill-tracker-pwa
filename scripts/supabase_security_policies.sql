@@ -125,6 +125,7 @@ ALTER TABLE user_data
 ALTER TABLE user_data ADD COLUMN IF NOT EXISTS last_sync TIMESTAMPTZ;
 ALTER TABLE user_data ADD COLUMN IF NOT EXISTS household_id UUID;
 ALTER TABLE user_data ADD COLUMN IF NOT EXISTS "paymentSettings" JSONB;
+ALTER TABLE user_data ADD COLUMN IF NOT EXISTS "financialPlan" JSONB;
 
 -- Step 10: Remove duplicate rows before creating unique index
 -- Keeps the most recently synced row per user, discards older duplicates.

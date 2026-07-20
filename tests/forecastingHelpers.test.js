@@ -23,7 +23,14 @@ it('calculateAverageMonthlySpending returns 0 for null', () => {
 });
 
 it('calculateAverageMonthlySpending returns positive for valid bills', () => {
-    expect(calculateAverageMonthlySpending(bills, 3)).toBeGreaterThan(0);
+    const currentMonth = new Date();
+    const recentBills = bills.map((bill, index) => ({
+        ...bill,
+        dueDate: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), index + 1)
+            .toISOString()
+            .slice(0, 10)
+    }));
+    expect(calculateAverageMonthlySpending(recentBills, 3)).toBeGreaterThan(0);
 });
 
 it('forecastNextMonth returns 0 total for empty array', () => {

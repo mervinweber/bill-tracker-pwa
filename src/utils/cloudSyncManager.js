@@ -96,6 +96,36 @@ export const syncBillsFromCloud = async ({
 };
 
 /**
+ * Apply cloud planning data only when it is newer than the local version.
+ */
+export const syncFinancialPlanFromCloud = async ({
+    fetchCloudFinancialPlan,
+    financialPlanStore,
+    logger
+}) => {
+    const { data: cloudFinancialPlan, error = null } = await fetchCloudFinancialPlan();
+    if (error) {
+        logger.warn('Financial plan cloud fetch failed', { error: error.message || error.code });
+        return { cloudFinancialPlan: null, synced: false, error };
+    }
+    if (!cloudFinancialPlan || typeof cloudFinancialPlan !== 'object') {
+        return { cloudFinancialPlan: null, synced: false, error: null };
+    }
+
+    const localPlan = financialPlanStore.getPlan();
+    const cloudUpdatedAt = Date.parse(cloudFinancialPlan.updatedAt || '') || 0;
+    const localUpdatedAt = Date.parse(localPlan.updatedAt || '') || 0;
+    if (cloudUpdatedAt >= localUpdatedAt) {
+        financialPlanStore.replace(cloudFinancialPlan);
+        logger.info('Financial plan updated from cloud');
+        return { cloudFinancialPlan, synced: true, error: null };
+    }
+
+    logger.info('Local financial plan is newer than cloud data');
+    return { cloudFinancialPlan, synced: false, error: null };
+};
+
+/**
  * @param {Object} params
  * @param {import('../types/domainTypes.js').Bill[]} params.cloudBills
  * @param {import('../types/domainTypes.js').PaymentSettings|null} params.cloudPaymentSettings
