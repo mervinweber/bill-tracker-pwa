@@ -336,8 +336,9 @@ export const initializeHeader = (paychecks, actions) => {
 
     document.getElementById('allBillsScopeFilter').addEventListener('change', (e) => {
         const sel = /** @type {HTMLSelectElement} */ (e.target);
+        const scope = sel.value;
+        actions.onAllBillsScopeChange?.(scope);
         actions.onAllBillsSelect?.();
-        actions.onAllBillsScopeChange?.(sel.value);
     });
 
     document.getElementById('carriedForwardToggle').addEventListener('change', (e) => {

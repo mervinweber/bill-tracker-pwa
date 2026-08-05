@@ -39,7 +39,6 @@ export function handleAllBillsSelect() {
     appState.setDisplayMode('list');
     appState.setPaymentFilter('all');
     appState.setSearchQuery('');
-    appState.setAllBillsScope('open-through-next-pay-date');
     appState.setCurrentCalendarDate(new Date());
 }
 
