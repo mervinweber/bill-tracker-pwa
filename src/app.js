@@ -1021,6 +1021,8 @@ class AppOrchestrator {
                                 this.handleUpdateBalance(billId, balance),
                             onTogglePayment: (billId, isPaid) =>
                                 this.handleTogglePayment(billId, isPaid),
+                            onToggleAutopay: (billId, enabled) =>
+                                this.handleToggleAutopay(billId, enabled),
                             onRecordPayment: (billId) => openRecordPaymentModal(billId),
                             onViewHistory: (billId) => this.handleViewHistory(billId),
                             onDeleteBill: (billId) => this.handleDeleteBill(billId),
@@ -1229,6 +1231,35 @@ class AppOrchestrator {
         } catch (error) {
             logger.error('Error toggling reminder setting', error);
             billActionHandlers.showErrorNotification(error.message, 'Reminder Update Failed');
+        }
+    }
+
+    handleToggleAutopay(billId, enabled) {
+        try {
+            const bills = billStore.getAll();
+            const bill = bills.find((existingBill) => existingBill.id === billId);
+            if (!bill) return;
+
+            const updatedBill = {
+                ...bill,
+                autopayEnabled: enabled
+            };
+
+            if (bill.recurrence && bill.recurrence !== 'One-time') {
+                billStore.setBills(cascadeRecurringBillEdit(bills, bill, updatedBill));
+            } else {
+                billStore.update(updatedBill);
+            }
+
+            recordAuditEvent('bill.autopay.updated', {
+                entityType: 'bill',
+                entityId: billId,
+                summary: `Autopay ${enabled ? 'enabled' : 'disabled'} for ${bill.name}`,
+                metadata: { enabled }
+            });
+        } catch (error) {
+            logger.error('Error toggling autopay setting', error);
+            billActionHandlers.showErrorNotification(error.message, 'Autopay Update Failed');
         }
     }
 

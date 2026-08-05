@@ -177,6 +177,12 @@ it('Bill Grid: Payment checkbox change listeners are attached', () => {
     expect(billGridContent).toContain('actions.onTogglePayment');
 });
 
+it('Bill Grid: Autopay checkbox saves from the list view', () => {
+    expect(billGridContent).toContain("autopayCheckbox.addEventListener('change'");
+    expect(billGridContent).toContain('actions.onToggleAutopay');
+    expect(appContent).toContain('handleToggleAutopay');
+});
+
 it('Bill Grid: Pay button listeners are attached', () => {
     expect(billGridContent).toContain("payBtn.addEventListener('click'");
     expect(billGridContent).toContain('actions.onRecordPayment');

@@ -121,6 +121,11 @@ it('Bill grid has payment toggle checkbox', () => {
     expect(billGridContent).toContain("checkbox");
 });
 
+it('Bill grid has an accessible autopay toggle', () => {
+    expect(billGridContent).toContain('actions.onToggleAutopay');
+    expect(billGridContent).toContain("setAttribute('aria-label', `Enable autopay for ${bill.name}`)");
+});
+
 it('Bill grid has aria-hidden elements for decorative content', () => {
     // Check for aria-live (used in empty state messages as accessibility hook)
     expect(billGridContent).toContain('aria-live');

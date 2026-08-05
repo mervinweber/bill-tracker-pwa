@@ -175,8 +175,8 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
 
     const colgroup = document.createElement('colgroup');
     const columnWidths = viewMode === 'all'
-        ? ['24%', '13%', '12%', '10%', '18%', '9%', '5%', '9%']
-        : ['30%', '15%', '12%', '20%', '10%', '5%', '8%'];
+        ? ['22%', '12%', '11%', '9%', '17%', '8%', '7%', '5%', '9%']
+        : ['28%', '14%', '11%', '18%', '9%', '8%', '5%', '7%'];
     columnWidths.forEach((width) => {
         const col = document.createElement('col');
         col.style.width = width;
@@ -194,6 +194,7 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Amount</th>
             <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Balance</th>
             <th class="h-9 px-3 py-1 text-left align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Credit</th>
+            <th class="h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap" title="Autopay enabled">Auto</th>
             <th class="h-9 px-3 py-1 text-center align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Paid</th>
             <th class="h-9 px-3 py-1 text-right align-middle font-medium text-muted-foreground bg-card text-xs whitespace-nowrap">Actions</th>
         </tr>
@@ -287,6 +288,21 @@ export const renderBillGrid = ({ bills, viewMode, selectedPaycheck, selectedCate
             ? `<span class="text-emerald-600">$${creditBalance.toFixed(2)}</span>`
             : '<span class="text-muted-foreground">$0.00</span>';
         row.appendChild(creditCell);
+
+        // Autopay Toggle
+        const autopayCell = document.createElement('td');
+        autopayCell.className = "px-3 py-3 align-top text-center";
+        const autopayCheckbox = document.createElement('input');
+        autopayCheckbox.type = 'checkbox';
+        autopayCheckbox.checked = Boolean(bill.autopayEnabled);
+        autopayCheckbox.className = checkboxBase;
+        autopayCheckbox.title = `Autopay for ${bill.name}`;
+        autopayCheckbox.setAttribute('aria-label', `Enable autopay for ${bill.name}`);
+        autopayCheckbox.addEventListener('change', (e) => {
+            actions.onToggleAutopay(bill.id, /** @type {HTMLInputElement} */ (e.target).checked);
+        });
+        autopayCell.appendChild(autopayCheckbox);
+        row.appendChild(autopayCell);
 
         // Status / Paid Toggle
         const statusCell = document.createElement('td');

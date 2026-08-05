@@ -67,7 +67,13 @@ describe('cascadeRecurringBillEdit', () => {
             dueDate: '2026-10-22',
             balance: 60
         };
-        const updated = { ...monthlyBill, name: 'Citi Credit - Black', amountDue: 125, balance: 125 };
+        const updated = {
+            ...monthlyBill,
+            name: 'Citi Credit - Black',
+            amountDue: 125,
+            balance: 125,
+            autopayEnabled: true
+        };
 
         const result = cascadeRecurringBillEdit([monthlyBill, paidFuture, customBalance], monthlyBill, updated);
 
@@ -75,7 +81,8 @@ describe('cascadeRecurringBillEdit', () => {
         expect(result.find((bill) => bill.id === customBalance.id)).toMatchObject({
             name: 'Citi Credit - Black',
             amountDue: 125,
-            balance: 60
+            balance: 60,
+            autopayEnabled: true
         });
     });
 
