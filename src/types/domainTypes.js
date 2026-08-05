@@ -30,6 +30,7 @@
 /**
  * @typedef {Object} Bill
  * @property {string} id
+ * @property {string} [seriesId]
  * @property {string} name
  * @property {string} category
  * @property {string} [payee]
